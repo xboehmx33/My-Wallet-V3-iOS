@@ -2,6 +2,7 @@
 
 import EthereumKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 

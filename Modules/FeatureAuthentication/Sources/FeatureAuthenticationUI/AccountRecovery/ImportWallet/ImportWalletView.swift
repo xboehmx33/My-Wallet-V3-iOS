@@ -1,6 +1,5 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import AnalyticsKit
 import ComposableArchitecture
 import Localization
 import SwiftUI
@@ -66,9 +65,7 @@ struct ImportWalletView: View {
                         state: \.createAccountState,
                         action: ImportWalletAction.createAccount
                     ),
-                    then: { store in
-                        CreateAccountView(store: store)
-                    }
+                    then: CreateAccountView.init(store:)
                 ),
                 isActive: viewStore.binding(
                     get: \.isCreateAccountScreenVisible,
@@ -92,6 +89,10 @@ struct ImportWalletView: View {
 }
 
 #if DEBUG
+import AnalyticsKit
+import FeatureAuthenticationDomain
+import ToolKit
+
 struct ImportWalletView_Previews: PreviewProvider {
     static var previews: some View {
         ImportWalletView(
@@ -99,6 +100,9 @@ struct ImportWalletView_Previews: PreviewProvider {
                 initialState: .init(),
                 reducer: importWalletReducer,
                 environment: .init(
+                    mainQueue: .main,
+                    passwordValidator: PasswordValidator(),
+                    externalAppOpener: ToLogAppOpener(),
                     analyticsRecorder: NoOpAnalyticsRecorder()
                 )
             )

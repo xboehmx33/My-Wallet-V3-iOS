@@ -57,7 +57,7 @@ public struct CalloutCard<Leading: View>: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: Spacing.containerBorderRadius)
-                .stroke(Color.Semantic.primary)
+                .stroke(Color.WalletSemantic.primary)
         )
     }
 }

@@ -2,6 +2,7 @@
 
 import DIKit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import StellarKit
@@ -33,7 +34,7 @@ final class StellarActivityDetailsInteractor {
             .details(for: identifier)
         let price = price(at: createdAt)
             .optional()
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
 
         return Observable
             .combineLatest(
@@ -47,7 +48,8 @@ final class StellarActivityDetailsInteractor {
 
     private func price(at date: Date) -> Single<PriceQuoteAtTime> {
         fiatCurrencySettings
-            .fiatCurrency
+            .displayCurrency
+            .asSingle()
             .flatMap(weak: self) { (self, fiatCurrency) in
                 self.price(at: date, in: fiatCurrency)
             }

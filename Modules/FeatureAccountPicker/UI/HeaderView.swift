@@ -4,7 +4,7 @@ import SwiftUI
 import UIComponentsKit
 
 struct HeaderView: View {
-    let viewModel: Header
+    let viewModel: HeaderStyle
 
     @Binding var searchText: String?
     @Binding var isSearching: Bool
@@ -215,7 +215,7 @@ struct HeaderView_Previews: PreviewProvider {
 
         var body: some View {
             HeaderView(
-                viewModel: Header.normal(
+                viewModel: .normal(
                     title: "Receive Crypto Now",
                     subtitle: "Choose a Wallet to receive crypto to.",
                     image: ImageAsset.iconReceive.image,

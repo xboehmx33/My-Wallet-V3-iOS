@@ -18,6 +18,10 @@ public enum UpgradeAccountAction: Equatable, NavigationAction {
     // MARK: - Local Actions
 
     case skipUpgrade(SkipUpgradeAction)
+
+    // MARK: Web Account Upgrade
+
+    case setCurrentMessage(String)
 }
 
 // MARK: - Properties
@@ -31,13 +35,23 @@ public struct UpgradeAccountState: NavigationState {
     // MARK: - Wallet Info
 
     var walletInfo: WalletInfo
+    var base64Str: String
 
     // MARK: - Local States
 
     var skipUpgradeState: SkipUpgradeState?
 
-    init(walletInfo: WalletInfo) {
+    // MARK: - Web Account Upgrade Messaging
+
+    var currentMessage: String
+
+    init(
+        walletInfo: WalletInfo,
+        base64Str: String
+    ) {
         self.walletInfo = walletInfo
+        self.base64Str = base64Str
+        currentMessage = ""
     }
 }
 
@@ -107,9 +121,13 @@ let upgradeAccountReducer = Reducer.combine(
         // MARK: - Local Reducers
 
         case .skipUpgrade(.returnToUpgradeButtonTapped):
-            return Effect(value: .navigate(to: nil))
+            return .dismiss()
 
         case .skipUpgrade:
+            return .none
+
+        case .setCurrentMessage(let message):
+            state.currentMessage = message
             return .none
         }
     }

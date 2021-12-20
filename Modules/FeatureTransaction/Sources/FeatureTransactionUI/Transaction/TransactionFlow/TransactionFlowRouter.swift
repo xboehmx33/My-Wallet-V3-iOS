@@ -1,7 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import DIKit
 import FeatureOpenBankingUI
 import FeatureTransactionDomain
@@ -50,6 +54,7 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
     private var securityRouter: PaymentSecurityRouter?
     private let kycRouter: PlatformUIKit.KYCRouting
     private let transactionsRouter: TransactionsRouterAPI
+    private let featureFlagsService: FeatureFlagsServiceAPI
 
     private let bottomSheetPresenter = BottomSheetPresenting(ignoresBackgroundTouches: true)
 
@@ -69,7 +74,8 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
         kycRouter: PlatformUIKit.KYCRouting = resolve(),
         transactionsRouter: TransactionsRouterAPI = resolve(),
         topMostViewControllerProvider: TopMostViewControllerProviding = resolve(),
-        alertViewPresenter: AlertViewPresenterAPI = resolve()
+        alertViewPresenter: AlertViewPresenterAPI = resolve(),
+        featureFlagsService: FeatureFlagsServiceAPI = resolve()
     ) {
         self.paymentMethodLinker = paymentMethodLinker
         self.bankWireLinker = bankWireLinker
@@ -78,6 +84,7 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
         self.transactionsRouter = transactionsRouter
         self.topMostViewControllerProvider = topMostViewControllerProvider
         self.alertViewPresenter = alertViewPresenter
+        self.featureFlagsService = featureFlagsService
         super.init(interactor: interactor, viewController: viewController)
         interactor.router = self
     }
@@ -230,8 +237,9 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
 
     func presentLinkPaymentMethod(transactionModel: TransactionModel) {
         let presenter = viewController.uiviewController.topMostViewController ?? viewController.uiviewController
-        paymentMethodLinker.presentAccountLinkingFlow(from: presenter) { result in
+        paymentMethodLinker.presentAccountLinkingFlow(from: presenter) { [weak self] result in
             presenter.dismiss(animated: true) {
+                guard let self = self else { return }
                 switch result {
                 case .abandoned:
                     transactionModel.process(action: .returnToPreviousStep)
@@ -240,10 +248,22 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
                     case .bankAccount:
                         transactionModel.process(action: .showBankWiringInstructions)
                     case .bankTransfer:
-                        // Check the currency to ensure the user can link a bank via ACH until Open Banking is complete.
-                        if paymentMethod.fiatCurrency == .USD {
+                        switch paymentMethod.fiatCurrency {
+                        case .USD:
                             transactionModel.process(action: .showBankLinkingFlow)
-                        } else {
+                        case .GBP, .EUR:
+                            self.featureFlagsService
+                                .isEnabled(.remote(.openBanking))
+                                .if(
+                                    then: {
+                                        transactionModel.process(action: .showBankLinkingFlow)
+                                    },
+                                    else: {
+                                        transactionModel.process(action: .showBankWiringInstructions)
+                                    }
+                                )
+                                .store(in: &self.cancellables)
+                        default:
                             transactionModel.process(action: .showBankWiringInstructions)
                         }
                     case .card:
@@ -285,11 +305,7 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
                 case .closeFlow:
                     transactionModel.process(action: .bankLinkingFlowDismissed(state.action))
                 case .bankLinked:
-                    if let source = state.source {
-                        transactionModel.process(action: .bankAccountLinkedFromSource(source, state.action))
-                    } else {
-                        transactionModel.process(action: .bankAccountLinked(state.action))
-                    }
+                    transactionModel.process(action: .bankAccountLinked(state.action))
                 }
             })
             .disposed(by: disposeBag)
@@ -306,41 +322,61 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
     }
 
     func presentOpenBanking(
+        action: OpenBankingAction,
         transactionModel: TransactionModel,
-        account: LinkedBankAccount,
-        order: PendingTransaction
+        account: LinkedBankData
     ) {
-        let presenter = viewController.uiviewController.topMostViewController ?? viewController.uiviewController
-        let viewController = OpenBankingViewController(
-            deposit: order.amount.minorString,
-            product: "SIMPLEBUY",
-            from: .init(account.data),
-            environment: .init(
-                dismiss: { [weak presenter] in
-                    presenter?.dismiss(animated: true)
-                },
-                currency: order.amount.currency.code
+
+        let presentingViewController = viewController.uiviewController.topMostViewController
+            ?? viewController.uiviewController
+
+        guard let presenter = presentingViewController as? TransactionFlowViewControllable else {
+            fatalError(
+                """
+                Unable to present OpenBanking
+                expected TransactionFlowViewControllable but got \(type(of: presentingViewController))
+                """
             )
+        }
+
+        let environment = OpenBankingEnvironment(
+            dismiss: { [weak presenter] in
+                presenter?.dismiss()
+            },
+            cancel: { [weak presenter] in
+                presenter?.pop()
+            },
+            currency: action.currency
         )
+
+        let viewController: OpenBankingViewController
+        switch action {
+        case .buy(let order):
+            viewController = OpenBankingViewController(
+                order: .init(order),
+                from: .init(account),
+                environment: environment
+            )
+        case .deposit(let transaction):
+            viewController = OpenBankingViewController(
+                deposit: transaction.amount.minorString,
+                product: "SIMPLEBUY",
+                from: .init(account),
+                environment: environment
+            )
+        }
+
         viewController.eventPublisher.sink { [weak presenter] result in
             switch result {
             case .success:
                 transactionModel.process(action: .updateTransactionComplete)
-                presenter?.dismiss(animated: true)
+                presenter?.dismiss()
             case .failure:
                 break
             }
         }
         .store(withLifetimeOf: viewController)
 
-        guard let presenter = presenter as? TransactionFlowViewControllable else {
-            fatalError(
-                """
-                Unable to present OpenBanking
-                expected TransactionFlowViewControllable but got \(type(of: presenter))
-                """
-            )
-        }
         presenter.push(viewController: viewController)
     }
 
@@ -390,13 +426,11 @@ final class TransactionFlowRouter: TransactionViewableRouter, TransactionFlowRou
         let presenter = topMostViewControllerProvider.topMostViewController ?? viewController.uiviewController
         securityRouter = PaymentSecurityRouter { result in
             Logger.shared.debug(String(describing: result))
-            presenter.dismiss(animated: true) {
-                switch result {
-                case .abandoned, .failed:
-                    transactionModel.process(action: .returnToPreviousStep)
-                case .pending, .completed:
-                    transactionModel.process(action: .securityChecksCompleted)
-                }
+            switch result {
+            case .abandoned, .failed:
+                transactionModel.process(action: .returnToPreviousStep)
+            case .pending, .completed:
+                transactionModel.process(action: .securityChecksCompleted)
             }
         }
         transactionModel

@@ -2,6 +2,7 @@
 
 import FeatureOpenBankingDomain
 import Foundation
+import MoneyKit
 
 public struct FastlinkConfiguration {
     public let config: String?

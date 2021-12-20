@@ -98,7 +98,8 @@ platform :ios do
   desc "Runs all unit tests on Blockchain (Staging) scheme"
   lane :execute_tests do
     scan(
-      cloned_source_packages_path: "SourcePackages"
+      cloned_source_packages_path: "SourcePackages",
+      xcargs: "-packageCachePath ${PWD}/PackageCache -disableAutomaticPackageResolution"
     )
   end
   
@@ -182,7 +183,8 @@ platform :ios do
   private_lane :build_and_archive do | options |
     puts "🏗  Building App"
     build_app(
-      cloned_source_packages_path: "SourcePackages"
+      cloned_source_packages_path: "SourcePackages",
+      xcargs: "-packageCachePath ${PWD}/PackageCache -disableAutomaticPackageResolution"
     )
   end
   

@@ -7,7 +7,7 @@ import RxDataSources
 import RxSwift
 import ToolKit
 
-final class SettingsViewController: BaseScreenViewController {
+public final class SettingsViewController: BaseScreenViewController {
 
     // MARK: - Accessibility
 
@@ -25,26 +25,26 @@ final class SettingsViewController: BaseScreenViewController {
 
     // MARK: - Setup
 
-    init(presenter: SettingsScreenPresenter) {
+    public init(presenter: SettingsScreenPresenter) {
         self.presenter = presenter
         super.init(nibName: SettingsViewController.objectName, bundle: .module)
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     // MARK: - Lifecycle
 
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         title = LocalizationConstants.settings
         setupTableView()
         presenter.refresh()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
+    override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         setupNavigationBar()
     }
@@ -78,7 +78,7 @@ final class SettingsViewController: BaseScreenViewController {
         tableView.registerNibCell(SwitchTableViewCell.self, in: .module)
         tableView.registerNibCell(ClipboardTableViewCell.self, in: .module)
         tableView.registerNibCell(BadgeTableViewCell.self, in: .platformUIKit)
-        tableView.registerNibCell(PlainTableViewCell.self, in: .module)
+        tableView.registerNibCell(CommonTableViewCell.self, in: .module)
         tableView.registerNibCell(AddPaymentMethodTableViewCell.self, in: .module)
         tableView.register(LinkedBankTableViewCell.self)
         tableView.registerNibCell(LinkedCardTableViewCell.self, in: .platformUIKit)
@@ -93,8 +93,8 @@ final class SettingsViewController: BaseScreenViewController {
                 cell = self.badgeCell(for: indexPath, presenter: presenter)
             case .clipboard(let type):
                 cell = self.clipboardCell(for: indexPath, viewModel: type.viewModel)
-            case .plain(let type):
-                cell = self.plainCell(for: indexPath, viewModel: type.viewModel)
+            case .common(let type):
+                cell = self.commonCell(for: indexPath, viewModel: type.viewModel)
             case .cards(let type):
                 switch type {
                 case .skeleton:
@@ -133,7 +133,7 @@ final class SettingsViewController: BaseScreenViewController {
             .disposed(by: disposeBag)
     }
 
-    override func navigationBarLeadingButtonPressed() {
+    override public func navigationBarLeadingButtonPressed() {
         presenter.navigationBarLeadingButtonTapped()
     }
 }
@@ -142,7 +142,7 @@ final class SettingsViewController: BaseScreenViewController {
 
 extension SettingsViewController: UITableViewDelegate {
 
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+    public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: TableHeaderView.objectName) as? TableHeaderView else {
             return nil
         }
@@ -169,8 +169,8 @@ extension SettingsViewController: UITableViewDelegate {
         return cell
     }
 
-    private func plainCell(for indexPath: IndexPath, viewModel: PlainCellViewModel) -> PlainTableViewCell {
-        let cell = tableView.dequeue(PlainTableViewCell.self, for: indexPath)
+    private func commonCell(for indexPath: IndexPath, viewModel: CommonCellViewModel) -> CommonTableViewCell {
+        let cell = tableView.dequeue(CommonTableViewCell.self, for: indexPath)
         cell.viewModel = viewModel
         return cell
     }

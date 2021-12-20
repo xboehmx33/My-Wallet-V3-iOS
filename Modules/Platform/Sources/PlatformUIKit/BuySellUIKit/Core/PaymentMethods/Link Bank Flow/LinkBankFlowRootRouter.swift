@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 import RIBs
 import RxCocoa
@@ -42,7 +43,7 @@ public protocol LinkBankFlowStarter: AnyObject {
 
 public protocol StartOpenBanking {
 
-    static func link(
+    func link(
         account data: BankLinkageData,
         currency: FiatCurrency,
         listener: LinkBankListener
@@ -73,7 +74,7 @@ final class LinkBankFlowRootRouter: RIBs.Router<LinkBankFlowRootInteractable>,
     private let splashScreenBuilder: LinkBankSplashScreenBuildable
     private let yodleeScreenBuilder: YodleeScreenBuildable
     private let failureScreenBuilder: LinkBankFailureScreenBuildable
-    private let startOpenBanking: StartOpenBanking.Type
+    private let startOpenBanking: StartOpenBanking
 
     private var navigationController: UINavigationController?
 
@@ -83,7 +84,7 @@ final class LinkBankFlowRootRouter: RIBs.Router<LinkBankFlowRootInteractable>,
         splashScreenBuilder: LinkBankSplashScreenBuildable,
         yodleeScreenBuilder: YodleeScreenBuildable,
         failureScreenBuilder: LinkBankFailureScreenBuildable,
-        startOpenBanking: StartOpenBanking.Type = resolve()
+        startOpenBanking: StartOpenBanking = resolve()
     ) {
         self.topMostViewControllerProvider = topMostViewControllerProvider
         self.splashScreenBuilder = splashScreenBuilder

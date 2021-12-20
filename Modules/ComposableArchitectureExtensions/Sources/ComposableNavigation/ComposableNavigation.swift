@@ -74,12 +74,27 @@ extension NavigationRoute {
 
 extension NavigationAction {
 
-    public static func navigate(to route: RouteType?) -> Self {
-        .route(route.map { RouteIntent(route: $0, action: .navigateTo) })
+    public static func dismiss() -> Self {
+        .route(nil)
     }
 
-    public static func enter(into route: RouteType?, context: EnterIntoContext = .default) -> Self {
-        .route(route.map { RouteIntent(route: $0, action: .enterInto(context)) })
+    public static func navigate(to route: RouteType) -> Self {
+        .route(.navigate(to: route))
+    }
+
+    public static func enter(into route: RouteType, context: EnterIntoContext = .default) -> Self {
+        .route(.enter(into: route, context: context))
+    }
+}
+
+extension RouteIntent {
+
+    public static func navigate(to route: R) -> Self {
+        .init(route: route, action: .navigateTo)
+    }
+
+    public static func enter(into route: R, context: EnterIntoContext = .default) -> Self {
+        .init(route: route, action: .enterInto(context))
     }
 }
 
@@ -103,12 +118,17 @@ extension View {
 extension Effect where Output: NavigationAction {
 
     /// A navigation effect to continue a user-journey by navigating to a new screen.
-    public static func navigate(to route: Output.RouteType?) -> Self {
+    public static func dismiss() -> Self {
+        Effect(value: .dismiss())
+    }
+
+    /// A navigation effect to continue a user-journey by navigating to a new screen.
+    public static func navigate(to route: Output.RouteType) -> Self {
         Effect(value: .navigate(to: route))
     }
 
     /// A navigation effect that enters a new user journey context.
-    public static func enter(into route: Output.RouteType?, context: EnterIntoContext = .default) -> Self {
+    public static func enter(into route: Output.RouteType, context: EnterIntoContext = .default) -> Self {
         Effect(value: .enter(into: route, context: context))
     }
 }
@@ -132,16 +152,18 @@ public struct NavigationRouteViewModifier<Route: NavigationRoute>: ViewModifier 
     }
 
     public func body(content: Content) -> some View {
-        content.background(
-            Group {
-                if let intent = intent {
-                    create(intent).inserting(intent, into: $isReady)
-                }
+        content
+            .background(routing)
+            .onReceive(viewStore.publisher) { state in
+                guard state != intent?.value else { return }
+                intent = state.map { .init($0, id: UUID()) }
             }
-        )
-        .onReceive(viewStore.publisher) { state in
-            guard state != intent?.value else { return }
-            intent = state.map { .init($0, id: UUID()) }
+    }
+
+    @ViewBuilder private var routing: some View {
+        if let intent = intent {
+            create(intent)
+                .inserting(intent, into: $isReady)
         }
     }
 
@@ -230,7 +252,7 @@ extension Binding where Value == Bool {
 extension Reducer where Action: NavigationAction, State: NavigationState {
     /// Returns a reducer that applies ``NavigationAction`` mutations to `NavigationState` after running this
     /// reducer's logic.
-    public func routable() -> Self {
+    public func routing() -> Self {
         Self { state, action, environment in
             guard let route = (/Action.route).extract(from: action)
             else {

@@ -27,28 +27,18 @@ final class ProfileSectionPresenter: SettingsSectionPresenting {
         mobileVerificationPresenter = .init(interactor: mobileVerificationInteractor)
         // IOS: 4806: Hiding the web log in for production build as pair wallet with QR code has been deprecated
         // Web log in is enabled in internal production to ease QA testing
-        let viewModel: SettingsSectionViewModel
+        var viewModel = SettingsSectionViewModel(
+            sectionType: sectionType,
+            items: [
+                .init(cellType: .badge(.limits, limitsPresenter)),
+                .init(cellType: .clipboard(.walletID)),
+                .init(cellType: .badge(.emailVerification, emailVerificationPresenter)),
+                .init(cellType: .badge(.mobileVerification, mobileVerificationPresenter)),
+                .init(cellType: .common(.webLogin))
+            ]
+        )
         if BuildFlag.isInternal {
-            viewModel = .init(
-                sectionType: sectionType,
-                items: [
-                    .init(cellType: .badge(.limits, limitsPresenter)),
-                    .init(cellType: .clipboard(.walletID)),
-                    .init(cellType: .badge(.emailVerification, emailVerificationPresenter)),
-                    .init(cellType: .badge(.mobileVerification, mobileVerificationPresenter)),
-                    .init(cellType: .plain(.loginToWebWallet))
-                ]
-            )
-        } else {
-            viewModel = .init(
-                sectionType: sectionType,
-                items: [
-                    .init(cellType: .badge(.limits, limitsPresenter)),
-                    .init(cellType: .clipboard(.walletID)),
-                    .init(cellType: .badge(.emailVerification, emailVerificationPresenter)),
-                    .init(cellType: .badge(.mobileVerification, mobileVerificationPresenter))
-                ]
-            )
+            viewModel.items.append(.init(cellType: .common(.loginToWebWallet)))
         }
         state = .just(.loaded(next: .some(viewModel)))
     }

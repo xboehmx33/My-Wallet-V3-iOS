@@ -19,7 +19,7 @@ class MultiBadgeView: UIView {
 
     // MARK: - Public Properties
 
-    var model: MultiBadgeViewModel! {
+    var model: MultiBadgeViewModel? {
         willSet {
             disposeBag = DisposeBag()
             stackView.removeSubviews()
@@ -120,11 +120,13 @@ public struct MultiBadgeViewRepresentable: View, UIViewRepresentable {
         viewModel
             .drive(view.rx.viewModel)
             .disposed(by: disposeBag)
-        view.model.visibility
-            .drive(weak: view) { view, visibility in
-                view.isHidden = visibility.isHidden
-            }
+
+        viewModel
+            .flatMap(\.visibility)
+            .map(\.isHidden)
+            .drive(view.rx.isHidden)
             .disposed(by: disposeBag)
+
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import BigInt
+import MoneyKit
 import RxSwift
 
 public protocol PortfolioProviding {
@@ -38,7 +39,7 @@ public final class PortfolioProvider: PortfolioProviding {
             .combineLatest(
                 balancesObservable,
                 change,
-                fiatCurrencyService.fiatCurrencyObservable
+                fiatCurrencyService.displayCurrencyPublisher.asObservable()
             )
             .map { accounts, change, fiatCurrency -> Portfolio in
                 let (ethereum, stellar, bitcoin, bitcoinCash) = accounts

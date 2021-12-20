@@ -1,9 +1,14 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import DIKit
 import FeatureInterestDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa

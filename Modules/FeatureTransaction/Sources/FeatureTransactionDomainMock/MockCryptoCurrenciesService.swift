@@ -2,6 +2,7 @@
 
 import Combine
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import ToolKit
 
@@ -22,6 +23,12 @@ final class MockCryptoCurrenciesService: CryptoCurrenciesServiceAPI {
         using fiatCurrency: FiatCurrency
     ) -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError> {
         recordedInvocations.fetchPurchasableCryptoCurrencies.append(fiatCurrency)
+        return stubbedResults.fetchPurchasableCryptoCurrencies
+    }
+
+    func fetchPurchasableCryptoCurrencies(
+    ) -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError> {
+        recordedInvocations.fetchPurchasableCryptoCurrencies.append(FiatCurrency.USD)
         return stubbedResults.fetchPurchasableCryptoCurrencies
     }
 }

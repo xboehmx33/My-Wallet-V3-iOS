@@ -23,6 +23,10 @@ public enum AppFeature: Int, CaseIterable {
     /// Sift Science SDK is enabled
     case siftScienceEnabled
 
+    // MARK: Wallet Connect
+
+    case walletConnectEnabled
+
     // MARK: Onboarding (After Login)
 
     /// Shows Email Verification insted of Simple Buy at Login
@@ -54,19 +58,33 @@ public enum AppFeature: Int, CaseIterable {
     /// Enable Zen-Desk Messaging for Gold Verified Users
     case customerSupportChat
 
-    /// Enable new Sell Transaction flow
-    case sellUsingTransactionFlowEnabled
-
     /// Enable Open Banking
     case openBanking
 
-    // MARK: - Transactions Flow
-
-    /// Uses the Transactions Flow implementation of Buy when enabled
-    case useTransactionsFlowToBuyCrypto
+    /// Enable New Card Acquirers (Stripe & Checkout)
+    case newCardAcquirers
 
     /// Enables the new Limits UI in Transaction Flow
     case newLimitsUIEnabled
+
+    /// Enables the new pricing model
+    case newQuoteForSimpleBuy
+
+    // MARK: - Account Picker
+
+    /// New SwiftUI account picker from `FeatureAccountPicker`
+    case swiftUIAccountPicker
+
+    // MARK: - Onboarding
+
+    /// New tour view from `FeatureTour`
+    case newOnboardingTour
+
+    // MARK: - Redesign
+
+    case redesign
+
+    case fab
 }
 
 extension AppFeature {
@@ -101,14 +119,24 @@ extension AppFeature {
             return "sdd_enabled_ios"
         case .customerSupportChat:
             return "customer_support_chat_ios"
-        case .sellUsingTransactionFlowEnabled:
-            return "sell_using_transaction_flow_enabled_ios"
         case .openBanking:
             return "ios_open_banking"
-        case .useTransactionsFlowToBuyCrypto:
-            return "ios_use_transaction_flow_buy"
+        case .newCardAcquirers:
+            return "ios_ff_new_card_acquirers"
         case .newLimitsUIEnabled:
             return "ios_use_new_limits_ui"
+        case .newQuoteForSimpleBuy:
+            return "ios_ff_new_pricing"
+        case .swiftUIAccountPicker:
+            return "ios_swiftui_account_picker"
+        case .walletConnectEnabled:
+            return "ios_ff_wallet_connect"
+        case .redesign:
+            return "ios_ff_redesign"
+        case .fab:
+            return "ios_fab_data"
+        case .newOnboardingTour:
+            return "ios_ff_new_onboarding_tour"
         }
     }
 
@@ -143,12 +171,23 @@ extension AppFeature {
             return false
         case .customerSupportChat:
             return false
-        case .sellUsingTransactionFlowEnabled,
-             .useTransactionsFlowToBuyCrypto:
+        case .newCardAcquirers:
             return true
         case .openBanking:
             return true
         case .newLimitsUIEnabled:
+            return true
+        case .newQuoteForSimpleBuy:
+            return true
+        case .swiftUIAccountPicker:
+            return true
+        case .walletConnectEnabled:
+            return true
+        case .redesign:
+            return true
+        case .fab:
+            return true
+        case .newOnboardingTour:
             return true
         }
     }

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ComposableNavigation
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa

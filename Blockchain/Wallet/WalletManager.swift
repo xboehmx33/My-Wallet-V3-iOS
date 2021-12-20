@@ -60,12 +60,16 @@ class WalletManager: NSObject, JSContextProviderAPI, WalletRepositoryProvider, W
             appSettings: appSettings,
             reactiveWallet: reactiveWallet
         )
+        let walletConnect = WalletConnectMetadata(
+            jsContextProvider: self
+        )
         legacyRepository = repository
         self.repository = repository
         self.wallet.repository = repository
         self.wallet.delegate = self
         self.wallet.ethereum.reactiveWallet = reactiveWallet
         self.wallet.bitcoin.reactiveWallet = reactiveWallet
+        self.wallet.walletConnect = walletConnect
         self.wallet.handleReload = { [weak self] in
             self?.loggedInReloadHandler.reload()
         }

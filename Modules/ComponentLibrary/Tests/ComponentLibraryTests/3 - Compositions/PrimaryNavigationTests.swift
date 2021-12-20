@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import ComponentLibrary
+@testable import ComponentLibrary
 import SnapshotTesting
 import SwiftUI
 import XCTest
@@ -8,7 +8,7 @@ import XCTest
 final class PrimaryNavigationTests: XCTestCase {
 
     private struct TestContainer: View {
-        let usesCircledBackButton: Bool
+        let backButtonColor: Color
         @State var secondViewActive: Bool
 
         var body: some View {
@@ -20,25 +20,28 @@ final class PrimaryNavigationTests: XCTestCase {
                     Text("First")
                 }
                 .primaryNavigation(title: "First") {
-                    IconButton(icon: .qRCode) {}
+                    IconButton(icon: .qrCode) {}
 
                     IconButton(icon: .user) {}
                 }
             }
-            .environment(\.navigationUsesCircledBackButton, usesCircledBackButton)
+            .environment(\.navigationBackButtonColor, backButtonColor)
         }
 
         @ViewBuilder private var secondView: some View {
             Text("Second")
                 .primaryNavigation(title: "Second") {
-                    IconButton(icon: .qRCode) {}
+                    IconButton(icon: .qrCode) {}
                 }
         }
     }
 
     func testFirstView_iPhone8() {
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: true, secondViewActive: false),
+            matching: TestContainer(
+                backButtonColor: .semantic.primary,
+                secondViewActive: false
+            ),
             as: [
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -46,7 +49,10 @@ final class PrimaryNavigationTests: XCTestCase {
         )
 
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: false, secondViewActive: false),
+            matching: TestContainer(
+                backButtonColor: Color(light: .palette.dark400, dark: .palette.white),
+                secondViewActive: false
+            ),
             as: [
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -56,7 +62,10 @@ final class PrimaryNavigationTests: XCTestCase {
 
     func testFirstView_iPhoneX() {
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: true, secondViewActive: false),
+            matching: TestContainer(
+                backButtonColor: .semantic.primary,
+                secondViewActive: false
+            ),
             as: [
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -64,7 +73,10 @@ final class PrimaryNavigationTests: XCTestCase {
         )
 
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: false, secondViewActive: false),
+            matching: TestContainer(
+                backButtonColor: Color(light: .palette.dark400, dark: .palette.white),
+                secondViewActive: false
+            ),
             as: [
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -74,7 +86,10 @@ final class PrimaryNavigationTests: XCTestCase {
 
     func testSecondView_iPhone8() {
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: true, secondViewActive: true),
+            matching: TestContainer(
+                backButtonColor: .semantic.primary,
+                secondViewActive: true
+            ),
             as: [
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -82,7 +97,10 @@ final class PrimaryNavigationTests: XCTestCase {
         )
 
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: false, secondViewActive: true),
+            matching: TestContainer(
+                backButtonColor: Color(light: .palette.dark400, dark: .palette.white),
+                secondViewActive: true
+            ),
             as: [
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhone8), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -92,7 +110,10 @@ final class PrimaryNavigationTests: XCTestCase {
 
     func testSecondView_iPhoneX() {
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: true, secondViewActive: true),
+            matching: TestContainer(
+                backButtonColor: .semantic.primary,
+                secondViewActive: true
+            ),
             as: [
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .dark))
@@ -100,7 +121,10 @@ final class PrimaryNavigationTests: XCTestCase {
         )
 
         assertSnapshots(
-            matching: TestContainer(usesCircledBackButton: false, secondViewActive: true),
+            matching: TestContainer(
+                backButtonColor: Color(light: .palette.dark400, dark: .palette.white),
+                secondViewActive: true
+            ),
             as: [
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .light)),
                 .image(layout: .device(config: .iPhoneX), traits: UITraitCollection(userInterfaceStyle: .dark))

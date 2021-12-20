@@ -26,6 +26,8 @@ public struct MinimalDoubleButton: View {
     private let leadingButton: ButtonData
     private let trailingButton: ButtonData
 
+    @Environment(\.isEnabled) private var isEnabled
+
     public init(
         leadingTitle: String,
         leadingIsLoading: Bool = false,
@@ -50,6 +52,7 @@ public struct MinimalDoubleButton: View {
         Button(action: {}, label: {})
             .buttonStyle(
                 MinimalDoubleButtonStyle(
+                    isEnabled: isEnabled,
                     leadingButton: leadingButton,
                     trailingButton: trailingButton
                 )
@@ -65,8 +68,7 @@ private struct ButtonData {
 
 private struct MinimalDoubleButtonStyle: ButtonStyle {
 
-    @Environment(\.isEnabled) private var isEnabled
-
+    let isEnabled: Bool
     let leadingButton: ButtonData
     let trailingButton: ButtonData
 
@@ -114,6 +116,7 @@ private struct MinimalDoubleButtonStyle: ButtonStyle {
                 .buttonStyle(
                     PillButtonStyle(
                         isLoading: leadingButton.isLoading,
+                        isEnabled: isEnabled,
                         isRounded: false,
                         colorCombination: colorCombination
                     )
@@ -124,6 +127,7 @@ private struct MinimalDoubleButtonStyle: ButtonStyle {
                 .buttonStyle(
                     PillButtonStyle(
                         isLoading: trailingButton.isLoading,
+                        isEnabled: isEnabled,
                         isRounded: false,
                         colorCombination: colorCombination
                     )

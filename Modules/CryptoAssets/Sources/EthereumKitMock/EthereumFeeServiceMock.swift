@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 

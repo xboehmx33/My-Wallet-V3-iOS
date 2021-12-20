@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 public struct WithdrawalCheckoutData: Equatable {
     public let currency: FiatCurrency
     public let beneficiary: Beneficiary

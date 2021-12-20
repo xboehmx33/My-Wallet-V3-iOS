@@ -1,4 +1,8 @@
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import ComposableArchitecture
 import Localization
 import SwiftUI

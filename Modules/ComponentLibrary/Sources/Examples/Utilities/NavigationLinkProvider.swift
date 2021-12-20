@@ -27,7 +27,7 @@ public struct NavigationLinkProvider: Hashable {
     public static func sections(for data: NavigationLinkProviderList) -> some View {
         ForEach(Array(data.keys.sorted()), id: \.self) { key in
             if let dict = data[key] {
-                Section(header: Text(key)) {
+                Section(header: SectionHeader(title: key)) {
                     links(for: dict)
                 }
             }
@@ -37,12 +37,38 @@ public struct NavigationLinkProvider: Hashable {
     @ViewBuilder
     public static func links(for dict: [NavigationLinkProvider]) -> some View {
         ForEach(dict, id: \.self) { linkable in
-            PrimaryNavigationLink(
-                destination: linkable.view,
-                label: {
-                    Text(linkable.title)
-                }
+            NavigationLinkView(
+                title: linkable.title,
+                view: linkable.view
             )
         }
+    }
+}
+
+private struct NavigationLinkView<LinkableView: View>: View {
+    @State var isActive = false
+
+    let title: String
+    let view: LinkableView
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PrimaryRow(title: title)
+                .background(
+                    PrimaryNavigationLink(
+                        destination: ZStack { view }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.semantic.background.ignoresSafeArea()),
+                        isActive: $isActive,
+                        label: { EmptyView() }
+                    )
+                )
+                .onTapGesture {
+                    isActive = true
+                }
+
+            PrimaryDivider()
+        }
+        .listRowInsets(EdgeInsets())
     }
 }

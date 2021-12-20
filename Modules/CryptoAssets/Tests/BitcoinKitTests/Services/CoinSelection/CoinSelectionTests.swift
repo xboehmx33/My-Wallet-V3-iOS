@@ -2,6 +2,7 @@
 
 import BigInt
 @testable import BitcoinKit
+import MoneyKit
 import PlatformKit
 import XCTest
 

@@ -1,7 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Foundation
-import NetworkError
 import ToolKit
 
 extension OpenBanking {
@@ -57,7 +56,7 @@ extension OpenBanking.Error: ExpressibleByError, CustomStringConvertible {
             return String(describing: error)
         case .other(let error):
             switch error {
-            case let error as NetworkError:
+            case let error as CustomStringConvertible:
                 return error.description
             default:
                 return "\(error)"

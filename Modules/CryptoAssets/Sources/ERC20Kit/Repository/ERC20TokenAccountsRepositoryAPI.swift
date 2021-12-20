@@ -24,6 +24,12 @@ public enum ERC20TokenAccountsError: Error, Equatable, CustomStringConvertible {
 /// A repository in charge of getting ERC-20 token accounts associated with a given ethereum account address.
 public protocol ERC20TokenAccountsRepositoryAPI {
 
+    /// Invalidates the `ERC20TokenAccounts` cache. This is used after a
+    /// transaction completes to ensure views show the latest balance.
+    ///
+    /// - Parameter address: The ethereum account address.
+    func invalidateERC20TokenAccountsForAddress(_ address: EthereumAddress)
+
     /// Gets the ERC-20 token accounts associated with the given ethereum account address, optionally ignoring cached values.
     ///
     /// - Parameters:

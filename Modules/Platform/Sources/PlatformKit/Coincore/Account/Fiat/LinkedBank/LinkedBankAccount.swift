@@ -1,6 +1,8 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import DIKit
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -50,6 +52,10 @@ public class LinkedBankAccount: FiatAccount, BankAccount {
 
     public var activity: Single<[ActivityItemEvent]> {
         .just([])
+    }
+
+    public func invalidateAccountBalance() {
+        // no-op
     }
 
     public let fiatCurrency: FiatCurrency

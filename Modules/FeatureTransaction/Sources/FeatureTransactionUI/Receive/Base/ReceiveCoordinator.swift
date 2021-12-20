@@ -34,7 +34,6 @@ public class ReceiveCoordinator {
 
     init(
         coincore: CoincoreAPI = resolve(),
-        internalFeatureFlagService: InternalFeatureFlagServiceAPI = resolve(),
         receiveRouter: ReceiveRouterAPI = resolve(),
         receiveSelectionService: AccountSelectionServiceAPI = AccountSelectionService(),
         kycStatusChecker: KYCStatusChecking = resolve(),
@@ -46,7 +45,6 @@ public class ReceiveCoordinator {
         self.analyticsHook = analyticsHook
         self.receiveSelectionService = receiveSelectionService
         builder = ReceiveRootBuilder(
-            internalFeatureFlagService: internalFeatureFlagService,
             receiveSelectionService: receiveSelectionService
         )
 

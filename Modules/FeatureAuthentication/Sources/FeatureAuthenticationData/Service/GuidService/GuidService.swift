@@ -13,37 +13,18 @@ public final class GuidService: GuidServiceAPI {
 
     private let sessionTokenRepository: SessionTokenRepositoryAPI
     private let client: GuidClientAPI
-    private let walletRepo: WalletRepo
-    private let nativeWalletFlagEnabled: () -> AnyPublisher<Bool, Never>
 
     // MARK: - Setup
 
     public init(
         sessionTokenRepository: SessionTokenRepositoryAPI,
-        client: GuidClientAPI,
-        walletRepo: WalletRepo,
-        nativeWalletFlagEnabled: @escaping () -> AnyPublisher<Bool, Never>
+        client: GuidClientAPI
     ) {
         self.sessionTokenRepository = sessionTokenRepository
         self.client = client
-        self.walletRepo = walletRepo
-        self.nativeWalletFlagEnabled = nativeWalletFlagEnabled
 
-        guid = nativeWalletFlagEnabled()
-            .flatMap { isEnabled -> AnyPublisher<String?, GuidServiceError> in
-                guard isEnabled else {
-                    return sessionTokenRepository.sessionTokenPublisher
-                        .mapError()
-                }
-                return walletRepo.credentials
-                    .map { creds in
-                        guard !creds.sessionToken.isEmpty else {
-                            return nil
-                        }
-                        return creds.sessionToken
-                    }
-                    .mapError()
-            }
+        guid = sessionTokenRepository
+            .sessionToken
             .flatMap { [client] token -> AnyPublisher<String?, GuidServiceError> in
                 guard let token = token else {
                     return .failure(.missingSessionToken)

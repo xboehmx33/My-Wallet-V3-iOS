@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureAuthenticationDomain
+import MoneyKit
 import NetworkKit
 import ToolKit
 
@@ -72,8 +73,6 @@ extension DependencyContainer {
 
         // MARK: - Services
 
-        single { EnabledCurrenciesService() as EnabledCurrenciesServiceAPI }
-
         single { KYCTiersService() as KYCTiersServiceAPI }
 
         single { KYCTiersService() as KYCVerificationServiceAPI }
@@ -93,12 +92,6 @@ extension DependencyContainer {
         factory { LinkedBanksFactory() as LinkedBanksFactoryAPI }
 
         single { Coincore() as CoincoreAPI }
-
-        factory { SupportedAssetsFilePathProvider() as SupportedAssetsFilePathProviderAPI }
-
-        factory { SupportedAssetsService() as SupportedAssetsServiceAPI }
-
-        single { SupportedAssetsRepository() as SupportedAssetsRepositoryAPI }
 
         single { ReactiveWallet() as ReactiveWalletAPI }
 

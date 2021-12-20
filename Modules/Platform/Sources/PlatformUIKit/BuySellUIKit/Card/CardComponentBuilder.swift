@@ -17,7 +17,7 @@ public protocol CardComponentBuilderAPI: AnyObject {
     func pendingCardStatus(cardId: String) -> UIViewController
 
     /// Builds a card authorization screen
-    func cardAuthorization(for data: PartnerAuthorizationData) -> UIViewController
+    func cardAuthorization(for data: PartnerAuthorizationData) -> UIViewController?
 }
 
 public final class CardComponentBuilder: CardComponentBuilderAPI {
@@ -26,17 +26,20 @@ public final class CardComponentBuilder: CardComponentBuilderAPI {
     private let analyticsRecorder: AnalyticsEventRecorderAPI
     private let messageRecorder: MessageRecording
     private let paymentMethodTypesService: PaymentMethodTypesServiceAPI
+    private var stripeClient: StripeUIClientAPI
 
     public init(
         routingInteractor: CardRouterInteractor,
         paymentMethodTypesService: PaymentMethodTypesServiceAPI = resolve(),
         analyticsRecorder: AnalyticsEventRecorderAPI = resolve(),
-        messageRecorder: MessageRecording = resolve()
+        messageRecorder: MessageRecording = resolve(),
+        stripeClient: StripeUIClientAPI = resolve()
     ) {
         self.paymentMethodTypesService = paymentMethodTypesService
         self.routingInteractor = routingInteractor
         self.analyticsRecorder = analyticsRecorder
         self.messageRecorder = messageRecorder
+        self.stripeClient = stripeClient
     }
 
     public func cardDetails() -> UIViewController {
@@ -65,17 +68,29 @@ public final class CardComponentBuilder: CardComponentBuilderAPI {
         return viewController
     }
 
-    public func cardAuthorization(for data: PartnerAuthorizationData) -> UIViewController {
+    public func cardAuthorization(for data: PartnerAuthorizationData) -> UIViewController? {
         let interactor = CardAuthorizationScreenInteractor(routingInteractor: routingInteractor)
         let presenter = CardAuthorizationScreenPresenter(
             interactor: interactor,
             data: data,
             eventRecorder: analyticsRecorder
         )
-        let viewController = CardAuthorizationScreenViewController(
-            presenter: presenter
-        )
-        return viewController
+
+        guard case .required(let params) = data.state else {
+            presenter.redirect()
+            return nil
+        }
+
+        switch params.cardAcquirer {
+        case .stripe:
+            stripeClient.confirmPayment(data, with: presenter)
+            return nil
+        case .everyPay, .checkout, .unknown:
+            let viewController = CardAuthorizationScreenViewController(
+                presenter: presenter
+            )
+            return viewController
+        }
     }
 
     public func billingAddress(

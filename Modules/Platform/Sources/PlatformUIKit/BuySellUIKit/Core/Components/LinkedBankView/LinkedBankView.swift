@@ -66,12 +66,12 @@ final class LinkedBankView: UIView {
         addSubview(button)
 
         badgeImageView.layoutToSuperview(.centerY)
-        badgeImageView.layout(size: CGSize(width: 32, height: 32))
-        badgeImageView.layoutToSuperview(.leading, offset: Spacing.outer)
+        badgeImageView.layout(size: CGSize(width: 28, height: 28))
+        badgeImageView.layoutToSuperview(.leading, offset: Spacing.inner)
 
         accountLabel.layoutToSuperview(.centerY)
         accountLabel.layout(edge: .leading, to: .trailing, of: stackView, offset: Spacing.inner)
-        accountLabel.layoutToSuperview(.trailing, offset: -Spacing.outer)
+        accountLabel.layoutToSuperview(.trailing, offset: -Spacing.inner)
         accountLabel.horizontalContentHuggingPriority = .required
         accountLabel.horizontalContentCompressionResistancePriority = .required
 

@@ -7,12 +7,12 @@ import PlatformKit
 
 class TransactionPushClientAPIMock: TransactionPushClientAPI {
 
-    var lastPushedTransaction: EthereumTransactionFinalised?
+    var lastPushedTransaction: EthereumTransactionEncoded?
     var pushTransactionValue: AnyPublisher<EthereumPushTxResponse, NetworkError> =
         .just(EthereumPushTxResponse(txHash: "txHash"))
 
     func push(
-        transaction: EthereumTransactionFinalised
+        transaction: EthereumTransactionEncoded
     ) -> AnyPublisher<EthereumPushTxResponse, NetworkError> {
         lastPushedTransaction = transaction
         return pushTransactionValue

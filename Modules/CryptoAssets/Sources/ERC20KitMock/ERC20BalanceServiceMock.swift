@@ -3,6 +3,7 @@
 import Combine
 import ERC20Kit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit

@@ -11,7 +11,7 @@ import UIComponentsKit
 
 public enum VerifyDeviceRoute: NavigationRoute {
     case credentials
-    case upgradeAccount
+    case upgradeAccount(exchangeOnly: Bool)
 
     @ViewBuilder
     public func destination(
@@ -32,13 +32,18 @@ public enum VerifyDeviceRoute: NavigationRoute {
                         )
                     }
                 )
-            case .upgradeAccount:
+            case .upgradeAccount(let exchangeOnly):
                 IfLetStore(
                     store.scope(
                         state: \.upgradeAccountState,
                         action: VerifyDeviceAction.upgradeAccount
                     ),
-                    then: UpgradeAccountView.init(store:)
+                    then: { store in
+                        UpgradeAccountView(
+                            store: store,
+                            exchangeOnly: exchangeOnly
+                        )
+                    }
                 )
             }
         }

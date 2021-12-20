@@ -9,6 +9,11 @@ import ToolKit
 
 public protocol EthereumAccountDetailsServiceAPI {
 
+    /// Invalidates the `EthereumAssetAccountDetails` cache.
+    /// This is used after a transaction completes to ensure
+    /// views show the latest balance.
+    func invalidateEthereumAccountDetails()
+
     /// Streams the default account details.
     func accountDetails() -> Single<EthereumAssetAccountDetails>
 }
@@ -56,5 +61,10 @@ final class EthereumAccountDetailsService: EthereumAccountDetailsServiceAPI {
 
     func accountDetails() -> Single<EthereumAssetAccountDetails> {
         cache.valueSingle
+    }
+
+    func invalidateEthereumAccountDetails() {
+        cache
+            .invalidate()
     }
 }

@@ -13,16 +13,13 @@ public struct UserAddress {
     public var country: Country {
         Country(code: countryCode)!
     }
-}
-
-extension UserAddress {
 
     public init(
-        lineOne: String,
-        lineTwo: String,
-        postalCode: String,
-        city: String,
-        state: String,
+        lineOne: String?,
+        lineTwo: String?,
+        postalCode: String?,
+        city: String?,
+        state: String?,
         countryCode: String
     ) {
         self.lineOne = lineOne

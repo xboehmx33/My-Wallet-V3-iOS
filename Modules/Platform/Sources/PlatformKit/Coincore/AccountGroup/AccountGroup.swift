@@ -2,6 +2,7 @@
 
 import Algorithms
 import Combine
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -106,6 +107,10 @@ extension AccountGroup {
 
     public func includes(account: BlockchainAccount) -> Bool {
         accounts.map(\.identifier).contains(account.identifier)
+    }
+
+    public func invalidateAccountBalance() {
+        accounts.forEach { $0.invalidateAccountBalance() }
     }
 
     public var actions: Single<AvailableActions> {

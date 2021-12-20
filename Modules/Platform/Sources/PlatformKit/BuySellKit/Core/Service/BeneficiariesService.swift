@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxRelay
 import RxSwift
 import ToolKit
@@ -114,6 +115,7 @@ final class BeneficiariesService: BeneficiariesServiceAPI {
                 self?.paymentMethodTypesService.clearPreferredPaymentIfNeeded(by: data.id)
             })
             .ignoreElements()
+            .asCompletable()
     }
 
     // MARK: - Private
@@ -132,7 +134,7 @@ final class BeneficiariesService: BeneficiariesServiceAPI {
     private func deleteBank(by id: String, for accountType: Beneficiary.AccountType) -> Completable {
         switch accountType {
         case .funds:
-            return client.deleteBank(by: id).asObservable().ignoreElements()
+            return client.deleteBank(by: id).asObservable().ignoreElements().asCompletable()
         case .linkedBank:
             return linkedBankService.deleteBank(by: id)
         }

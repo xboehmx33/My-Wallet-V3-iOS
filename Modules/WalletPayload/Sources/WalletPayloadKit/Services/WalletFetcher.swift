@@ -50,17 +50,17 @@ final class WalletFetcher: WalletFetcherAPI {
                 .mapError { _ in WalletError.decryption(.decryptionError) }
                 .eraseToAnyPublisher()
             }
-            .flatMap { [walletLogic] string -> AnyPublisher<Wallet, WalletError> in
+            .flatMap { [walletLogic] string -> AnyPublisher<WalletState, WalletError> in
                 guard let data = string.data(using: .utf8) else {
                     return .failure(.decryption(.decryptionError))
                 }
                 return walletLogic
-                    .initialize(using: data)
+                    .initialize(with: password, payload: data)
             }
-            .flatMap { [walletRepo] wallet -> AnyPublisher<Wallet, WalletError> in
+            .flatMap { [walletRepo] walletState -> AnyPublisher<Wallet, WalletError> in
                 walletRepo
-                    .set(keyPath: \.credentials.sharedKey, value: wallet.sharedKey)
-                    .map { _ in wallet }
+                    .set(keyPath: \.credentials.sharedKey, value: walletState.wallet.sharedKey)
+                    .map { _ in walletState.wallet }
                     .mapError()
                     .eraseToAnyPublisher()
             }
@@ -68,10 +68,7 @@ final class WalletFetcher: WalletFetcherAPI {
             .eraseToAnyPublisher()
         // 2. save the guid to metadata (metadata can get this from WalletRepo)
         // 3. load the metadata (lazy)
-        // 4. fetch and store:
-        //    a) wallet options
-        //    b) account info
-        // 5. Success (or failure)
+        // 4. Success (or failure)
     }
 
     // MARK: - Private

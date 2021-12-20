@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import ToolKit
@@ -10,14 +11,11 @@ import UIKit
 public final class ReceiveRootBuilder {
     private typealias LocalizedReceive = LocalizationConstants.Receive
 
-    private let internalFeatureFlagService: InternalFeatureFlagServiceAPI
     private let receiveSelectionService: AccountSelectionServiceAPI
 
     init(
-        internalFeatureFlagService: InternalFeatureFlagServiceAPI,
         receiveSelectionService: AccountSelectionServiceAPI
     ) {
-        self.internalFeatureFlagService = internalFeatureFlagService
         self.receiveSelectionService = receiveSelectionService
     }
 
@@ -25,7 +23,6 @@ public final class ReceiveRootBuilder {
 
     public func receive() -> UIViewController {
 
-        let displayQRCodeButton = internalFeatureFlagService.isEnabled(.unifiedQRCodeScanner)
         let header = AccountPickerHeaderModel(
             imageContent: .init(
                 imageResource: ImageAsset.iconReceive.imageResource,
@@ -38,7 +35,7 @@ public final class ReceiveRootBuilder {
         )
         let navigationModel = ScreenNavigationModel(
             leadingButton: .drawer,
-            trailingButton: displayQRCodeButton ? .qrCode : .none,
+            trailingButton: .qrCode,
             titleViewStyle: .text(value: LocalizedReceive.Text.request),
             barStyle: .lightContent()
         )

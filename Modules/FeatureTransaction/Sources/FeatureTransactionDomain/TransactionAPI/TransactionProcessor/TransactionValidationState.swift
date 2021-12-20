@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import NabuNetworkError
 import PlatformKit
 
@@ -34,7 +35,27 @@ public enum TransactionValidationState: Equatable {
     case addressIsContract
     case invalidAddress
     case invoiceExpired
+    case incorrectSourceCurrency
+    case incorrectDestinationCurrency
     case optionInvalid
     case pendingOrdersLimitReached
     case transactionInFlight
+
+    var isUninitialized: Bool {
+        switch self {
+        case .uninitialized:
+            return true
+        default:
+            return false
+        }
+    }
+
+    var isCanExecute: Bool {
+        switch self {
+        case .canExecute:
+            return true
+        default:
+            return false
+        }
+    }
 }

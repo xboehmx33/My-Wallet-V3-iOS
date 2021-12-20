@@ -31,9 +31,9 @@ public final class FiatCustodialBalancesTableViewCell: UITableViewCell {
                         self.collectionView.collectionViewFlowLayout.minimumInteritemSpacing = Spacing.inner
                         self.collectionView.collectionViewFlowLayout.sectionInset = UIEdgeInsets(
                             top: 0,
-                            left: Spacing.outer,
+                            left: Spacing.interItem,
                             bottom: 0,
-                            right: Spacing.outer
+                            right: Spacing.interItem
                         )
                         self.separatorView.isHidden = true
                     } else {

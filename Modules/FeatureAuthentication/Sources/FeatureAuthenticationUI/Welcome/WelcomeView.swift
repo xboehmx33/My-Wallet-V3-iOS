@@ -1,34 +1,122 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ComposableArchitecture
+import ComposableNavigation
 import FeatureAuthenticationDomain
 import Localization
 import SwiftUI
 import ToolKit
 import UIComponentsKit
 
+public enum WelcomeRoute: NavigationRoute {
+    case createWallet
+    case emailLogin
+    case restoreWallet
+    case manualLogin
+    case secondPassword
+
+    @ViewBuilder
+    public func destination(
+        in store: Store<WelcomeState, WelcomeAction>
+    ) -> some View {
+        let viewStore = ViewStore(store)
+        switch self {
+        case .createWallet:
+            IfLetStore(
+                store.scope(
+                    state: \.createWalletState,
+                    action: WelcomeAction.createWallet
+                ),
+                then: { store in
+                    if viewStore.route?.action == .navigateTo {
+                        CreateAccountView(store: store)
+                    } else {
+                        CreateAccountView(store: store)
+                            .trailingNavigationButton(.close) {
+                                viewStore.send(.createWallet(.closeButtonTapped))
+                            }
+                    }
+                }
+            )
+        case .emailLogin:
+            IfLetStore(
+                store.scope(
+                    state: \.emailLoginState,
+                    action: WelcomeAction.emailLogin
+                ),
+                then: EmailLoginView.init(store:)
+            )
+        case .restoreWallet:
+            IfLetStore(
+                store.scope(
+                    state: \.restoreWalletState,
+                    action: WelcomeAction.restoreWallet
+                ),
+                then: { store in
+                    SeedPhraseView(store: store)
+                        .trailingNavigationButton(.close) {
+                            viewStore.send(.restoreWallet(.closeButtonTapped))
+                        }
+                        .whiteNavigationBarStyle()
+                        .hideBackButtonTitle()
+                }
+            )
+        case .manualLogin:
+            IfLetStore(
+                store.scope(
+                    state: \.manualCredentialsState,
+                    action: WelcomeAction.manualPairing
+                ),
+                then: { store in
+                    CredentialsView(
+                        context: .manualPairing,
+                        store: store
+                    )
+                    .trailingNavigationButton(.close) {
+                        viewStore.send(.manualPairing(.closeButtonTapped))
+                    }
+                    .whiteNavigationBarStyle()
+                    .navigationTitle(
+                        LocalizedString.Button.manualPairing
+                    )
+                }
+            )
+        case .secondPassword:
+            IfLetStore(
+                store.scope(
+                    state: \.secondPasswordNoticeState,
+                    action: WelcomeAction.secondPasswordNotice
+                ),
+                then: { store in
+                    SecondPasswordNoticeView(store: store)
+                }
+            )
+        }
+    }
+}
+
+private typealias LocalizedString = LocalizationConstants.FeatureAuthentication.Welcome
+
+private enum Layout {
+    static let topPadding: CGFloat = 140
+    static let bottomPadding: CGFloat = 58
+    static let leadingPadding: CGFloat = 24
+    static let trailingPadding: CGFloat = 24
+
+    static let imageSideLength: CGFloat = 64
+    static let imageBottomPadding: CGFloat = 40
+    static let titleFontSize: CGFloat = 24
+    static let titleBottomPadding: CGFloat = 16
+    static let messageFontSize: CGFloat = 16
+    static let messageLineSpacing: CGFloat = 4
+    static let buttonSpacing: CGFloat = 10
+    static let buttonFontSize: CGFloat = 16
+    static let buttonBottomPadding: CGFloat = 20
+    static let supplmentaryTextFontSize: CGFloat = 12
+}
+
 /// Entry point to Create Wallet/Login/Restore Wallet
 public struct WelcomeView: View {
-
-    private typealias LocalizedString = LocalizationConstants.FeatureAuthentication.Welcome
-
-    private enum Layout {
-        static let topPadding: CGFloat = 140
-        static let bottomPadding: CGFloat = 58
-        static let leadingPadding: CGFloat = 24
-        static let trailingPadding: CGFloat = 24
-
-        static let imageSideLength: CGFloat = 64
-        static let imageBottomPadding: CGFloat = 40
-        static let titleFontSize: CGFloat = 24
-        static let titleBottomPadding: CGFloat = 16
-        static let messageFontSize: CGFloat = 16
-        static let messageLineSpacing: CGFloat = 4
-        static let buttonSpacing: CGFloat = 10
-        static let buttonFontSize: CGFloat = 16
-        static let buttonBottomPadding: CGFloat = 20
-        static let supplmentaryTextFontSize: CGFloat = 12
-    }
 
     private let store: Store<WelcomeState, WelcomeAction>
     @ObservedObject private var viewStore: ViewStore<WelcomeState, WelcomeAction>
@@ -54,84 +142,7 @@ public struct WelcomeView: View {
                 trailing: Layout.trailingPadding
             )
         )
-        .sheet(
-            isPresented: .constant(
-                viewStore.screenFlow == .emailLoginScreen
-                    || viewStore.screenFlow == .restoreWalletScreen
-                    || viewStore.screenFlow == .manualLoginScreen
-                    || viewStore.modals == .secondPasswordNoticeScreen
-            ),
-            onDismiss: {
-                // TODO: This is ugly, refactor by navigation routes extension by Oliver (PR #2791)
-                if viewStore.screenFlow == .emailLoginScreen || viewStore.screenFlow == .restoreWalletScreen {
-                    viewStore.send(.presentScreenFlow(.welcomeScreen))
-                } else if viewStore.modals == .secondPasswordNoticeScreen {
-                    viewStore.send(.modalDismissed(.secondPasswordNoticeScreen))
-                }
-            },
-            content: {
-                if viewStore.screenFlow == .emailLoginScreen {
-                    IfLetStore(
-                        store.scope(
-                            state: \.emailLoginState,
-                            action: WelcomeAction.emailLogin
-                        ),
-                        then: EmailLoginView.init(store:)
-                    )
-                } else if viewStore.screenFlow == .restoreWalletScreen {
-                    IfLetStore(
-                        store.scope(
-                            state: \.restoreWalletState,
-                            action: WelcomeAction.restoreWallet
-                        ),
-                        then: { store in
-                            NavigationView {
-                                SeedPhraseView(context: .restoreWallet, store: store)
-                                    .trailingNavigationButton(.close) {
-                                        viewStore.send(.restoreWallet(.closeButtonTapped))
-                                    }
-                                    .whiteNavigationBarStyle()
-                                    .hideBackButtonTitle()
-                            }
-                        }
-                    )
-                } else if viewStore.screenFlow == .manualLoginScreen {
-                    IfLetStore(
-                        store.scope(
-                            state: \.manualCredentialsState,
-                            action: WelcomeAction.manualPairing
-                        ),
-                        then: { store in
-                            NavigationView {
-                                CredentialsView(
-                                    context: .manualPairing,
-                                    store: store
-                                )
-                                .trailingNavigationButton(.close) {
-                                    viewStore.send(.manualPairing(.closeButtonTapped))
-                                }
-                                .whiteNavigationBarStyle()
-                                .navigationTitle(
-                                    LocalizedString.Button.manualPairing
-                                )
-                            }
-                        }
-                    )
-                } else if viewStore.modals == .secondPasswordNoticeScreen {
-                    IfLetStore(
-                        store.scope(
-                            state: \.secondPasswordNoticeState,
-                            action: WelcomeAction.secondPasswordNotice
-                        ),
-                        then: { store in
-                            NavigationView {
-                                SecondPasswordNoticeView(store: store)
-                            }
-                        }
-                    )
-                }
-            }
-        )
+        .navigationRoute(in: store)
     }
 
     // MARK: - Private
@@ -179,11 +190,11 @@ public struct WelcomeView: View {
     private var buttonSection: some View {
         VStack(spacing: Layout.buttonSpacing) {
             PrimaryButton(title: LocalizedString.Button.buyCryptoNow) {
-                viewStore.send(.presentScreenFlow(.createWalletScreen))
+                viewStore.send(.navigate(to: .createWallet))
             }
             .accessibility(identifier: AccessibilityIdentifiers.WelcomeScreen.createWalletButton)
             SecondaryButton(title: LocalizedString.Button.login) {
-                viewStore.send(.presentScreenFlow(.emailLoginScreen))
+                viewStore.send(.enter(into: .emailLogin))
             }
             .accessibility(identifier: AccessibilityIdentifiers.WelcomeScreen.emailLoginButton)
             if viewStore.manualPairingEnabled {
@@ -200,7 +211,7 @@ public struct WelcomeView: View {
     private var supplementarySection: some View {
         HStack {
             Button(LocalizedString.Button.restoreWallet) {
-                viewStore.send(.presentScreenFlow(.restoreWalletScreen))
+                viewStore.send(.enter(into: .restoreWallet))
             }
             .font(Font(weight: .semibold, size: Layout.supplmentaryTextFontSize))
             .foregroundColor(.buttonLinkText)
@@ -215,7 +226,7 @@ public struct WelcomeView: View {
 
     private func manualPairingButton() -> some View {
         Button(LocalizedString.Button.manualPairing) {
-            viewStore.send(.presentScreenFlow(.manualLoginScreen))
+            viewStore.send(.enter(into: .manualLogin))
         }
         .font(Font(weight: .semibold, size: Layout.buttonFontSize))
         .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonMinHeight)

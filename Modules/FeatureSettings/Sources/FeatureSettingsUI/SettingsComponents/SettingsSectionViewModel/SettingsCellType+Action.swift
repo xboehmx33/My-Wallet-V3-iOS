@@ -3,6 +3,7 @@
 import FeatureSettingsDomain
 import PlatformKit
 import PlatformUIKit
+import ToolKit
 
 extension SettingsSectionType.CellType {
     var action: SettingsScreenAction {
@@ -15,7 +16,7 @@ extension SettingsSectionType.CellType {
             case .emailVerification:
                 return .showUpdateEmailScreen
             case .limits:
-                return .launchKYC
+                return .presentTradeLimits
             case .mobileVerification:
                 return .showUpdateMobileScreen
             case .pitConnection:
@@ -48,7 +49,7 @@ extension SettingsSectionType.CellType {
             case .walletID:
                 return .promptGuidCopy
             }
-        case .plain(let type):
+        case .common(let type):
             switch type {
             case .changePassword:
                 return .launchChangePassword
@@ -56,6 +57,8 @@ extension SettingsSectionType.CellType {
                 return .showChangePinScreen
             case .loginToWebWallet:
                 return .launchWebLogin
+            case .webLogin:
+                return .showWebLogin
             case .rateUs:
                 return .showAppStore
             case .termsOfService:
@@ -64,6 +67,14 @@ extension SettingsSectionType.CellType {
                 return .showURL(URL(string: Constants.Url.privacyPolicy)!)
             case .cookiesPolicy:
                 return .showURL(URL(string: Constants.Url.cookiesPolicy)!)
+            case .logout:
+                return .logout
+            case .addresses:
+                return .showAccountsAndAddresses
+            case .contactSupport:
+                return .showContactSupport
+            case .airdrops:
+                return .showAirdrops
             }
         case .switch:
             return .none

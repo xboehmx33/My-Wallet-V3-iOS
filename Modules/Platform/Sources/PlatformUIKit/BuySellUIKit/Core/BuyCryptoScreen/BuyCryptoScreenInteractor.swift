@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -103,7 +104,7 @@ final class BuyCryptoScreenInteractor: EnterAmountScreenInteractor {
         Observable
             .combineLatest(
                 paymentMethodTypesService.methodTypes,
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 kycTiersService.tiers.map(\.isTier2Approved).asObservable(),
                 featureFlagsService
                     .isEnabled(.remote(.openBanking))
@@ -284,10 +285,9 @@ final class BuyCryptoScreenInteractor: EnterAmountScreenInteractor {
                 amountTranslationInteractor.fiatAmount.compactMap(\.fiatValue),
                 amountTranslationInteractor.cryptoAmount.compactMap(\.cryptoValue),
                 pairForCryptoCurrency,
-                fiatCurrencyService.fiatCurrencyObservable
+                fiatCurrencyService.displayCurrencyPublisher.asObservable()
             )
             .map { preferredPaymentMethod, fiat, crypto, pair, currency -> State in
-
                 /// There must be a pair to compare to before calculation begins
                 guard let pair = pair else {
                     return .empty(currency: currency)
@@ -342,7 +342,8 @@ final class BuyCryptoScreenInteractor: EnterAmountScreenInteractor {
             // Handle possible errors: it is unlikely to get here unless
             // there was a connection / BE error
             .catchError { _ in
-                fiatCurrencyService.fiatCurrencyObservable
+                fiatCurrencyService.displayCurrencyPublisher
+                    .asObservable()
                     .take(1)
                     .map { .empty(currency: $0) }
             }

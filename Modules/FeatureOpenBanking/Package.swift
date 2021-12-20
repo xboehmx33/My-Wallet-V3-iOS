@@ -55,7 +55,6 @@ let package = Package(
             dependencies: [
                 .product(name: "CombineSchedulers", package: "combine-schedulers"),
                 .product(name: "CasePaths", package: "swift-case-paths"),
-                .product(name: "NetworkError", package: "NetworkErrors"),
                 .product(name: "Session", package: "Session"),
                 .product(name: "ToolKit", package: "Tool")
             ]

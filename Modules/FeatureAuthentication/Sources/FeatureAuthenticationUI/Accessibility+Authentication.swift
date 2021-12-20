@@ -145,6 +145,7 @@ final class AccessibilityIdentifiers: NSObject {
         static let passwordStrengthIndicatorGroup = "\(prefix)passwordStrengthIndicatorGroup"
         static let confirmPasswordGroup = "\(prefix)confirmPasswordGroup"
         static let createAccountButton = "\(prefix)createAccountButton"
+        static let nextButton = "\(prefix)nextButton"
     }
 
     enum TradingAccountWarningScreen {

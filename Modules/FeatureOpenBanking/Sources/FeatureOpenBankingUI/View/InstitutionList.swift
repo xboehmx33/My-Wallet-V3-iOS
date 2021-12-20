@@ -1,6 +1,12 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+typealias ComponentLibrarySecondaryButton = SharedComponentLibrary.SecondaryButton
+#else
 import ComponentLibrary
+typealias ComponentLibrarySecondaryButton = ComponentLibrary.SecondaryButton
+#endif
 import ComposableArchitecture
 import ComposableNavigation
 import FeatureOpenBankingDomain
@@ -165,7 +171,7 @@ public struct InstitutionList: View {
                 .multilineTextAlignment(.center)
                 .padding([.leading, .trailing], 12.5.vmin)
             Spacer()
-            ComponentLibrary.SecondaryButton(title: Localization.InstitutionList.Error.showTransferDetails) {
+            ComponentLibrarySecondaryButton(title: Localization.InstitutionList.Error.showTransferDetails) {
                 view.send(.showTransferDetails)
             }
             .padding(10.5.vmin)

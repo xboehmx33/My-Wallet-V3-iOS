@@ -8,7 +8,7 @@ final class SettingsSectionsProvider {
     var states: Observable<SettingSectionsLoadingStates> {
         Observable
             .combineLatest(
-                presenters[.about]!.state,
+                presenters[.help]!.state,
                 presenters[.connect]!.state,
                 presenters[.banks]!.state,
                 presenters[.cards]!.state,
@@ -18,7 +18,7 @@ final class SettingsSectionsProvider {
             ) { (about: $0, connect: $1, banks: $2, cards: $3, security: $4, profile: $5, preferences: $6) }
             .map { states in
                 SettingSectionsLoadingStates(statePerSection: [
-                    .about: states.about,
+                    .help: states.about,
                     .connect: states.connect,
                     .banks: states.banks,
                     .cards: states.cards,
@@ -54,7 +54,7 @@ final class SettingsSectionsProvider {
         preferences: SettingsSectionPresenting
     ) {
         presenters[.profile] = profile
-        presenters[.about] = about
+        presenters[.help] = about
         presenters[.connect] = connect
         presenters[.banks] = banks
         presenters[.cards] = cards

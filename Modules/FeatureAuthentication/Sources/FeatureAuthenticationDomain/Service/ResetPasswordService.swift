@@ -21,10 +21,10 @@ public final class ResetPasswordService: ResetPasswordServiceAPI {
 
     public func setNewPassword(newPassword: String) -> AnyPublisher<Void, ResetPasswordServiceError> {
         passwordRepository
-            .setPublisher(password: newPassword)
+            .set(password: newPassword)
             .flatMap { [passwordRepository] _ -> AnyPublisher<Void, ResetPasswordServiceError> in
                 passwordRepository
-                    .syncPublisher()
+                    .sync()
                     .mapError(ResetPasswordServiceError.passwordRepositoryError)
                     .eraseToAnyPublisher()
             }

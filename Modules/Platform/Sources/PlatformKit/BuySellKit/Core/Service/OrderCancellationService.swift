@@ -49,6 +49,7 @@ final class OrderCancellationService: OrderCancellationServiceAPI {
         client.cancel(order: id)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
             // Fetch the orders anew
             .andThen(orderDetailsService.fetchOrders())
             .asCompletable()

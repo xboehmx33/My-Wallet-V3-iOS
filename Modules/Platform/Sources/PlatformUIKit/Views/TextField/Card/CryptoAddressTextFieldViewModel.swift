@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import RxSwift
 import ToolKit
 
@@ -22,7 +26,7 @@ public final class CryptoAddressTextFieldViewModel: TextFieldViewModel {
             messageRecorder: messageRecorder
         )
         let content = ImageViewContent(
-            imageResource: .local(name: Icon.qRCode.name, bundle: .componentLibrary)
+            imageResource: .local(name: Icon.qrCode.name, bundle: .componentLibrary)
         )
         let theme = BadgeImageViewModel.Theme(
             backgroundColor: .white,

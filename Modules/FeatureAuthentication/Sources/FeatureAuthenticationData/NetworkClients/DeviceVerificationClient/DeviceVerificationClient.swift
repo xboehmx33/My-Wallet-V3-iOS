@@ -109,6 +109,23 @@ final class DeviceVerificationClient: DeviceVerificationClientAPI {
             contentType: .formUrlEncoded
         )!
         return networkAdapter.perform(request: request)
+            .catch { networkError -> AnyPublisher<AuthorizeApproveResponse, NetworkError> in
+                // this request can send a specific `409` status code which we need to capture
+                // and not throw an error causing the stream to end...
+                guard case .rawServerError(let value) = networkError else {
+                    return .failure(networkError)
+                }
+                guard value.response.statusCode == 409,
+                      let payload = value.payload
+                else {
+                    return .failure(networkError)
+                }
+                guard let value = try? payload.decode(to: AuthorizeApproveResponse.self) else {
+                    return .failure(networkError)
+                }
+                return .just(value)
+            }
+            .eraseToAnyPublisher()
     }
 
     func pollForWalletInfo(

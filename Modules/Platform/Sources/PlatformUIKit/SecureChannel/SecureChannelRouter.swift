@@ -105,6 +105,11 @@ final class SecureChannelRouter: SecureChannelRouting {
             showNeedLoginAlert()
             return
         }
+
+        guard nav == nil else {
+            return
+        }
+
         showDetailsScreen(with: candidate)
     }
 

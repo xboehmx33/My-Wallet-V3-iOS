@@ -18,7 +18,10 @@ final class QRCodeScannerView: UIView, QRCodeScannableArea {
 
     init(viewModel: QRCodeScannerViewModelProtocol, targetCoordinateSpace: UICoordinateSpace) {
         self.viewModel = viewModel
-        overlay = QRCodeScannerViewOverlay(viewModel: viewModel.overlayViewModel, targetCoordinateSpace: targetCoordinateSpace)
+        overlay = QRCodeScannerViewOverlay(
+            viewModel: viewModel.overlayViewModel,
+            targetCoordinateSpace: targetCoordinateSpace
+        )
         super.init(frame: .zero)
         setupViewFinder()
     }

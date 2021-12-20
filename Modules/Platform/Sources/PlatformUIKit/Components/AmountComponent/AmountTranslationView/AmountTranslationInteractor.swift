@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxRelay
@@ -40,7 +41,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         effectRelay
             .asObservable()
             .distinctUntilChanged()
-            .subscribeOn(MainScheduler.asyncInstance)
+            .subscribe(on: MainScheduler.asyncInstance)
     }
 
     /// The active input relay
@@ -62,7 +63,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         activeInputRelay
             .asObservable()
             .distinctUntilChanged()
-            .subscribeOn(MainScheduler.asyncInstance)
+            .subscribe(on: MainScheduler.asyncInstance)
     }
 
     /// Input injection relay - allow any client of the component to inject number as a `Decimal` type
@@ -104,7 +105,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
 
     // MARK: - Injected
 
-    private let fiatCurrencyService: FiatCurrencyServiceAPI
+    private let fiatCurrencyClosure: () -> Observable<FiatCurrency>
     private let cryptoCurrencyService: CryptoCurrencyServiceAPI
     private let priceProvider: AmountTranslationPriceProviding
 
@@ -115,7 +116,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
     // MARK: - Setup
 
     public init(
-        fiatCurrencyService: FiatCurrencyServiceAPI,
+        fiatCurrencyClosure: @escaping () -> Observable<FiatCurrency>,
         cryptoCurrencyService: CryptoCurrencyServiceAPI,
         priceProvider: AmountTranslationPriceProviding,
         defaultFiatCurrency: FiatCurrency = .default,
@@ -126,7 +127,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         cryptoAmountRelay = BehaviorRelay(value: .zero(currency: defaultCryptoCurrency))
         fiatInteractor = InputAmountLabelInteractor(currency: defaultFiatCurrency)
         cryptoInteractor = InputAmountLabelInteractor(currency: defaultCryptoCurrency)
-        self.fiatCurrencyService = fiatCurrencyService
+        self.fiatCurrencyClosure = fiatCurrencyClosure
         self.cryptoCurrencyService = cryptoCurrencyService
         self.priceProvider = priceProvider
         fiatAmountRelay = BehaviorRelay<MoneyValue>(
@@ -138,20 +139,20 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         /// modify the fiat / crypto value
 
         // Fiat changes affect crypto
-        let fallibleFiatCurrency = fiatCurrencyService.fiatCurrencyObservable
+        let fallibleFiatCurrency = fiatCurrencyClosure()
             .map { $0 as Currency }
 
         let fallibleCryptoCurrency = cryptoCurrencyService.cryptoCurrencyObservable
             .map { $0 as Currency }
 
         let fiatCurrency = fallibleFiatCurrency
-            .catchError { _ -> Observable<Currency> in
+            .catch { _ -> Observable<Currency> in
                 .empty()
             }
             .share(replay: 1, scope: .whileConnected)
 
         let cryptoCurrency = fallibleCryptoCurrency
-            .catchError { _ -> Observable<Currency> in
+            .catch { _ -> Observable<Currency> in
                 .empty()
             }
             .share(replay: 1, scope: .whileConnected)
@@ -403,7 +404,7 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
     private func invertInput(from activeInput: ActiveAmountInput) -> Completable {
         Single.just(activeInput)
             .map(\.inverted)
-            .observeOn(MainScheduler.asyncInstance)
+            .observe(on: MainScheduler.asyncInstance)
             .do(onSuccess: activeInputRelay.accept)
             .asCompletable()
     }
@@ -412,7 +413,9 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         Single
             .zip(
                 cryptoCurrencyService.cryptoCurrency,
-                fiatCurrencyService.fiatCurrency
+                fiatCurrencyClosure()
+                    .take(1)
+                    .asSingle()
             )
             .flatMap(weak: self) { (self, currencies) -> Single<MoneyValuePair> in
                 let (cryptoCurrency, fiatCurrency) = currencies
@@ -429,7 +432,9 @@ public final class AmountTranslationInteractor: AmountViewInteracting {
         Single
             .zip(
                 cryptoCurrencyService.cryptoCurrency,
-                fiatCurrencyService.fiatCurrency
+                fiatCurrencyClosure()
+                    .take(1)
+                    .asSingle()
             )
             .flatMap(weak: self) { (self, currencies) -> Single<MoneyValuePair> in
                 let (cryptoCurrency, fiatCurrency) = currencies
@@ -489,7 +494,7 @@ extension Observable {
                     handler?.handleCurrency(error: error)
                 }
             )
-            .catchError { _ in
+            .catch { _ in
                 Observable<Element>.empty()
             }
     }

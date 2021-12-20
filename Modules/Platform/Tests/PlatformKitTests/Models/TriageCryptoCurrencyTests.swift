@@ -2,9 +2,8 @@
 
 import BigInt
 import Foundation
+import PlatformKit
 import XCTest
-
-@testable import PlatformKit
 
 final class TriageCryptoCurrencyTests: XCTestCase {
 

@@ -25,9 +25,9 @@
        JSContext,
        BitcoinWallet,
        EthereumWallet,
+       WalletConnectMetadata,
        WalletCryptoJS,
-       WalletRepository,
-       EtherTransaction;
+       WalletRepository;
 
 @interface Wallet : NSObject
 
@@ -58,6 +58,7 @@
 @property (nonatomic, readonly, strong, nonnull) EthereumWallet * ethereum;
 @property (nonatomic, readonly, strong, nonnull) WalletCryptoJS * crypto;
 @property (nonatomic, strong, nonnull) WalletRepository * repository;
+@property (nonatomic, strong, nonnull) WalletConnectMetadata * walletConnect;
 
 - (instancetype)init;
 

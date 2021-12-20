@@ -13,6 +13,8 @@ private let makeImage = Image.init(nsImage:)
 public struct ImageResourceView<Loading: View, Placeholder: View>: View {
 
     @StateObject private var loader: ImageLoader
+
+    private let resource: ImageResource
     private let placeholder: () -> Placeholder
     private let loading: () -> Loading
     fileprivate var configurations: [(Image) -> Image] = []
@@ -22,13 +24,21 @@ public struct ImageResourceView<Loading: View, Placeholder: View>: View {
         @ViewBuilder loading: @escaping () -> Loading,
         @ViewBuilder placeholder: @escaping () -> Placeholder
     ) {
+        self.resource = resource
         self.loading = loading
         self.placeholder = placeholder
-        _loader = StateObject(wrappedValue: ImageLoader(resource: resource))
+        _loader = StateObject(wrappedValue: ImageLoader())
     }
 
     public var body: some View {
-        content.onAppear(perform: loader.load)
+        content
+            .onChange(of: resource) { value in
+                loader.load(resource: value)
+            }
+            .onAppear {
+                loader.load(resource: resource)
+            }
+            .id(resource)
     }
 
     @ViewBuilder private var content: some View {
@@ -191,21 +201,17 @@ private class ImageLoader: ObservableObject {
     @Published var image: Image?
 
     private(set) var isLoading = false
-
-    private let resource: ImageResource
     private var cancellable: AnyCancellable?
 
     private static let imageProcessingQueue = DispatchQueue(label: "image-processing")
 
-    init(resource: ImageResource) {
-        self.resource = resource
-    }
+    init() {}
 
     deinit {
         cancel()
     }
 
-    func load() {
+    func load(resource: ImageResource) {
         guard !isLoading else { return }
 
         switch resource {

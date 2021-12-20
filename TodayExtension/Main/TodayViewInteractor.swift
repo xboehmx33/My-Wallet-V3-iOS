@@ -2,6 +2,7 @@
 
 import DIKit
 import LocalAuthentication
+import MoneyKit
 import NetworkKit
 import PlatformKit
 import PlatformUIKit

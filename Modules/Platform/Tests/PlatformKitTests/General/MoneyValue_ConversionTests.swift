@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 import XCTest
 
 final class MoneyValueConversionTests: XCTestCase {

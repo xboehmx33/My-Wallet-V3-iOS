@@ -78,7 +78,7 @@ extension Wallet: LegacyBitcoinWalletProtocol {
                 error(String(describing: errorMessage))
             }
         }
-        let function: String = "MyWalletPhone.signBitcoinPayment"
+        let function: String = "MyWalletPhone.tradeExecution.bitcoin.signPayment"
         let script: String
         if let escapedSecondPassword = secondPassword?.escapedForJS() {
             script = "\(function)(\(escapedSecondPassword))"

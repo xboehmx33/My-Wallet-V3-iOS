@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// A historical price series in fiat, for one crypto currency, in a specific time range.
 public struct HistoricalPriceSeries {
 

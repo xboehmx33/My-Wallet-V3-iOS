@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 
 public struct TradeLimit {
@@ -57,6 +58,18 @@ public struct SuggestedLimitsUpgrade: Decodable, Equatable {
 
 extension PeriodicLimit {
 
+    public static func max(
+        _ x: PeriodicLimit,
+        _ y: PeriodicLimit
+    ) throws -> PeriodicLimit {
+        let value: MoneyValue = try .max(x.limit, y.limit)
+        let effective: Bool? = try x.limit > y.limit ? x.effective : y.effective
+        return .init(
+            limit: value,
+            effective: effective
+        )
+    }
+
     func convert(using exchangeRate: MoneyValue) -> PeriodicLimit {
         PeriodicLimit(
             limit: limit.convert(using: exchangeRate),
@@ -78,6 +91,21 @@ extension PeriodicLimits {
 }
 
 extension EffectiveLimit {
+
+    public static func min(
+        _ x: EffectiveLimit?,
+        _ y: EffectiveLimit?
+    ) throws -> EffectiveLimit? {
+        guard let x = x, let y = y else {
+            return x ?? y
+        }
+        let value: MoneyValue = try .min(x.value, y.value)
+        let timeframe: TimeFrame = try x.value < y.value ? x.timeframe : y.timeframe
+        return .init(
+            timeframe: timeframe,
+            value: value
+        )
+    }
 
     public static func max(
         _ x: EffectiveLimit?,

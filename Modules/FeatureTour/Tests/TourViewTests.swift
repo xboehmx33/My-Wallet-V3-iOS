@@ -3,6 +3,7 @@
 import ComposableArchitecture
 import DIKit
 @testable import FeatureTourUI
+import MoneyKit
 import PlatformKit
 import SnapshotTesting
 import XCTest

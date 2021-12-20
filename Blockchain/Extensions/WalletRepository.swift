@@ -47,44 +47,74 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
         static let updateUserCredentialsFailure = "objc_updateUserCredentials_error"
     }
 
-    private let authenticatorTypeRelay = BehaviorRelay<WalletAuthenticatorType>(value: .standard)
+    // MARK: - Properties
+
     private let sessionTokenRelay = BehaviorRelay<String?>(value: nil)
+    private let authenticatorTypeRelay = BehaviorRelay<WalletAuthenticatorType>(value: .standard)
     private let passwordRelay = BehaviorRelay<String?>(value: nil)
     private let reactiveWallet: ReactiveWalletAPI
 
-    // MARK: - Properties
+    /// Streams the GUID if exists
+    var guid: AnyPublisher<String?, Never> {
+        .just(settings.guid)
+    }
+
+    /// Streams the cached shared key or `nil` if it is not cached
+    var sharedKey: AnyPublisher<String?, Never> {
+        .just(settings.sharedKey)
+    }
 
     /// Streams the session token if exists
-    var sessionToken: Single<String?> {
-        sessionTokenRelay
-            .take(1)
-            .asSingle()
+    var sessionToken: AnyPublisher<String?, Never> {
+        sessionTokenRelay.take(1).asPublisher().ignoreFailure()
     }
 
-    /// Streams the GUID if exists
-    var guid: Single<String?> {
-        settings.guid
-    }
-
-    /// Streams the shared key if exists
-    var sharedKey: Single<String?> {
-        settings.sharedKey
+    /// Streams the authenticator type
+    var authenticatorType: AnyPublisher<WalletAuthenticatorType, Never> {
+        authenticatorTypeRelay.take(1).asPublisher().ignoreFailure()
     }
 
     /// Streams the password if exists
-    var password: Single<String?> {
-        passwordRelay
-            .take(1)
-            .asSingle()
+    var password: AnyPublisher<String?, Never> {
+        passwordRelay.take(1).asPublisher().ignoreFailure()
     }
 
-    var authenticatorType: Single<WalletAuthenticatorType> {
-        authenticatorTypeRelay
-            .take(1)
-            .asSingle()
+    var hasPassword: AnyPublisher<Bool, Never> {
+        password
+            .map { $0 != nil }
+            .eraseToAnyPublisher()
     }
 
-    private var offlineTokenPublisher: AnyPublisher<String?, WalletError> {
+    /// Streans the nabu offline token
+    var offlineToken: AnyPublisher<NabuOfflineToken, MissingCredentialsError> {
+        let userId = userIdFromJS
+        let offlineToken = offlineTokenFromJS
+        return reactiveWallet.waitUntilInitializedSinglePublisher
+            .mapError()
+            .flatMap { [userId, offlineToken] _ -> AnyPublisher<(String?, String?), WalletError> in
+                Publishers.Zip(
+                    userId,
+                    offlineToken
+                )
+                .eraseToAnyPublisher()
+            }
+            .eraseToAnyPublisher()
+            .replaceError(with: MissingCredentialsError.offlineToken)
+            .flatMap { userId, offlineToken
+                -> AnyPublisher<(userId: String, offlineToken: String, created: Bool?), MissingCredentialsError> in
+                guard let userId = userId else {
+                    return .failure(.userId)
+                }
+                guard let offlineToken = offlineToken else {
+                    return .failure(.offlineToken)
+                }
+                return .just((userId: userId, offlineToken: offlineToken, created: nil))
+            }
+            .map(NabuOfflineToken.init)
+            .eraseToAnyPublisher()
+    }
+
+    private var offlineTokenFromJS: AnyPublisher<String?, WalletError> {
         let jsContextProvider = jsContextProvider
         return Deferred {
             Future { [jsContextProvider] promise in
@@ -118,7 +148,7 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
         .eraseToAnyPublisher()
     }
 
-    private var userIdPublisher: AnyPublisher<String?, WalletError> {
+    private var userIdFromJS: AnyPublisher<String?, WalletError> {
         let jsContextProvider = jsContextProvider
         return Deferred {
             Future { [jsContextProvider] promise in
@@ -153,35 +183,9 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
         .eraseToAnyPublisher()
     }
 
-    private var userId: Single<String?> {
-        Single.deferred { [weak self] in
-            guard WalletManager.shared.wallet.isInitialized() else {
-                return .error(WalletError.notInitialized)
-            }
-            guard let self = self else {
-                return .error(ToolKitError.nullReference(Self.self))
-            }
-            guard let jsValue = self.jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(JSSetter.userId) else {
-                return Single.just(nil)
-            }
-            guard !jsValue.isNull, !jsValue.isUndefined else {
-                return .just(nil)
-            }
-            guard let string = jsValue.toString() else {
-                return .just(nil)
-            }
-            guard !string.isEmpty else {
-                return .just(nil)
-            }
-            return Single.just(jsValue.toString())
-        }
-        .subscribeOn(jsScheduler)
-    }
-
     private let settings: AppSettingsAPI
     private let jsScheduler: SerialDispatchQueueScheduler
     private let combineJSScheduler: DispatchQueue
-
     private unowned let jsContextProvider: JSContextProviderAPI
 
     // MARK: - Setup
@@ -203,87 +207,51 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
 
     // MARK: - Wallet Setters
 
-    /// Sets GUID
-    func set(guid: String) -> Completable {
+    /// Sets the guid
+    func set(guid: String) -> AnyPublisher<Void, Never> {
         perform { [weak self] in
             self?.settings.guid = guid
         }
     }
 
-    /// Sets the session token
-    func set(sessionToken: String) -> Completable {
-        perform { [weak sessionTokenRelay] in
-            sessionTokenRelay?.accept(sessionToken)
-        }
-    }
-
-    /// Cleans the session token
-    func cleanSessionToken() -> Completable {
-        perform { [weak sessionTokenRelay] in
-            sessionTokenRelay?.accept(nil)
-        }
-    }
-
-    /// Sets Shared-Key
-    func set(sharedKey: String) -> Completable {
+    /// Sets the shared key
+    func set(sharedKey: String) -> AnyPublisher<Void, Never> {
         perform { [weak self] in
             self?.settings.sharedKey = sharedKey
         }
     }
 
-    /// Sets Password
-    func set(password: String) -> Completable {
-        perform { [weak passwordRelay] in
-            passwordRelay?.accept(password)
+    /// Sets the session token
+    func set(sessionToken: String) -> AnyPublisher<Void, Never> {
+        perform { [weak sessionTokenRelay] in
+            sessionTokenRelay?.accept(sessionToken)
         }
     }
 
-    func sync() -> Completable {
-        Completable
-            .create { [weak self] observer -> Disposable in
-                guard let self = self else {
-                    observer(.error(PasswordRepositoryError.syncFailed))
-                    return Disposables.create()
-                }
-                guard let password = self.passwordRelay.value else {
-                    observer(.error(PasswordRepositoryError.unavailable))
-                    return Disposables.create()
-                }
-                let script = String(format: JSSetter.Password.change, password)
-
-                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
-                    observer(.completed)
-                }, forJsFunctionName: JSSetter.Password.success as NSString)
-
-                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
-                    observer(.error(PasswordRepositoryError.syncFailed))
-                }, forJsFunctionName: JSSetter.Password.error as NSString)
-
-                self.jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(script)
-                return Disposables.create()
-            }
+    /// Clear the session token
+    func cleanSessionToken() -> AnyPublisher<Void, Never> {
+        perform { [weak sessionTokenRelay] in
+            sessionTokenRelay?.accept(nil)
+        }
     }
 
-    /// Sets Authenticator Type
-    func set(authenticatorType: WalletAuthenticatorType) -> Completable {
+    /// Sets the authenticator type
+    func set(authenticatorType: WalletAuthenticatorType) -> AnyPublisher<Void, Never> {
         perform { [weak authenticatorTypeRelay] in
             authenticatorTypeRelay?.accept(authenticatorType)
         }
     }
 
-    // MARK: - JS Setters
-
-    /// Sets a boolean indicating whether the public keys should sync to the wallet
-    func set(syncPubKeys: Bool) -> Completable {
-        perform { [weak jsContextProvider] in
-            let value = syncPubKeys ? "true" : "false"
-            let script = String(format: JSSetter.syncPubKeys, value)
-            jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
+    /// Sets the password
+    func set(password: String) -> AnyPublisher<Void, Never> {
+        perform { [weak passwordRelay] in
+            passwordRelay?.accept(password)
         }
     }
 
-    /// Sets the language
-    func set(language: String) -> Completable {
+    // MARK: - JS Setters
+
+    func set(language: String) -> AnyPublisher<Void, Never> {
         perform { [weak jsContextProvider] in
             let escaped = language.escapedForJS()
             let script = String(format: JSSetter.language, escaped)
@@ -291,13 +259,75 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
         }
     }
 
-    /// Sets the wallet payload
-    func set(payload: String) -> Completable {
+    func set(syncPubKeys: Bool) -> AnyPublisher<Void, Never> {
+        perform { [weak jsContextProvider] in
+            let value = syncPubKeys ? "true" : "false"
+            let script = String(format: JSSetter.syncPubKeys, value)
+            jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
+        }
+    }
+
+    func set(offlineToken: NabuOfflineToken) -> AnyPublisher<Void, CredentialWritingError> {
+        let jsContextProvider = jsContextProvider
+        return Deferred {
+            Future { [jsContextProvider] promise in
+                jsContextProvider.jsContext.invokeOnce(
+                    functionBlock: {
+                        promise(.failure(.offlineToken))
+                    },
+                    forJsFunctionName: JSCallback.updateUserCredentialsFailure as NSString
+                )
+                jsContextProvider.jsContext.invokeOnce(
+                    functionBlock: {
+                        promise(.success(()))
+                    },
+                    forJsFunctionName: JSCallback.updateUserCredentialsSuccess as NSString
+                )
+                let userId = offlineToken.userId.escapedForJS()
+                let offlineToken = offlineToken.token.escapedForJS()
+                let script = String(format: JSSetter.updateUserCredentials, userId, offlineToken)
+                jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(script)?.toString()
+            }
+        }
+        .subscribe(on: combineJSScheduler)
+        .eraseToAnyPublisher()
+    }
+
+    func set(payload: String) -> AnyPublisher<Void, Never> {
         perform { [weak jsContextProvider] in
             let escaped = payload.escapedForJS()
             let script = String(format: JSSetter.payload, escaped)
             jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
         }
+    }
+
+    func sync() -> AnyPublisher<Void, PasswordRepositoryError> {
+        Deferred {
+            Future { [weak self] promise in
+                guard let self = self else {
+                    promise(.failure(.syncFailed))
+                    return
+                }
+                guard let password = self.passwordRelay.value else {
+                    promise(.failure(.unavailable))
+                    return
+                }
+
+                let script = String(format: JSSetter.Password.change, password)
+
+                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
+                    promise(.success(()))
+                }, forJsFunctionName: JSSetter.Password.success as NSString)
+
+                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
+                    promise(.failure(.syncFailed))
+                }, forJsFunctionName: JSSetter.Password.error as NSString)
+
+                self.jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(script)
+            }
+        }
+        .subscribe(on: combineJSScheduler)
+        .eraseToAnyPublisher()
     }
 
     // MARK: - Accessors
@@ -309,7 +339,7 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
                 observer(.completed)
                 return Disposables.create()
             }
-            .subscribeOn(jsScheduler)
+            .subscribe(on: jsScheduler)
     }
 
     fileprivate func perform(_ operation: @escaping () -> Void) -> AnyPublisher<Void, Never> {
@@ -351,223 +381,5 @@ final class WalletRepository: NSObject, WalletRepositoryAPI, WalletCredentialsPr
         set {
             passwordRelay.accept(newValue)
         }
-    }
-}
-
-// MARK: - SessionTokenRepositoryCombineAPI
-
-extension WalletRepository {
-
-    var sessionTokenPublisher: AnyPublisher<String?, Never> {
-        sessionToken.asPublisher().ignoreFailure()
-    }
-
-    func setPublisher(sessionToken: String) -> AnyPublisher<Void, Never> {
-        perform { [weak sessionTokenRelay] in
-            sessionTokenRelay?.accept(sessionToken)
-        }
-    }
-
-    func cleanSessionTokenPublisher() -> AnyPublisher<Void, Never> {
-        perform { [weak sessionTokenRelay] in
-            sessionTokenRelay?.accept(nil)
-        }
-    }
-}
-
-// MARK: - SharedKeyRepositoryCombineAPI
-
-extension WalletRepository {
-
-    /// Streams the cached shared key or `nil` if it is not cached
-    var sharedKeyPublisher: AnyPublisher<String?, Never> {
-        sharedKey.asPublisher().ignoreFailure()
-    }
-
-    /// Sets the shared key
-    func setPublisher(sharedKey: String) -> AnyPublisher<Void, Never> {
-        perform { [weak self] in
-            self?.settings.sharedKey = sharedKey
-        }
-    }
-}
-
-// MARK: - PasswordRepositoryCombineAPI
-
-extension WalletRepository {
-
-    var hasPasswordPublisher: AnyPublisher<Bool, Never> {
-        hasPassword.asPublisher().ignoreFailure()
-    }
-
-    var passwordPublisher: AnyPublisher<String?, Never> {
-        password.asPublisher().ignoreFailure()
-    }
-
-    func syncPublisher() -> AnyPublisher<Void, PasswordRepositoryError> {
-        Deferred {
-            Future { [weak self] promise in
-                guard let self = self else {
-                    promise(.failure(.syncFailed))
-                    return
-                }
-                guard let password = self.passwordRelay.value else {
-                    promise(.failure(.unavailable))
-                    return
-                }
-
-                let script = String(format: JSSetter.Password.change, password)
-
-                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
-                    promise(.success(()))
-                }, forJsFunctionName: JSSetter.Password.success as NSString)
-
-                self.jsContextProvider.jsContext.invokeOnce(functionBlock: {
-                    promise(.failure(.syncFailed))
-                }, forJsFunctionName: JSSetter.Password.error as NSString)
-
-                self.jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(script)
-            }
-        }
-        .subscribe(on: combineJSScheduler)
-        .eraseToAnyPublisher()
-    }
-
-    func setPublisher(password: String) -> AnyPublisher<Void, Never> {
-        perform { [weak passwordRelay] in
-            passwordRelay?.accept(password)
-        }
-    }
-}
-
-// MARK: - GuidRepositoryCombineAPI
-
-extension WalletRepository {
-
-    var guidPublisher: AnyPublisher<String?, Never> {
-        let settings = settings
-        return Deferred {
-            Future { [settings] promise in
-                promise(.success(settings.guid))
-            }
-        }
-        .subscribe(on: combineJSScheduler)
-        .eraseToAnyPublisher()
-    }
-
-    func setPublisher(guid: String) -> AnyPublisher<Void, Never> {
-        perform { [weak self] in
-            self?.settings.guid = guid
-        }
-    }
-}
-
-// MARK: - SyncPubKeysRepositoryCombineAPI
-
-extension WalletRepository {
-
-    func setPublisher(syncPubKeys: Bool) -> AnyPublisher<Void, Never> {
-        perform { [weak jsContextProvider] in
-            let value = syncPubKeys ? "true" : "false"
-            let script = String(format: JSSetter.syncPubKeys, value)
-            jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
-        }
-    }
-}
-
-// MARK: - LanguageRepositoryCombineAPI
-
-extension WalletRepository {
-
-    func setPublisher(language: String) -> AnyPublisher<Void, Never> {
-        perform { [weak jsContextProvider] in
-            let escaped = language.escapedForJS()
-            let script = String(format: JSSetter.language, escaped)
-            jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
-        }
-    }
-}
-
-// MARK: - AuthenticatorRepositoryCombineAPI
-
-extension WalletRepository {
-
-    var authenticatorTypePublisher: AnyPublisher<WalletAuthenticatorType, Never> {
-        authenticatorType.asPublisher().ignoreFailure()
-    }
-
-    func setPublisher(authenticatorType: WalletAuthenticatorType) -> AnyPublisher<Void, Never> {
-        perform { [weak authenticatorTypeRelay] in
-            authenticatorTypeRelay?.accept(authenticatorType)
-        }
-    }
-}
-
-// MARK: - PayloadRepositoryCombineAPI
-
-extension WalletRepository {
-
-    func setPublisher(payload: String) -> AnyPublisher<Void, Never> {
-        perform { [weak jsContextProvider] in
-            let escaped = payload.escapedForJS()
-            let script = String(format: JSSetter.payload, escaped)
-            jsContextProvider?.jsContext.evaluateScriptCheckIsOnMainQueue(script)
-        }
-    }
-}
-
-// MARK: - NabuOfflineTokenRepositoryCombineAPI
-
-extension WalletRepository {
-
-    var offlineToken: AnyPublisher<NabuOfflineToken, MissingCredentialsError> {
-        let userIdPublisher = userIdPublisher
-        let offlineTokenPublisher = offlineTokenPublisher
-        return reactiveWallet.waitUntilInitializedSinglePublisher
-            .mapError()
-            .flatMap { [userIdPublisher, offlineTokenPublisher] _ -> AnyPublisher<(String?, String?), WalletError> in
-                Publishers.Zip(userIdPublisher, offlineTokenPublisher)
-                    .eraseToAnyPublisher()
-            }
-            .eraseToAnyPublisher()
-            .replaceError(with: MissingCredentialsError.offlineToken)
-            .flatMap { userId, offlineToken
-                -> AnyPublisher<(userId: String, offlineToken: String, created: Bool?), MissingCredentialsError> in
-                guard let userId = userId else {
-                    return .failure(.userId)
-                }
-                guard let offlineToken = offlineToken else {
-                    return .failure(.offlineToken)
-                }
-                return .just((userId: userId, offlineToken: offlineToken, created: nil))
-            }
-            .map(NabuOfflineToken.init)
-            .eraseToAnyPublisher()
-    }
-
-    func set(offlineToken: NabuOfflineToken) -> AnyPublisher<Void, CredentialWritingError> {
-        let jsContextProvider = jsContextProvider
-        return Deferred {
-            Future { [jsContextProvider] promise in
-                jsContextProvider.jsContext.invokeOnce(
-                    functionBlock: {
-                        promise(.failure(.offlineToken))
-                    },
-                    forJsFunctionName: JSCallback.updateUserCredentialsFailure as NSString
-                )
-                jsContextProvider.jsContext.invokeOnce(
-                    functionBlock: {
-                        promise(.success(()))
-                    },
-                    forJsFunctionName: JSCallback.updateUserCredentialsSuccess as NSString
-                )
-                let userId = offlineToken.userId.escapedForJS()
-                let offlineToken = offlineToken.token.escapedForJS()
-                let script = String(format: JSSetter.updateUserCredentials, userId, offlineToken)
-                jsContextProvider.jsContext.evaluateScriptCheckIsOnMainQueue(script)?.toString()
-            }
-        }
-        .subscribe(on: combineJSScheduler)
-        .eraseToAnyPublisher()
     }
 }

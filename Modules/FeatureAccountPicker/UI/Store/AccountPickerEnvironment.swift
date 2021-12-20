@@ -18,13 +18,13 @@ public class AccountPickerEnvironment {
     // State / Input
     let sections: () -> AnyPublisher<[AccountPickerRow], Never>
 
-    let updateSingleAccount: (AccountPickerRow.SingleAccount)
-        -> AnyPublisher<AccountPickerRow.SingleAccount.Balances, Error>?
+    let updateSingleAccounts: (Set<AnyHashable>)
+        -> AnyPublisher<[AnyHashable: AccountPickerRow.SingleAccount.Balances], Error>
 
-    let updateAccountGroup: (AccountPickerRow.AccountGroup)
-        -> AnyPublisher<AccountPickerRow.AccountGroup.Balances, Error>?
+    let updateAccountGroups: (Set<AnyHashable>)
+        -> AnyPublisher<[AnyHashable: AccountPickerRow.AccountGroup.Balances], Error>
 
-    let header: () -> AnyPublisher<Header, Error>
+    let header: () -> AnyPublisher<HeaderStyle, Error>
 
     public init(
         mainQueue: AnySchedulerOf<DispatchQueue> = .main,
@@ -34,10 +34,10 @@ public class AccountPickerEnvironment {
         search: @escaping (String?) -> Void,
         sections: @escaping () -> AnyPublisher<[AccountPickerRow], Never>,
         // swiftlint:disable line_length
-        updateSingleAccount: @escaping (AccountPickerRow.SingleAccount) -> AnyPublisher<AccountPickerRow.SingleAccount.Balances, Error>?,
-        updateAccountGroup: @escaping (AccountPickerRow.AccountGroup) -> AnyPublisher<AccountPickerRow.AccountGroup.Balances, Error>?,
+        updateSingleAccounts: @escaping (Set<AnyHashable>) -> AnyPublisher<[AnyHashable: AccountPickerRow.SingleAccount.Balances], Error>,
+        updateAccountGroups: @escaping (Set<AnyHashable>) -> AnyPublisher<[AnyHashable: AccountPickerRow.AccountGroup.Balances], Error>,
         // swiftlint:enable line_length
-        header: @escaping () -> AnyPublisher<Header, Error>
+        header: @escaping () -> AnyPublisher<HeaderStyle, Error>
     ) {
         self.mainQueue = mainQueue
         self.rowSelected = rowSelected
@@ -45,8 +45,8 @@ public class AccountPickerEnvironment {
         self.closeButtonTapped = closeButtonTapped
         self.search = search
         self.sections = sections
-        self.updateSingleAccount = updateSingleAccount
-        self.updateAccountGroup = updateAccountGroup
+        self.updateSingleAccounts = updateSingleAccounts
+        self.updateAccountGroups = updateAccountGroups
         self.header = header
     }
 }

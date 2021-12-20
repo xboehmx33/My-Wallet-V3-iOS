@@ -19,14 +19,14 @@ public struct EthereumTransactionPublished: Equatable {
     /// Creates a EthereumTransactionPublished.
     ///
     /// This factory method checks that the response transaction hash (`responseHash`) does match the given
-    ///  `EthereumTransactionFinalised` transaction hash.
+    ///  `EthereumTransactionEncoded` transaction hash.
     static func create(
-        finalisedTransaction: EthereumTransactionFinalised,
+        transaction: EthereumTransactionEncoded,
         responseHash: String
     ) -> Result<EthereumTransactionPublished, EthereumTransactionPublishedError> {
-        guard finalisedTransaction.transactionHash == responseHash else {
+        guard transaction.transactionHash == responseHash else {
             return .failure(.invalidResponseHash)
         }
-        return .success(.init(transactionHash: finalisedTransaction.transactionHash))
+        return .success(.init(transactionHash: transaction.transactionHash))
     }
 }

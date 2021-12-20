@@ -2,13 +2,11 @@
 
 import Combine
 import FeatureAuthenticationDomain
-import RxSwift
 import WalletPayloadKit
 
 final class SharedKeyRepository: SharedKeyRepositoryAPI {
 
-    let sharedKey: Single<String?>
-    let sharedKeyPublisher: AnyPublisher<String?, Never>
+    let sharedKey: AnyPublisher<String?, Never>
 
     // This is set to the older WalletRepository API, soon to be removed
     private let walletRepository: WalletRepositoryAPI
@@ -25,21 +23,9 @@ final class SharedKeyRepository: SharedKeyRepositoryAPI {
         self.nativeWalletEnabled = nativeWalletEnabled
 
         sharedKey = nativeWalletEnabled()
-            .asObservable()
-            .take(1)
-            .asSingle()
-            .flatMap { isEnabled -> Single<String?> in
-                guard isEnabled else {
-                    return walletRepository.sharedKey
-                }
-                let keyOrNil = walletRepo.credentials.sharedKey.isEmpty ? nil : walletRepo.credentials.sharedKey
-                return .just(keyOrNil)
-            }
-
-        sharedKeyPublisher = nativeWalletEnabled()
             .flatMap { isEnabled -> AnyPublisher<String?, Never> in
                 guard isEnabled else {
-                    return walletRepository.sharedKeyPublisher
+                    return walletRepository.sharedKey
                 }
                 return walletRepo.map(\.credentials.sharedKey)
                     .map { key in key.isEmpty ? nil : key }
@@ -48,24 +34,11 @@ final class SharedKeyRepository: SharedKeyRepositoryAPI {
             .eraseToAnyPublisher()
     }
 
-    func set(sharedKey: String) -> Completable {
-        nativeWalletEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.set(sharedKey: sharedKey)
-                }
-                return walletRepo.set(keyPath: \.credentials.sharedKey, value: sharedKey)
-                    .asCompletable()
-            }
-            .asCompletable()
-    }
-
-    func setPublisher(sharedKey: String) -> AnyPublisher<Void, Never> {
+    func set(sharedKey: String) -> AnyPublisher<Void, Never> {
         nativeWalletEnabled()
             .flatMap { [walletRepo, walletRepository] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.setPublisher(sharedKey: sharedKey)
+                    return walletRepository.set(sharedKey: sharedKey)
                 }
                 return walletRepo.set(keyPath: \.credentials.sharedKey, value: sharedKey)
                     .mapToVoid()

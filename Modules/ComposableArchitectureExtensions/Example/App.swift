@@ -44,7 +44,6 @@ let exampleReducer = Reducer<ExampleState, ExampleAction, Void>
                 return .fireAndForget { print("✅") }
             }
         }
-        .debug()
     )
 
 enum ExampleRoute: NavigationRoute, CaseIterable {
@@ -71,7 +70,7 @@ enum ExampleRoute: NavigationRoute, CaseIterable {
             )
         case .end:
             EndContentView(
-                store: .init(initialState: .init(name: "End"), reducer: endReducer, environment: .init(dismiss: { viewStore.send(.route(nil)) }))
+                store: .init(initialState: .init(name: "End"), reducer: endReducer, environment: .init(dismiss: { viewStore.send(.dismiss()) }))
             )
         }
     }

@@ -14,7 +14,7 @@ let package = Package(
         .package(
             name: "RxSwift",
             url: "https://github.com/ReactiveX/RxSwift.git",
-            from: "5.1.3"
+            from: "6.2.0"
         ),
         .package(
             name: "DIKit",
@@ -44,6 +44,7 @@ let package = Package(
         .target(
             name: "FeatureAppUI",
             dependencies: [
+                .target(name: "FeatureAppDomain"),
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "BitcoinChainKit", package: "CryptoAssets"),
                 .product(name: "ERC20Kit", package: "CryptoAssets"),
@@ -52,6 +53,7 @@ let package = Package(
                 .product(name: "FeatureDashboardUI", package: "FeatureDashboard"),
                 .product(name: "FeatureAuthenticationDomain", package: "FeatureAuthentication"),
                 .product(name: "FeatureOpenBankingDomain", package: "FeatureOpenBanking"),
+                .product(name: "FeatureOpenBankingUI", package: "FeatureOpenBanking"),
                 .product(name: "FeatureAuthenticationUI", package: "FeatureAuthentication"),
                 .product(name: "FeatureSettingsDomain", package: "FeatureSettings"),
                 .product(name: "RemoteNotificationsKit", package: "RemoteNotifications"),
@@ -61,13 +63,15 @@ let package = Package(
                 .product(name: "RxCocoa", package: "RxSwift"),
                 .product(name: "RxRelay", package: "RxSwift"),
                 .product(name: "RxSwift", package: "RxSwift"),
-                .product(name: "ToolKit", package: "Tool")
+                .product(name: "ToolKit", package: "Tool"),
+                .product(name: "WalletPayloadKit", package: "WalletPayload")
             ]
         ),
         .target(
             name: "FeatureAppDomain",
             dependencies: [
                 .product(name: "PlatformKit", package: "Platform"),
+                .product(name: "WalletPayloadKit", package: "WalletPayload"),
                 .product(name: "FeatureAuthenticationDomain", package: "FeatureAuthentication"),
                 .product(name: "FeatureWithdrawalLocksData", package: "FeatureWithdrawalLocks"),
                 .product(name: "FeatureWithdrawalLocksDomain", package: "FeatureWithdrawalLocks")

@@ -29,10 +29,13 @@ public enum UpgradeAccountRoute: NavigationRoute {
             )
         case .webUpgrade:
             WebUpgradeAccountView(
-                sendMessage: .constant("Test Message"),
-                callback: { _ in
+                currentMessage: .constant(viewStore.currentMessage),
+                connectionStatusCallback: { _ in
+                    viewStore.send(.setCurrentMessage(viewStore.base64Str))
+                },
+                credentialsCallback: { _ in
                     // dismiss the web upgrade screen when received a callback
-                    viewStore.send(.enter(into: nil, context: .fullScreen))
+                    viewStore.send(.dismiss())
                 }
             )
         }
@@ -52,14 +55,20 @@ struct UpgradeAccountView: View {
         static let headingBottomPadding: CGFloat = 8
         static let subheadingFontSize: CGFloat = 16
         static let subheadingLineSpacing: CGFloat = 5
+        static let subheadingBottomPadding: CGFloat = 32
 
         static let buttonSpacing: CGFloat = 10
     }
 
     private let store: Store<UpgradeAccountState, UpgradeAccountAction>
+    private let exchangeOnly: Bool
 
-    init(store: Store<UpgradeAccountState, UpgradeAccountAction>) {
+    init(
+        store: Store<UpgradeAccountState, UpgradeAccountAction>,
+        exchangeOnly: Bool
+    ) {
         self.store = store
+        self.exchangeOnly = exchangeOnly
     }
 
     var body: some View {
@@ -74,9 +83,9 @@ struct UpgradeAccountView: View {
                         .font(Font(weight: .medium, size: Layout.subheadingFontSize))
                 }
                 .multilineTextAlignment(.center)
+                .padding(.bottom, Layout.subheadingBottomPadding)
 
-                Spacer()
-                MessageList(messages: createMessages())
+                MessageList(messages: createMessages(exchangeOnly: exchangeOnly))
                 Spacer()
 
                 VStack {
@@ -154,8 +163,8 @@ struct UpgradeAccountView: View {
         }
     }
 
-    private func createMessages() -> [Message] {
-        [
+    private func createMessages(exchangeOnly: Bool) -> [Message] {
+        var messages: [Message] = [
             Message(
                 id: 1,
                 iconName: "number-one",
@@ -167,14 +176,19 @@ struct UpgradeAccountView: View {
                 iconName: "number-two",
                 title: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.headingTwo,
                 detailedMessage: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.bodyTwo
-            ),
-            Message(
-                id: 3,
-                iconName: "number-three",
-                title: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.headingThree,
-                detailedMessage: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.bodyThree
             )
         ]
+        if exchangeOnly {
+            messages.append(
+                Message(
+                    id: 3,
+                    iconName: "number-three",
+                    title: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.headingThree,
+                    detailedMessage: LocalizationConstants.FeatureAuthentication.UpgradeAccount.MessageList.bodyThree
+                )
+            )
+        }
+        return messages
     }
 }
 
@@ -184,7 +198,8 @@ struct UpgradeAccountView_Previews: PreviewProvider {
         UpgradeAccountView(
             store: .init(
                 initialState: .init(
-                    walletInfo: .empty
+                    walletInfo: .empty,
+                    base64Str: ""
                 ),
                 reducer: upgradeAccountReducer,
                 environment: UpgradeAccountEnvironment(
@@ -194,7 +209,8 @@ struct UpgradeAccountView_Previews: PreviewProvider {
                     featureFlagsService: NoOpFeatureFlagsService(),
                     analyticsRecorder: NoOpAnalyticsRecorder()
                 )
-            )
+            ),
+            exchangeOnly: true
         )
     }
 }

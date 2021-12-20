@@ -63,11 +63,11 @@ final class PasswordRequiredScreenInteractor {
             .asObservable()
             .ignoreElements()
             .subscribe(
+                onError: errorRelay.accept,
                 onCompleted: { [weak self] in
                     guard let self = self else { return }
                     self.walletFetcher(self.passwordRelay.value)
-                },
-                onError: errorRelay.accept
+                }
             )
             .disposed(by: disposeBag)
     }

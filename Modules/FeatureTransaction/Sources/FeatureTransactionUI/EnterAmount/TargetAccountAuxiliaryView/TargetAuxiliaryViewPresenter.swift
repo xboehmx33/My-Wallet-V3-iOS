@@ -2,27 +2,40 @@
 
 import PlatformKit
 import SwiftUI
+import ToolKit
 
 final class TargetAuxiliaryViewPresenter: AuxiliaryViewPresenting {
 
     private weak var delegate: AuxiliaryViewPresentingDelegate?
     private let transactionState: TransactionState
+    private let eventsRecorder: Recording
 
-    init(delegate: AuxiliaryViewPresentingDelegate?, transactionState: TransactionState) {
+    init(
+        delegate: AuxiliaryViewPresentingDelegate?,
+        transactionState: TransactionState,
+        eventsRecorder: Recording
+    ) {
         self.delegate = delegate
         self.transactionState = transactionState
+        self.eventsRecorder = eventsRecorder
     }
 
     func makeViewController() -> UIViewController {
-        guard let account = transactionState.destination as? CryptoAccount else {
-            fatalError("Impossible: a buy can only have a crypto destination and needs to have a fiat rate!")
-        }
-
-        guard let conversionRate = transactionState.sourceToFiatPair else {
+        guard let account = transactionState.destination as? CryptoAccount,
+              let conversionRate = transactionState.sourceToFiatPair
+        else {
+            if transactionState.destination as? CryptoAccount == nil {
+                let error = "\(type(of: self)) - Invalid destination for transaction state '\(dump(transactionState))'"
+                eventsRecorder.record(error)
+                ProbabilisticRunner.run(for: .tenPercent) {
+                    fatalError(error)
+                }
+            }
+            // return a placeholder (same view but redacted, so no info is visible, just placeholder 'boxes')
             return UIHostingController(
                 rootView: TargetAccountAuxiliaryView(
-                    asset: account.asset,
-                    price: .zero(currency: account.asset.currencyType),
+                    asset: .coin(.bitcoin),
+                    price: .zero(currency: .fiat(.USD)),
                     action: { [weak self] in
                         self?.handleTap()
                     }

@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import stellarsdk
@@ -26,7 +27,7 @@ final class StellarOnChainTransactionEngine: OnChainTransactionEngine {
 
     let walletCurrencyService: FiatCurrencyServiceAPI
     let currencyConversionService: CurrencyConversionServiceAPI
-    var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    var askForRefreshConfirmation: AskForRefreshConfirmation!
     var requireSecondPassword: Bool
     var sourceAccount: BlockchainAccount!
     var transactionTarget: TransactionTarget!
@@ -40,7 +41,8 @@ final class StellarOnChainTransactionEngine: OnChainTransactionEngine {
     }
 
     private var userFiatCurrency: Single<FiatCurrency> {
-        walletCurrencyService.fiatCurrency
+        walletCurrencyService.displayCurrency
+            .asSingle()
     }
 
     private var sourceExchangeRatePair: Single<MoneyValuePair> {

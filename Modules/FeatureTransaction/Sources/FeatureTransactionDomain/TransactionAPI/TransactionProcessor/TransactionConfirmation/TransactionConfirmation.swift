@@ -1,10 +1,9 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 public enum TransactionConfirmation: TransactionConfirmationModelable {
 
-    case app(TransactionConfirmation.Model.App)
     case arrivalDate(TransactionConfirmation.Model.FundsArrivalDate)
     case bitpayCountdown(TransactionConfirmation.Model.BitPayCountdown)
     case buyCryptoValue(TransactionConfirmation.Model.BuyCryptoValue)
@@ -16,12 +15,15 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
     case exchangePrice(TransactionConfirmation.Model.ExchangePriceOption)
     case feedTotal(TransactionConfirmation.Model.FeedTotal)
     case feeSelection(TransactionConfirmation.Model.FeeSelection)
+    case imageNotice(TransactionConfirmation.Model.ImageNotice)
     case largeTransactionWarning(TransactionConfirmation.Model.AnyBoolOption<MoneyValue>)
     case memo(TransactionConfirmation.Model.Memo)
     case message(TransactionConfirmation.Model.Message)
     case network(TransactionConfirmation.Model.Network)
     case networkFee(TransactionConfirmation.Model.NetworkFee)
     case notice(TransactionConfirmation.Model.Notice)
+    case purchase(TransactionConfirmation.Model.Purchase)
+    case rawTransaction(TransactionConfirmation.Model.RawTransaction)
     case sellDestinationValue(TransactionConfirmation.Model.SellDestinationValue)
     case sellExchangeRateValue(TransactionConfirmation.Model.SellExchangeRateValue)
     case sellSourceValue(TransactionConfirmation.Model.SellSourceValue)
@@ -38,8 +40,6 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
 
     public var type: TransactionConfirmation.Kind {
         switch self {
-        case .app(let model):
-            return model.type
         case .arrivalDate(let model):
             return model.type
         case .bitpayCountdown(let model):
@@ -62,6 +62,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
             return model.type
         case .feeSelection(let model):
             return model.type
+        case .imageNotice(let model):
+            return model.type
         case .largeTransactionWarning(let model):
             return model.type
         case .memo(let model):
@@ -73,6 +75,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
         case .networkFee(let model):
             return model.type
         case .notice(let model):
+            return model.type
+        case .rawTransaction(let model):
             return model.type
         case .sellDestinationValue(let model):
             return model.type
@@ -95,6 +99,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
         case .total(let model):
             return model.type
         case .totalCost(let model):
+            return model.type
+        case .purchase(let model):
             return model.type
         case .transactionFee(let model):
             return model.type
@@ -105,8 +111,6 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
 
     public var formatted: (title: String, subtitle: String)? {
         switch self {
-        case .app(let model):
-            return model.formatted
         case .arrivalDate(let model):
             return model.formatted
         case .bitpayCountdown(let model):
@@ -129,6 +133,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
             return model.formatted
         case .feeSelection(let model):
             return model.formatted
+        case .imageNotice(let model):
+            return model.formatted
         case .largeTransactionWarning(let model):
             return model.formatted
         case .memo(let model):
@@ -140,6 +146,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
         case .networkFee(let model):
             return model.formatted
         case .notice(let model):
+            return model.formatted
+        case .rawTransaction(let model):
             return model.formatted
         case .sellDestinationValue(let model):
             return model.formatted
@@ -162,6 +170,8 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
         case .total(let model):
             return model.formatted
         case .totalCost(let model):
+            return model.formatted
+        case .purchase(let model):
             return model.formatted
         case .transactionFee(let model):
             return model.formatted
@@ -173,8 +183,7 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
     /// Is equal ignoring associated value.
     public func bareCompare(to rhs: Self) -> Bool {
         switch (self, rhs) {
-        case (.app, .app),
-             (.arrivalDate, .arrivalDate),
+        case (.arrivalDate, .arrivalDate),
              (.bitpayCountdown, .bitpayCountdown),
              (.buyCryptoValue, .buyCryptoValue),
              (.buyExchangeRateValue, .buyExchangeRateValue),
@@ -185,12 +194,14 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
              (.exchangePrice, .exchangePrice),
              (.feedTotal, .feedTotal),
              (.feeSelection, .feeSelection),
+             (.imageNotice, .imageNotice),
              (.largeTransactionWarning, .largeTransactionWarning),
              (.memo, .memo),
              (.message, .message),
              (.network, .network),
              (.networkFee, .networkFee),
              (.notice, .notice),
+             (.rawTransaction, .rawTransaction),
              (.sellDestinationValue, .sellDestinationValue),
              (.sellExchangeRateValue, .sellExchangeRateValue),
              (.sellSourceValue, .sellSourceValue),
@@ -202,6 +213,7 @@ public enum TransactionConfirmation: TransactionConfirmationModelable {
              (.termsOfService, .termsOfService),
              (.total, .total),
              (.totalCost, .totalCost),
+             (.purchase, .purchase),
              (.transactionFee, .transactionFee),
              (.transferAgreement, .transferAgreement):
             return true

@@ -21,6 +21,8 @@ public struct ExchangeSellButton: View {
     private let action: () -> Void
     private let isLoading: Bool
 
+    @Environment(\.isEnabled) private var isEnabled
+
     private let colorCombination = PillButtonStyle.ColorCombination(
         enabled: PillButtonStyle.ColorSet(
             foreground: Color(
@@ -70,6 +72,7 @@ public struct ExchangeSellButton: View {
         .buttonStyle(
             PillButtonStyle(
                 isLoading: isLoading,
+                isEnabled: isEnabled,
                 size: .standard,
                 colorCombination: colorCombination
             )

@@ -2,6 +2,7 @@
 
 import DIKit
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
@@ -10,7 +11,7 @@ import RxRelay
 import RxSwift
 import ToolKit
 
-final class PricesViewController: BaseScreenViewController {
+public final class PricesViewController: BaseScreenViewController {
 
     // MARK: - Private Types
 
@@ -23,11 +24,17 @@ final class PricesViewController: BaseScreenViewController {
     private let presenter: PricesScreenPresenter
     private let tableView = UITableView()
     private let searchBar = UISearchBar()
+    public typealias CustomSelectionActionClosure = ((CryptoCurrency) -> Void)
+    private let customSelectionActionClosure: CustomSelectionActionClosure?
 
     // MARK: - Setup
 
-    init(presenter: PricesScreenPresenter = .init()) {
+    public init(
+        presenter: PricesScreenPresenter,
+        customSelectionActionClosure: CustomSelectionActionClosure? = nil
+    ) {
         self.presenter = presenter
+        self.customSelectionActionClosure = customSelectionActionClosure
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -36,7 +43,7 @@ final class PricesViewController: BaseScreenViewController {
 
     // MARK: - Lifecycle
 
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         setupTableView()
@@ -45,7 +52,7 @@ final class PricesViewController: BaseScreenViewController {
         presenter.refreshRelay.accept(())
     }
 
-    override func viewWillAppear(_ animated: Bool) {
+    override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.navigationBar.isTranslucent = false
     }
@@ -145,7 +152,11 @@ final class PricesViewController: BaseScreenViewController {
                 case .emptyState:
                     break
                 case .currency(let cryptoCurrency, _):
-                    self.presenter.router.showDetailsScreen(for: cryptoCurrency)
+                    if let customSelectionActionClosure = self.customSelectionActionClosure {
+                        customSelectionActionClosure(cryptoCurrency)
+                    } else {
+                        self.presenter.router.showDetailsScreen(for: cryptoCurrency)
+                    }
                 }
             }
             .disposed(by: disposeBag)
@@ -158,7 +169,7 @@ final class PricesViewController: BaseScreenViewController {
 
     // MARK: - Navigation
 
-    override func navigationBarLeadingButtonPressed() {
+    override public func navigationBarLeadingButtonPressed() {
         presenter.navigationBarLeadingButtonPressed()
     }
 }

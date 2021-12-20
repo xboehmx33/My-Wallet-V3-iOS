@@ -2,6 +2,7 @@
 
 import BigInt
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 
 public struct InterestAccountLimitsResponse: Decodable {

@@ -2,6 +2,7 @@
 
 import BigInt
 import BitcoinChainKit
+import MoneyKit
 import PlatformKit
 
 public class BitcoinCashHistoricalTransaction: Decodable, BitcoinChainHistoricalTransactionResponse {

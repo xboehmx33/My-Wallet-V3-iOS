@@ -131,6 +131,7 @@ final class ConfirmationPageDetailsPresenter: DetailsScreenPresenterAPI, Confirm
 
         let memoChanged = contentReducer
             .memoUpdated
+            .distinctUntilChanged(\.0)
             .map { text, oldModel -> ConfirmationPageInteractor.Effects in
                 .updateMemo(text, oldModel: oldModel)
             }

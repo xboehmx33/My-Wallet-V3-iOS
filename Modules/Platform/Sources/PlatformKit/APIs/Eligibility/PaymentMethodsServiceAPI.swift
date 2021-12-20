@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import RxSwift
 
 /// Types adopting the `PaymentMethodsServiceAPI` protocol should provide a way to fetch the eligible payment methods for the current user.

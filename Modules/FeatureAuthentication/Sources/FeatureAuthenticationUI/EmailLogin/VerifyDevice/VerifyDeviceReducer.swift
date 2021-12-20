@@ -100,6 +100,7 @@ struct VerifyDeviceEnvironment {
     let errorRecorder: ErrorRecording
     let externalAppOpener: ExternalAppOpener
     let analyticsRecorder: AnalyticsEventRecorderAPI
+    let walletInfoBase64Encoder: (WalletInfo) throws -> String
 
     init(
         mainQueue: AnySchedulerOf<DispatchQueue>,
@@ -107,7 +108,10 @@ struct VerifyDeviceEnvironment {
         featureFlagsService: FeatureFlagsServiceAPI,
         errorRecorder: ErrorRecording,
         externalAppOpener: ExternalAppOpener = resolve(),
-        analyticsRecorder: AnalyticsEventRecorderAPI
+        analyticsRecorder: AnalyticsEventRecorderAPI,
+        walletInfoBase64Encoder: @escaping (WalletInfo) throws -> String = {
+            try JSONEncoder().encode($0).base64EncodedString()
+        }
     ) {
         self.mainQueue = mainQueue
         self.deviceVerificationService = deviceVerificationService
@@ -115,6 +119,7 @@ struct VerifyDeviceEnvironment {
         self.errorRecorder = errorRecorder
         self.externalAppOpener = externalAppOpener
         self.analyticsRecorder = analyticsRecorder
+        self.walletInfoBase64Encoder = walletInfoBase64Encoder
     }
 }
 
@@ -244,7 +249,15 @@ let verifyDeviceReducer = Reducer.combine(
                         state.route = nil
                         return .none
                     }
-                    state.upgradeAccountState = .init(walletInfo: info)
+                    do {
+                        let base64Str = try environment.walletInfoBase64Encoder(info)
+                        state.upgradeAccountState = .init(
+                            walletInfo: info,
+                            base64Str: base64Str
+                        )
+                    } catch {
+                        environment.errorRecorder.error(error)
+                    }
                 }
             } else {
                 state.credentialsState = nil
@@ -279,7 +292,8 @@ let verifyDeviceReducer = Reducer.combine(
                 }
 
         case .didExtractWalletInfo(let walletInfo):
-            guard walletInfo.email != nil, walletInfo.emailCode != nil else {
+            guard walletInfo.email != nil, walletInfo.emailCode != nil
+            else {
                 state.credentialsContext = .walletIdentifier(guid: walletInfo.guid)
                 // cancel the polling once wallet info is extracted
                 // it could be from the deeplink or from the polling
@@ -289,10 +303,29 @@ let verifyDeviceReducer = Reducer.combine(
                 )
             }
             state.credentialsContext = .walletInfo(walletInfo)
-            return .merge(
-                .cancel(id: VerifyDeviceCancellations.WalletInfoPollingId()),
-                .navigate(to: .credentials)
+            return Publishers.Zip(
+                environment.featureFlagsService.isEnabled(.local(.unifiedSignIn)),
+                environment.featureFlagsService.isEnabled(.remote(.unifiedSignIn))
             )
+            .map { isLocalEnabled, isRemoteEnabled in
+                isLocalEnabled && isRemoteEnabled
+            }
+            .flatMap { featureEnabled -> Effect<VerifyDeviceAction, Never> in
+                guard featureEnabled,
+                      walletInfo.shouldUpgradeAccount,
+                      let userType = walletInfo.userType
+                else {
+                    return .merge(
+                        .cancel(id: VerifyDeviceCancellations.WalletInfoPollingId()),
+                        .navigate(to: .credentials)
+                    )
+                }
+                return .merge(
+                    .cancel(id: VerifyDeviceCancellations.WalletInfoPollingId()),
+                    .navigate(to: .upgradeAccount(exchangeOnly: userType == .exchange))
+                )
+            }
+            .eraseToEffect()
 
         case .fallbackToWalletIdentifier:
             state.credentialsContext = .walletIdentifier(guid: "")

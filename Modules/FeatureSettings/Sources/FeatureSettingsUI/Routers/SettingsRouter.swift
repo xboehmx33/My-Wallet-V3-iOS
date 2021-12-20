@@ -4,18 +4,19 @@ import AnalyticsKit
 import Combine
 import DIKit
 import FeatureAuthenticationDomain
-import FeatureKYCDomain
-import FeatureKYCUI
 import FeatureSettingsDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
 import RxRelay
 import RxSwift
 import SafariServices
+import SwiftUI
 import ToolKit
 import UIKit
+import WebKit
 
 public protocol AppCoordinating: AnyObject {
     func showFundTrasferDetails(fiatCurrency: FiatCurrency, isOriginDeposit: Bool)
@@ -48,12 +49,18 @@ public protocol PaymentMethodsLinkerAPI {
     func routeToCardLinkingFlow(from viewController: UIViewController, completion: @escaping () -> Void)
 }
 
+public protocol KYCRouterAPI {
+
+    func presentLimitsOverview(from presenter: UIViewController)
+}
+
 final class SettingsRouter: SettingsRouterAPI {
 
     typealias AnalyticsEvent = AnalyticsEvents.Settings
 
     let actionRelay = PublishRelay<SettingsScreenAction>()
     let previousRelay = PublishRelay<Void>()
+    let navigationRouter: NavigationRouterAPI
 
     // MARK: - Routers
 
@@ -70,9 +77,7 @@ final class SettingsRouter: SettingsRouterAPI {
     private let guidRepositoryAPI: FeatureAuthenticationDomain.GuidRepositoryAPI
     private let analyticsRecording: AnalyticsEventRecorderAPI
     private let alertPresenter: AlertViewPresenter
-    private var cardRouter: CardRouter!
 
-    private let navigationRouter: NavigationRouterAPI
     private let paymentMethodTypesService: PaymentMethodTypesServiceAPI
     private unowned let tabSwapping: TabSwapping
     private unowned let appCoordinator: AppCoordinating
@@ -86,16 +91,26 @@ final class SettingsRouter: SettingsRouterAPI {
     private let builder: SettingsBuilding
     private let analyticsRecorder: AnalyticsEventRecorderAPI
     private let featureFlagsService: FeatureFlagsServiceAPI
+    private let externalActionsProvider: ExternalActionsProviderAPI
 
-    /// The router for linking a new bank
+    private let kycRouter: KYCRouterAPI
+
+    private var cardRouter: CardRouter!
     private var linkBankFlowRouter: LinkBankFlowStarter?
-
     private let paymentMethodLinker: PaymentMethodsLinkerAPI
     private let presentAccountLinkingFlow: AccountLinkingFlowPresenterAPI
 
     private let addCardCompletionRelay = PublishRelay<Void>()
     private let disposeBag = DisposeBag()
-    private var bag: Set<AnyCancellable> = []
+    private var cancellables = Set<AnyCancellable>()
+
+    private var topViewController: UIViewController {
+        let topViewController = navigationRouter.topMostViewControllerProvider.topMostViewController
+        guard let viewController = topViewController else {
+            fatalError("Failed to present open banking flow, no view controller available for presentation")
+        }
+        return viewController
+    }
 
     init(
         appCoordinator: AppCoordinating = resolve(),
@@ -108,6 +123,7 @@ final class SettingsRouter: SettingsRouterAPI {
         navigationRouter: NavigationRouterAPI = resolve(),
         analyticsRecording: AnalyticsEventRecorderAPI = resolve(),
         alertPresenter: AlertViewPresenter = resolve(),
+        kycRouter: KYCRouterAPI = resolve(),
         cardListService: CardListServiceAPI = resolve(),
         paymentMethodTypesService: PaymentMethodTypesServiceAPI = resolve(),
         pitConnectionAPI: PITConnectionStatusProviding = resolve(),
@@ -117,7 +133,8 @@ final class SettingsRouter: SettingsRouterAPI {
         paymentMethodLinker: PaymentMethodsLinkerAPI = resolve(),
         analyticsRecorder: AnalyticsEventRecorderAPI = resolve(),
         featureFlagsService: FeatureFlagsServiceAPI = resolve(),
-        presentAccountLinkingFlow: AccountLinkingFlowPresenterAPI = resolve()
+        presentAccountLinkingFlow: AccountLinkingFlowPresenterAPI = resolve(),
+        externalActionsProvider: ExternalActionsProviderAPI = resolve()
     ) {
         self.wallet = wallet
         self.appCoordinator = appCoordinator
@@ -128,6 +145,7 @@ final class SettingsRouter: SettingsRouterAPI {
         self.navigationRouter = navigationRouter
         self.alertPresenter = alertPresenter
         self.analyticsRecording = analyticsRecording
+        self.kycRouter = kycRouter
         self.tabSwapping = tabSwapping
         self.guidRepositoryAPI = guidRepositoryAPI
         self.paymentMethodTypesService = paymentMethodTypesService
@@ -138,6 +156,7 @@ final class SettingsRouter: SettingsRouterAPI {
         self.analyticsRecorder = analyticsRecorder
         self.featureFlagsService = featureFlagsService
         self.presentAccountLinkingFlow = presentAccountLinkingFlow
+        self.externalActionsProvider = externalActionsProvider
 
         previousRelay
             .bindAndCatch(weak: self) { (self) in
@@ -161,7 +180,7 @@ final class SettingsRouter: SettingsRouterAPI {
             .disposed(by: disposeBag)
     }
 
-    func presentSettings() {
+    func makeViewController() -> SettingsViewController {
         let interactor = SettingsScreenInteractor(
             pitConnectionAPI: pitConnectionAPI,
             wallet: wallet,
@@ -169,8 +188,11 @@ final class SettingsRouter: SettingsRouterAPI {
             authenticationCoordinator: authenticationCoordinator
         )
         let presenter = SettingsScreenPresenter(interactor: interactor, router: self)
-        let controller = SettingsViewController(presenter: presenter)
-        navigationRouter.present(viewController: controller, using: .modalOverTopMost)
+        return SettingsViewController(presenter: presenter)
+    }
+
+    func presentSettings() {
+        navigationRouter.present(viewController: makeViewController(), using: .modalOverTopMost)
     }
 
     func dismiss() {
@@ -183,11 +205,13 @@ final class SettingsRouter: SettingsRouterAPI {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     private func handle(action: SettingsScreenAction) {
         switch action {
         case .showURL(let url):
-            let controller = SFSafariViewController(url: url)
-            navigationRouter.present(viewController: controller)
+            navigationRouter
+                .navigationControllerAPI?
+                .present(SFSafariViewController(url: url), animated: true, completion: nil)
         case .launchChangePassword:
             let interactor = ChangePasswordScreenInteractor(passwordAPI: passwordRepository)
             let presenter = ChangePasswordScreenPresenter(previousAPI: self, interactor: interactor)
@@ -197,16 +221,14 @@ final class SettingsRouter: SettingsRouterAPI {
             let viewController = builder.removeCardPaymentMethodViewController(cardData: data)
             viewController.transitioningDelegate = sheetPresenter
             viewController.modalPresentationStyle = .custom
-            navigationRouter.topMostViewControllerProvider.topMostViewController?.present(viewController, animated: true, completion: nil)
+            topViewController.present(viewController, animated: true, completion: nil)
         case .showRemoveBankScreen(let data):
             let viewController = builder.removeBankPaymentMethodViewController(beneficiary: data)
             viewController.transitioningDelegate = sheetPresenter
             viewController.modalPresentationStyle = .custom
-            navigationRouter.topMostViewControllerProvider.topMostViewController?.present(viewController, animated: true, completion: nil)
+            topViewController.present(viewController, animated: true, completion: nil)
         case .showAddCardScreen:
-            guard let presenter = navigationRouter.topMostViewControllerProvider.topMostViewController else {
-                impossible("The top view controller cannot be nil")
-            }
+            let presenter = topViewController
             paymentMethodLinker.routeToCardLinkingFlow(from: presenter) { [addCardCompletionRelay] in
                 presenter.dismiss(animated: true) {
                     addCardCompletionRelay.accept(())
@@ -229,7 +251,7 @@ final class SettingsRouter: SettingsRouterAPI {
                             self.showFundTransferDetails(currency: fiatCurrency)
                         }
                     )
-                    .store(in: &bag)
+                    .store(in: &cancellables)
             default:
                 showFundTransferDetails(currency: fiatCurrency)
             }
@@ -242,8 +264,9 @@ final class SettingsRouter: SettingsRouterAPI {
         case .showCurrencySelectionScreen:
             let settingsService: FiatCurrencySettingsServiceAPI = resolve()
             settingsService
-                .fiatCurrency
-                .observeOn(MainScheduler.instance)
+                .displayCurrency
+                .asSingle()
+                .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] currency in
                     self?.showFiatCurrencySelectionScreen(selectedCurrency: currency)
                 })
@@ -254,11 +277,11 @@ final class SettingsRouter: SettingsRouterAPI {
             viewController.modalPresentationStyle = .overFullScreen
             navigationRouter.present(viewController: viewController)
         case .promptGuidCopy:
-            guidRepositoryAPI.guid
+            guidRepositoryAPI.guid.asSingle()
                 .map(weak: self) { _, value -> String in
                     value ?? ""
                 }
-                .observeOn(MainScheduler.instance)
+                .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] guid in
                     guard let self = self else { return }
                     let alert = UIAlertController(
@@ -278,21 +301,24 @@ final class SettingsRouter: SettingsRouterAPI {
                     let cancelAction = UIAlertAction(title: LocalizationConstants.cancel, style: .cancel, handler: nil)
                     alert.addAction(cancelAction)
                     alert.addAction(copyAction)
-                    guard let navController = self.navigationRouter.navigationControllerAPI as? UINavigationController else { return }
+                    guard let navController = self.navigationRouter
+                        .navigationControllerAPI as? UINavigationController
+                    else {
+                        return
+                    }
                     navController.present(alert, animated: true)
                 })
                 .disposed(by: disposeBag)
 
-        case .launchKYC:
-            guard let navController = navigationRouter.navigationControllerAPI as? UINavigationController else { return }
-            KYCTiersViewController
-                .routeToTiers(fromViewController: navController)
-                .disposed(by: disposeBag)
+        case .presentTradeLimits:
+            kycRouter.presentLimitsOverview(from: topViewController)
+
         case .launchPIT:
             guard let supportURL = URL(string: Constants.Url.exchangeSupport) else { return }
             let startPITCoordinator = { [weak self] in
                 guard let self = self else { return }
-                guard let navController = self.navigationRouter.navigationControllerAPI as? UINavigationController else { return }
+                guard let navController = self.navigationRouter
+                    .navigationControllerAPI as? UINavigationController else { return }
                 self.exchangeCoordinator.start(from: navController)
             }
             let launchPIT = AlertAction(
@@ -334,6 +360,16 @@ final class SettingsRouter: SettingsRouterAPI {
             navigationRouter.present(viewController: controller)
         case .showUpdateMobileScreen:
             updateMobileRouter.start()
+        case .logout:
+            externalActionsProvider.logout()
+        case .showAccountsAndAddresses:
+            externalActionsProvider.handleAccountsAndAddresses()
+        case .showAirdrops:
+            externalActionsProvider.handleAirdrops()
+        case .showContactSupport:
+            externalActionsProvider.handleSupport()
+        case .showWebLogin:
+            externalActionsProvider.handleSecureChannel()
         case .none:
             break
         }
@@ -344,11 +380,7 @@ final class SettingsRouter: SettingsRouterAPI {
     }
 
     private func showLinkOpenBankingFlow(currency: FiatCurrency) {
-
-        guard let viewController = navigationRouter.topMostViewControllerProvider.topMostViewController else {
-            fatalError("Failed to present open banking flow, no view controller available for presentation")
-        }
-
+        let viewController = topViewController
         presentAccountLinkingFlow
             .presentAccountLinkingFlow(
                 from: viewController,
@@ -388,7 +420,7 @@ final class SettingsRouter: SettingsRouterAPI {
         analyticsRecorder.record(event: AnalyticsEvents.New.Withdrawal.linkBankClicked(origin: .settings))
         router.startFlow()
             .takeUntil(.inclusive, predicate: { $0.isCloseEffect })
-            .skipWhile { $0.shouldSkipEffect }
+            .skip { $0.shouldSkipEffect }
             .subscribe(onNext: { [weak self] effect in
                 guard case .closeFlow(let isInteractive) = effect, !isInteractive else {
                     flowDismissed()
@@ -417,24 +449,26 @@ final class SettingsRouter: SettingsRouterAPI {
                 let settings: FiatCurrencySettingsServiceAPI = resolve()
                 return settings
                     .update(
-                        currency: currency,
+                        displayCurrency: currency,
                         context: .settings
                     )
+                    .asSingle()
+                    .asCompletable()
                     .andThen(Single.just(currency))
             }
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: { [weak self] currency in
                     guard let self = self else { return }
                     // TODO: Remove this and `fiatCurrencySelected` once `ReceiveBTC` and
-                    /// `SendBTC` are replaced with Swift implementations.
+                    // `SendBTC` are replaced with Swift implementations.
                     NotificationCenter.default.post(name: .fiatCurrencySelected, object: nil)
                     self.analyticsRecording.record(events: [
                         AnalyticsEvents.Settings.settingsCurrencySelected(currency: currency.code),
                         AnalyticsEvents.New.Settings.settingsCurrencyClicked(currency: currency.code)
                     ])
                 },
-                onError: { [weak self] _ in
+                onFailure: { [weak self] _ in
                     guard let self = self else { return }
                     self.alertPresenter.standardError(
                         message: LocalizationConstants.GeneralError.loadingData

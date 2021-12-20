@@ -1,6 +1,12 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
+import ComponentLibrary
+#endif
 import ComposableArchitectureExtensions
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
@@ -47,13 +53,13 @@ final class AddPaymenMethodBadgePresenter: BadgeImageAssetPresenting {
 extension BadgeImageViewModel {
 
     fileprivate static let bank: BadgeImageViewModel = .primary(
-        image: .local(name: "icon-bank", bundle: .platformUIKit),
+        image: .local(name: Icon.bank.name, bundle: .componentLibrary),
         cornerRadius: .round,
         accessibilityIdSuffix: ""
     )
 
     fileprivate static let card: BadgeImageViewModel = .primary(
-        image: .local(name: "Icon-Creditcard", bundle: .platformUIKit),
+        image: .local(name: Icon.creditcard.name, bundle: .componentLibrary),
         cornerRadius: .round,
         accessibilityIdSuffix: ""
     )

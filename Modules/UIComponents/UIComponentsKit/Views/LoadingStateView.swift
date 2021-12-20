@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 
 /// A view which represents a loading state
@@ -15,22 +19,20 @@ public struct LoadingStateView: View {
     }
 
     public var body: some View {
-        GeometryReader { geometry in
-            VStack {
-                Text(title)
-                    .typography(.title3)
-                    .foregroundColor(.textTitle)
-                ProgressView(value: 0.25)
-                    .progressViewStyle(
-                        IndeterminateProgressStyle(lineWidth: layout.lineWidth)
-                    )
-                    .frame(width: layout.progressViewWidth.in(geometry))
-            }
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity
-            )
+        VStack {
+            Text(title)
+                .typography(.title3)
+                .foregroundColor(.textTitle)
+            ProgressView(value: 0.25)
+                .progressViewStyle(
+                    IndeterminateProgressStyle(lineWidth: layout.lineWidth)
+                )
+                .frame(width: 28, height: 28)
         }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity
+        )
     }
 }
 

@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -37,11 +38,9 @@ final class ERC20CryptoAccount: CryptoNonCustodialAccount {
             isFunded,
             isPairToFiatAvailable,
             hasHistory.asSingle(),
-            isInterestTransferAvailable.asSingle(),
-            featureFlagsService
-                .isEnabled(.remote(.sellUsingTransactionFlowEnabled)).asSingle()
+            isInterestTransferAvailable.asSingle()
         )
-        .map { isFunded, isPairToFiatAvailable, hasHistory, isInterestEnabled, isSellEnabled -> AvailableActions in
+        .map { isFunded, isPairToFiatAvailable, hasHistory, isInterestEnabled -> AvailableActions in
             var base: AvailableActions = [.receive]
             if hasHistory || isFunded {
                 base.insert(.viewActivity)
@@ -52,7 +51,7 @@ final class ERC20CryptoAccount: CryptoNonCustodialAccount {
             if isFunded {
                 base.formUnion([.send, .swap])
             }
-            if isFunded, isSellEnabled {
+            if isFunded {
                 base.insert(.sell)
             }
             if isFunded, isInterestEnabled {
@@ -192,14 +191,9 @@ final class ERC20CryptoAccount: CryptoNonCustodialAccount {
         case .buy:
             return isPairToFiatAvailable
         case .sell:
-            return featureFlagsService
-                .isEnabled(.remote(.sellUsingTransactionFlowEnabled))
-                .asSingle()
-                .flatMap(weak: self) { (self, _) in
-                    Single.zip(self.isPairToFiatAvailable, self.isFunded).map {
-                        $0.0 && $0.1
-                    }
-                }
+            return Single.zip(isPairToFiatAvailable, isFunded).map {
+                $0.0 && $0.1
+            }
         }
     }
 
@@ -212,5 +206,11 @@ final class ERC20CryptoAccount: CryptoNonCustodialAccount {
                 MoneyValuePair(base: balance, exchangeRate: fiatPrice.moneyValue)
             }
             .eraseToAnyPublisher()
+    }
+
+    func invalidateAccountBalance() {
+        erc20TokenAccountsRepository.invalidateERC20TokenAccountsForAddress(
+            EthereumAddress(address: publicKey)!
+        )
     }
 }

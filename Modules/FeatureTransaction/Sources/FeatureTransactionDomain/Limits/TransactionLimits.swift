@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import BigInt
+import MoneyKit
 import PlatformKit
 
 /// Use this struct to fill transaction data in `TransactionEngine`s.

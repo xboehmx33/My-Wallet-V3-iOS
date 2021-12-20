@@ -2,6 +2,7 @@
 
 import FeatureTransactionDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxRelay
@@ -94,7 +95,7 @@ final class TransactionModel {
             )
 
         case .bankAccountLinked(let action):
-            return processSourceAccountsListUpdate(action: action, targetAccount: nil)
+            return processSourceAccountsListUpdate(action: action, targetAccount: nil, preferredMethod: .bankTransfer)
 
         case .bankAccountLinkedFromSource(let source, let action):
             switch action {
@@ -150,6 +151,8 @@ final class TransactionModel {
                 order: previousState.order,
                 secondPassword: previousState.secondPassword
             )
+        case .authorizedOpenBanking:
+            return nil
         case .updateTransactionPending:
             return nil
         case .updateTransactionComplete:
@@ -172,6 +175,8 @@ final class TransactionModel {
             return nil
         case .validateTransaction:
             return processValidateTransaction()
+        case .validateTransactionAfterKYC:
+            return processValidateTransactionAfterKYC(oldState: previousState)
         case .createOrder:
             return processCreateOrder()
         case .orderCreated:
@@ -278,7 +283,8 @@ final class TransactionModel {
 
     private func processSourceAccountsListUpdate(
         action: AssetAction,
-        targetAccount: TransactionTarget?
+        targetAccount: TransactionTarget?,
+        preferredMethod: PaymentMethodPayloadType? = nil
     ) -> Disposable {
         interactor
             .getAvailableSourceAccounts(
@@ -296,7 +302,9 @@ final class TransactionModel {
                         return
                     }
                     self?.process(action: .availableSourceAccountsListUpdated(sourceAccounts))
-                    if action == .buy, let first = sourceAccounts.first {
+                    if action == .buy, let first = sourceAccounts.first(
+                        where: { ($0 as? PaymentMethodAccount)?.paymentMethodType.method.rawType == preferredMethod }
+                    ) ?? sourceAccounts.first {
                         // For buy, we don't want to display the list of possible sources straight away.
                         // Instead, we want to select the default payment method returned by the API.
                         // Therefore, once we know what payment methods the user has avaialble, we should select the top one.
@@ -311,14 +319,39 @@ final class TransactionModel {
             )
     }
 
-    private func processValidateTransaction() -> Disposable {
-        interactor.validateTransaction
+    private func processValidateTransaction() -> Disposable? {
+        guard hasInitializedTransaction else {
+            return nil
+        }
+        return interactor.validateTransaction
             .subscribe(onCompleted: {
                 Logger.shared.debug("!TRANSACTION!> Tx validation complete")
             }, onError: { [weak self] error in
                 Logger.shared.error("!TRANSACTION!> Unable to processValidateTransaction: \(String(describing: error))")
                 self?.process(action: .fatalTransactionError(error))
             })
+    }
+
+    private func processValidateTransactionAfterKYC(oldState: TransactionState) -> Disposable {
+        Single.zip(
+            interactor.fetchUserKYCStatus().asSingle(),
+            interactor.getAvailableSourceAccounts(action: oldState.action, transactionTarget: oldState.destination)
+        )
+        .subscribe(on: MainScheduler.asyncInstance)
+        .subscribe { [weak self] kycStatus, sources in
+            guard let self = self else { return }
+            // refresh the sources so the accounts and limits get updated
+            self.process(action: .availableSourceAccountsListUpdated(sources))
+            // update the kyc status on the transaction
+            self.process(action: .userKYCInfoFetched(kycStatus))
+            // update the amount as a way force the validation of the pending transaction
+            self.process(action: .updateAmount(oldState.amount))
+            // finally, update the state so the user can move to checkout
+            self.process(action: .returnToPreviousStep) // clears the kycChecks step
+        } onFailure: { [weak self] error in
+            Logger.shared.debug("!TRANSACTION!> Invalid transaction: \(String(describing: error))")
+            self?.process(action: .fatalTransactionError(error))
+        }
     }
 
     private func processValidateTransactionForCheckout(oldState: TransactionState) -> Disposable {
@@ -350,6 +383,14 @@ final class TransactionModel {
         // and we have submitted the consent token from the deep link
         if (source as? LinkedBankAccount)?.partner == .yapily {
             return Disposables.create()
+        }
+        if let paymentMethod = source as? PaymentMethodAccount {
+            switch paymentMethod.paymentMethodType {
+            case .linkedBank(let data) where data.partner == .yapily:
+                return Disposables.create()
+            default:
+                break
+            }
         }
         return interactor.verifyAndExecute(order: order, secondPassword: secondPassword)
             .subscribe(onSuccess: { [weak self] result in
@@ -486,9 +527,9 @@ final class TransactionModel {
         interactor
             .fetchUserKYCStatus()
             .asSingle()
-            .compactMap { $0 }
-            .subscribe { [weak self] userKYCTier in
-                self?.process(action: .userKYCInfoFetched(userKYCTier))
+            .subscribe(on: MainScheduler.asyncInstance)
+            .subscribe { [weak self] userKYCStatus in
+                self?.process(action: .userKYCInfoFetched(userKYCStatus))
             }
     }
 

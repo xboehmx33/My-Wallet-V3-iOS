@@ -55,7 +55,7 @@ public final class AccountPickerInteractor: PresentableInteractor<AccountPickerP
             button.tapRelay
                 .bind { [weak self] in
                     guard let self = self else { return }
-                    self.listener?.didSelectActionButton()
+                    self.handle(effects: .button)
                 }
                 .disposeOnDeactivate(interactor: self)
         }
@@ -113,6 +113,8 @@ public final class AccountPickerInteractor: PresentableInteractor<AccountPickerP
             listener?.didTapClose()
         case .filter(let string):
             searchRelay.accept(string)
+        case .button:
+            listener?.didSelectActionButton()
         case .none:
             break
         }
@@ -131,6 +133,7 @@ extension AccountPickerInteractor {
         case back
         case closed
         case filter(String?)
+        case button
         case none
     }
 }

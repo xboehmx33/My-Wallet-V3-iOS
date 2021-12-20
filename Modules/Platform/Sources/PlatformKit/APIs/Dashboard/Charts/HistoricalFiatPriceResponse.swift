@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// A `HistoricalFiatPriceService` response, representing the current price and the historical price series in fiat, for one crypto currency, in a given price window.
 public struct HistoricalFiatPriceResponse {
 

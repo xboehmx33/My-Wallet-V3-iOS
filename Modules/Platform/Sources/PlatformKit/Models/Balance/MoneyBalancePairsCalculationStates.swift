@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// This construct provides access to aggregated fiat-crypto-pair calculation states.
 /// Any supported asset balance should be accessible here.
 public struct MoneyBalancePairsCalculationStates {

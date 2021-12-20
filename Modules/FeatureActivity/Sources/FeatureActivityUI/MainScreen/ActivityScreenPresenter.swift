@@ -62,7 +62,7 @@ final class ActivityScreenPresenter {
     var screenNavigationModel: ScreenNavigationModel {
         ScreenNavigationModel(
             leadingButton: .drawer,
-            trailingButton: interactor.isUnifiedQRCodeScannerEnabled ? .qrCode : .none,
+            trailingButton: .qrCode,
             titleViewStyle: .text(value: LocalizedString.title),
             barStyle: .lightContent()
         )

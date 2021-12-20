@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 
 /// A simple class required to update the state of `ErrorRecoveryCTA` from `UIKIt`

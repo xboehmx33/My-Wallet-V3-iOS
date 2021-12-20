@@ -18,7 +18,10 @@ public class NoOpFeatureFlagsService: FeatureFlagsServiceAPI {
         .empty()
     }
 
-    public func object<Feature>(for feature: FeatureFlag) -> AnyPublisher<Feature?, FeatureFlagError> where Feature: Decodable, Feature: Encodable {
+    public func object<Feature>(
+        for feature: FeatureFlag,
+        type: Feature.Type
+    ) -> AnyPublisher<Feature?, FeatureFlagError> where Feature: Decodable, Feature: Encodable {
         .empty()
     }
 }

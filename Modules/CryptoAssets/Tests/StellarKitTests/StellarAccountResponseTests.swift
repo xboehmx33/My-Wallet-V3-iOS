@@ -1,3 +1,4 @@
+import MoneyKit
 import PlatformKit
 @testable import StellarKit
 import stellarsdk

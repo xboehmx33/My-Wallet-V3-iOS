@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Foundation
+import MoneyKit
 
 /// Protocol definition for a URL payload for an asset. The URL typically contains the address,
 /// as well as other metadata such as an amount, message, etc. The set of supported metadata

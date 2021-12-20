@@ -2,6 +2,7 @@
 
 import BigInt
 import DIKit
+import MoneyKit
 
 /// This pattern is used to temporarily present new crypto-currencies in features like airdrops.
 /// When the currency is fully supported, the case should be removed from `TriageCryptoCurrency`

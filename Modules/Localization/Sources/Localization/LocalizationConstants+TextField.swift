@@ -32,7 +32,7 @@ extension LocalizationConstants {
                 comment: "Card type: JCB"
             )
             public static let unknown = NSLocalizedString(
-                "Unknown Card Type",
+                "Card",
                 comment: "Card type: Unknown"
             )
         }

@@ -4,6 +4,7 @@ import Combine
 import ComposableArchitecture
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import SwiftUI
@@ -82,7 +83,7 @@ class LegacyBuyFlowRouter: LegacyBuyFlowRouting {
     ) -> AnyPublisher<TransactionFlowResult, Never> {
         // Step 1. check SDD eligibility to understand which flow to show next
         kycService.checkSimplifiedDueDiligenceEligibility()
-            .zip(walletFiatCurrencyService.fiatCurrencyPublisher)
+            .zip(walletFiatCurrencyService.displayCurrencyPublisher)
             .receive(on: DispatchQueue.main)
             .flatMap { [weak self] userIsSDDEligible, fiatCurrency -> AnyPublisher<TransactionFlowResult, Never> in
                 guard let self = self else {

@@ -1,44 +1,53 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
+import RxToolKit
 
 final class FiatCurrencySettingsServiceMock: FiatCurrencySettingsServiceAPI {
 
-    private let fiatCurrencyRelay: BehaviorRelay<FiatCurrency>
+    private let displayCurrencyRelay: BehaviorRelay<FiatCurrency>
+    private let tradingCurrencyRelay: BehaviorRelay<FiatCurrency>
 
-    var fiatCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
-        fiatCurrency
+    var supportedFiatCurrencies: AnyPublisher<Set<FiatCurrency>, Never> {
+        .just([.EUR, .GBP, .USD])
+    }
+
+    var displayCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
+        displayCurrencyRelay
+            .asObservable()
             .asPublisher()
             .replaceError(with: .USD)
             .eraseToAnyPublisher()
     }
 
-    var fiatCurrencyObservable: Observable<FiatCurrency> {
-        fiatCurrencyRelay.asObservable()
+    var tradingCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
+        tradingCurrencyRelay
+            .asObservable()
+            .asPublisher()
+            .replaceError(with: .USD)
+            .eraseToAnyPublisher()
     }
 
-    var fiatCurrency: Single<FiatCurrency> {
-        fiatCurrencyRelay.take(1).asSingle()
+    var displayCurrencyObservable: Observable<FiatCurrency> {
+        displayCurrencyPublisher.asObservable()
     }
 
-    var legacyCurrency: FiatCurrency? {
-        fiatCurrencyRelay.value
-    }
-
-    func update(currency: FiatCurrency, context: FlowContext) -> Completable {
-        fiatCurrencyRelay.accept(currency)
-        return .empty()
-    }
-
-    func update(currency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
-        fiatCurrencyRelay.accept(currency)
+    func update(displayCurrency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
+        displayCurrencyRelay.accept(displayCurrency)
         return .just(())
     }
 
-    init(expectedCurrency: FiatCurrency) {
-        fiatCurrencyRelay = BehaviorRelay(value: expectedCurrency)
+    func update(tradingCurrency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
+        tradingCurrencyRelay.accept(tradingCurrency)
+        return .just(())
+    }
+
+    init(expectedCurrency: FiatCurrency, expectedTradingCurrency: FiatCurrency? = nil) {
+        displayCurrencyRelay = BehaviorRelay(value: expectedCurrency)
+        tradingCurrencyRelay = BehaviorRelay(value: expectedTradingCurrency ?? expectedCurrency)
     }
 }

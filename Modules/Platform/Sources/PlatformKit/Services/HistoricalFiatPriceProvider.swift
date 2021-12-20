@@ -2,6 +2,7 @@
 
 import DIKit
 import Foundation
+import MoneyKit
 import ToolKit
 
 public protocol HistoricalFiatPriceProviding: AnyObject {

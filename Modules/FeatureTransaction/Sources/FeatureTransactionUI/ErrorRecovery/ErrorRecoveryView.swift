@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import ComposableArchitecture
 import SwiftUI
 import UIComponentsKit
@@ -131,7 +135,7 @@ struct BottomSheetModal<Content: View>: View {
                     .typography(.body2)
                     .padding([.top], 12) // half the close button size
                 Spacer()
-                CircularIconButton(icon: .closev2, action: closeAction)
+                IconButton(icon: .closev2.circle(), action: closeAction)
                     .frame(width: 24, height: 24)
             }
             content()

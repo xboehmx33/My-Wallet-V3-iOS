@@ -69,8 +69,6 @@ struct AlertButtonStyle: ButtonStyle {
         let progressViewTrack: Color
     }
 
-    @Environment(\.isEnabled) private var isEnabled
-
     let isLoading: Bool
 
     private let colorCombination = ColorCombination(

@@ -2,6 +2,7 @@
 
 import AnalyticsKit
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -10,7 +11,7 @@ final class BitPayTransactionEngine: TransactionEngine {
 
     var sourceAccount: BlockchainAccount!
     var transactionTarget: TransactionTarget!
-    var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    var askForRefreshConfirmation: AskForRefreshConfirmation!
 
     let currencyConversionService: CurrencyConversionServiceAPI
     let walletCurrencyService: FiatCurrencyServiceAPI
@@ -173,10 +174,6 @@ final class BitPayTransactionEngine: TransactionEngine {
             .map { TransactionResult.hashed(txHash: $0, amount: pendingTransaction.amount) }
     }
 
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        transactionTarget.onTxCompleted(transactionResult)
-    }
-
     func doUpdateFeeLevel(pendingTransaction: PendingTransaction, level: FeeLevel, customFeeAmount: MoneyValue) -> Single<PendingTransaction> {
         precondition(pendingTransaction.feeSelection.availableLevels.contains(level))
         return .just(pendingTransaction)
@@ -194,6 +191,7 @@ final class BitPayTransactionEngine: TransactionEngine {
             )
             .asObservable()
             .ignoreElements()
+            .asCompletable()
             .delay(.seconds(3), scheduler: MainScheduler.instance)
             .andThen(
                 bitpayRepository

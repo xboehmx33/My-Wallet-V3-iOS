@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 
 /// A simple struct that defines an account in terms of whether funds are stored within Blockchain's domain or are extenally sourced.

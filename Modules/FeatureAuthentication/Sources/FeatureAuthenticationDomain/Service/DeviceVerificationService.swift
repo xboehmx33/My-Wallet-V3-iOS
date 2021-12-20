@@ -45,7 +45,7 @@ public final class DeviceVerificationService: DeviceVerificationServiceAPI {
             .mapError(DeviceVerificationServiceError.recaptchaError)
             .zip(
                 sessionTokenRepository
-                    .sessionTokenPublisher
+                    .sessionToken
                     .setFailureType(to: DeviceVerificationServiceError.self)
             )
             .flatMap { [deviceVerificationRepository] captcha, sessionTokenOrNil ->
@@ -65,7 +65,7 @@ public final class DeviceVerificationService: DeviceVerificationServiceAPI {
 
     public func authorizeLogin(emailCode: String) -> AnyPublisher<Void, DeviceVerificationServiceError> {
         sessionTokenRepository
-            .sessionTokenPublisher
+            .sessionToken
             .flatMap { token -> AnyPublisher<String, DeviceVerificationServiceError> in
                 guard let sessionToken = token else {
                     return .failure(.missingSessionToken)
@@ -86,7 +86,7 @@ public final class DeviceVerificationService: DeviceVerificationServiceAPI {
         extractWalletInfoFromDeeplink(url: deeplink)
             .flatMap { [sessionTokenRepository] walletInfo -> AnyPublisher<WalletInfo, WalletInfoError> in
                 sessionTokenRepository
-                    .sessionTokenPublisher
+                    .sessionToken
                     .flatMap { tokenOrNil -> AnyPublisher<WalletInfo, WalletInfoError> in
                         // if wallet info does not have session id, it is not a magic link,
                         // just return wallet info in this case
@@ -129,7 +129,7 @@ public final class DeviceVerificationService: DeviceVerificationServiceAPI {
         -> AnyPublisher<Result<WalletInfo, WalletInfoPollingError>, DeviceVerificationServiceError>
     {
         sessionTokenRepository
-            .sessionTokenPublisher
+            .sessionToken
             .flatMap { token -> AnyPublisher<String, DeviceVerificationServiceError> in
                 guard let sessionToken = token else {
                     return .failure(.missingSessionToken)

@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import ToolKit
 
 public final class BitPayInvoiceTarget: CryptoReceiveAddress, StaticTransactionTarget {

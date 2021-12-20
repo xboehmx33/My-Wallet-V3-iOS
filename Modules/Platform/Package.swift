@@ -30,18 +30,18 @@ let package = Package(
         ),
         .package(
             name: "RIBs",
-            url: "https://github.com/paulo-bc/RIBs.git",
-            from: "0.10.2"
+            url: "https://github.com/uber/RIBs.git",
+            from: "0.12.1"
         ),
         .package(
             name: "RxDataSources",
             url: "https://github.com/RxSwiftCommunity/RxDataSources.git",
-            from: "4.0.1"
+            from: "5.0.2"
         ),
         .package(
             name: "RxSwift",
             url: "https://github.com/ReactiveX/RxSwift.git",
-            from: "5.1.3"
+            from: "6.2.0"
         ),
         .package(
             name: "Nuke",
@@ -63,6 +63,16 @@ let package = Package(
             url: "https://github.com/apple/swift-algorithms.git",
             from: "0.2.1"
         ),
+        .package(
+            name: "Stripe",
+            url: "https://github.com/stripe/stripe-ios",
+            from: "21.9.0"
+        ),
+        .package(
+            name: "Frames",
+            url: "https://github.com/checkout/frames-ios.git",
+            .upToNextMajor(from: "3.0.0")
+        ),
         .package(path: "../Analytics"),
         .package(path: "../RxAnalytics"),
         .package(path: "../FeatureAuthentication"),
@@ -70,6 +80,7 @@ let package = Package(
         .package(path: "../Localization"),
         .package(path: "../NetworkErrors"),
         .package(path: "../Network"),
+        .package(path: "../Money"),
         .package(path: "../Test"),
         .package(path: "../Tool"),
         .package(path: "../RxTool"),
@@ -96,13 +107,16 @@ let package = Package(
                 .product(name: "NetworkError", package: "NetworkErrors"),
                 .product(name: "NabuNetworkError", package: "NetworkErrors"),
                 .product(name: "NetworkKit", package: "Network"),
+                .product(name: "MoneyKit", package: "Money"),
                 .product(name: "ToolKit", package: "Tool"),
                 .product(name: "ComposableNavigation", package: "ComposableArchitectureExtensions"),
                 .product(name: "ComposableArchitectureExtensions", package: "ComposableArchitectureExtensions"),
                 .product(name: "RxToolKit", package: "RxTool"),
                 .product(name: "WalletPayloadKit", package: "WalletPayload"),
                 .product(name: "FeatureOpenBankingDomain", package: "FeatureOpenBanking"),
-                .product(name: "Algorithms", package: "swift-algorithms")
+                .product(name: "Algorithms", package: "swift-algorithms"),
+                .product(name: "Frames", package: "Frames"),
+                .product(name: "Stripe", package: "Stripe")
             ],
             resources: [
                 .copy("Services/Currencies/local-currencies-custodial.json"),
@@ -135,7 +149,9 @@ let package = Package(
                 .product(name: "Zxcvbn", package: "Zxcvbn"),
                 .product(name: "FeatureOpenBankingUI", package: "FeatureOpenBanking"),
                 .product(name: "ComponentLibrary", package: "ComponentLibrary"),
-                .product(name: "FeatureWithdrawalLocksUI", package: "FeatureWithdrawalLocks")
+                .product(name: "FeatureWithdrawalLocksUI", package: "FeatureWithdrawalLocks"),
+                .product(name: "Frames", package: "Frames"),
+                .product(name: "Stripe", package: "Stripe")
             ],
             resources: [
                 .copy("PlatformUIKitAssets.xcassets")
@@ -161,6 +177,7 @@ let package = Package(
             dependencies: [
                 .target(name: "PlatformKit"),
                 .target(name: "PlatformKitMock"),
+                .product(name: "MoneyKitMock", package: "Money"),
                 .product(name: "FeatureAuthenticationMock", package: "FeatureAuthentication"),
                 .product(name: "NabuNetworkErrorMock", package: "NetworkErrors"),
                 .product(name: "NetworkKitMock", package: "Network"),

@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-public struct LazyDictionary<Key, Value> where Key: Hashable {
+public class LazyDictionary<Key, Value> where Key: Hashable {
 
     public private(set) var dictionary: [Key: Value]
     private var valueForKey: (Key) -> Value
@@ -13,7 +13,7 @@ public struct LazyDictionary<Key, Value> where Key: Hashable {
         valueForKey = ƒ
     }
 
-    public init(
+    public convenience init(
         _ dictionary: [Key: Value] = [:],
         valueForKey ƒ: @escaping @autoclosure () -> Value
     ) {
@@ -24,7 +24,7 @@ public struct LazyDictionary<Key, Value> where Key: Hashable {
 extension LazyDictionary {
 
     public subscript(key: Key) -> Value {
-        mutating get {
+        get {
             guard let value = dictionary[key] else {
                 let __default = valueForKey(key)
                 dictionary[key] = __default
@@ -38,6 +38,20 @@ extension LazyDictionary {
     public subscript() -> [Key: Value] {
         get { dictionary }
         set { dictionary = newValue }
+    }
+}
+
+extension LazyDictionary: Equatable where Value: Equatable {
+
+    public static func == (lhs: LazyDictionary, rhs: LazyDictionary) -> Bool {
+        lhs.dictionary == rhs.dictionary
+    }
+}
+
+extension LazyDictionary: Hashable where Value: Hashable {
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(dictionary)
     }
 }
 

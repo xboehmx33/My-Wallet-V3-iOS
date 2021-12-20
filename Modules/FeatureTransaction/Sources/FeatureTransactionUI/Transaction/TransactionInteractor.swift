@@ -4,6 +4,7 @@ import BigInt
 import Combine
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RIBs
@@ -34,6 +35,7 @@ final class TransactionInteractor {
     private let userTiersService: KYCTiersServiceAPI
     private let ordersService: OrdersServiceAPI
     private let errorRecorder: ErrorRecording
+    private var cancellables: Set<AnyCancellable> = []
     private var transactionProcessor: TransactionProcessor?
 
     /// Used to invalidate the transaction processor chain.
@@ -164,7 +166,7 @@ final class TransactionInteractor {
                 }
         case .sell:
             return allEligibleCryptoAccounts.map { $0 as [SingleAccount] }
-        case .deposit:
+        case .deposit, .withdraw:
             return linkedBanksFactory.linkedBanks.map { $0.map { $0 as SingleAccount } }
         default:
             preconditionFailure("Source account should be preselected for action \(action)")
@@ -280,11 +282,16 @@ final class TransactionInteractor {
         return transactionProcessor.validateAll()
     }
 
-    func fetchUserKYCStatus() -> AnyPublisher<KYC.UserTiers?, Never> {
-        userTiersService.tiers
-            .map { $0 } // make it optional
+    func fetchUserKYCStatus() -> AnyPublisher<TransactionState.KYCStatus?, Never> {
+        userTiersService.fetchTiers()
+            .zip(
+                userTiersService.checkSimplifiedDueDiligenceVerification(pollUntilComplete: false)
+                    .setFailureType(to: KYCTierServiceError.self)
+            )
+            .map { userTiers, isSDDVerified -> TransactionState.KYCStatus? in
+                TransactionState.KYCStatus(tiers: userTiers, isSDDVerified: isSDDVerified)
+            }
             .replaceError(with: nil)
-            .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 

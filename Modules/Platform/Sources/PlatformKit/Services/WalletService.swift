@@ -2,13 +2,14 @@
 
 import DIKit
 import NetworkKit
+import RxRelay
 import RxSwift
 
 class WalletService: WalletOptionsAPI {
 
     // MARK: - Private Properties
 
-    private(set) var cachedWalletOptions = Variable<WalletOptions?>(nil)
+    private(set) var cachedWalletOptions = BehaviorRelay<WalletOptions?>(value: nil)
 
     private var networkFetchedWalletOptions: Single<WalletOptions> {
         let url = URL(string: BlockchainAPI.shared.walletOptionsUrl)!
@@ -16,7 +17,7 @@ class WalletService: WalletOptionsAPI {
             .perform(request: NetworkRequest(endpoint: url, method: .get))
             .asSingle()
             .do(onSuccess: { [weak self] in
-                self?.cachedWalletOptions.value = $0
+                self?.cachedWalletOptions.accept($0)
             })
     }
 

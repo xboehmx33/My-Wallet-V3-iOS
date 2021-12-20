@@ -2,6 +2,7 @@
 
 @testable import EthereumKit
 @testable import EthereumKitMock
+@testable import MoneyKit
 @testable import PlatformKit
 import RxSwift
 import RxTest

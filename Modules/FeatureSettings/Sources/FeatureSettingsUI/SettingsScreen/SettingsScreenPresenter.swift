@@ -5,7 +5,7 @@ import PlatformUIKit
 import RxRelay
 import RxSwift
 
-final class SettingsScreenPresenter {
+public final class SettingsScreenPresenter {
 
     // MARK: - Types
 
@@ -48,21 +48,21 @@ final class SettingsScreenPresenter {
 
     // MARK: - Section Presenters
 
-    private let aboutSectionPresenter: AboutSectionPresenter
-    private let cardsSectionPresenter: CardsSectionPresenter
-    private let banksSectionPresenter: BanksSectionPresenter
-    private let securitySectionPresenter: SecuritySectionPresenter
     private let profileSectionPresenter: ProfileSectionPresenter
     private let preferencesSectionPresenter: PreferencesSectionPresenter
     private let connectPresenter: ConnectSectionPresenter
+    private let securitySectionPresenter: SecuritySectionPresenter
+    private let banksSectionPresenter: BanksSectionPresenter
+    private let cardsSectionPresenter: CardsSectionPresenter
+    private let helpSectionPresenter: HelpSectionPresenter
 
     // MARK: - Init
 
-    init(
+    public init(
         interactor: SettingsScreenInteractor,
         router: SettingsRouterAPI
     ) {
-        aboutSectionPresenter = AboutSectionPresenter()
+        helpSectionPresenter = HelpSectionPresenter()
 
         connectPresenter = .init(
             exchangeConnectionStatusProvider: interactor.pitConnnectionProviding
@@ -98,7 +98,7 @@ final class SettingsScreenPresenter {
         )
 
         sectionsProvider = SettingsSectionsProvider(
-            about: aboutSectionPresenter,
+            about: helpSectionPresenter,
             connect: connectPresenter,
             banks: banksSectionPresenter,
             cards: cardsSectionPresenter,
@@ -116,7 +116,6 @@ final class SettingsScreenPresenter {
     // MARK: - Private
 
     private func setup() {
-
         actionRelay
             .bindAndCatch(to: router.actionRelay)
             .disposed(by: disposeBag)

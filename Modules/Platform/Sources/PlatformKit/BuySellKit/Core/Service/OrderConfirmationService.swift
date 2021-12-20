@@ -42,7 +42,7 @@ final class OrderConfirmationService: OrderConfirmationServiceAPI {
         case .bankTransfer:
             partner = .bank
         case .card:
-            partner = .everyPay(customerUrl: PartnerAuthorizationData.exitLink)
+            partner = .card(redirectURL: PartnerAuthorizationData.exitLink)
         case .funds:
             partner = .funds
         }

@@ -4,6 +4,7 @@ import Combine
 import DIKit
 import FeatureTransactionDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RIBs
@@ -67,6 +68,7 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
 
     private let featureFlagService: FeatureFlagsServiceAPI
     private let analyticsHook: TransactionAnalyticsHook
+    private let eventsRecorder: Recording
 
     init(
         transactionModel: TransactionModel,
@@ -75,7 +77,8 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
         action: AssetAction,
         navigationModel: ScreenNavigationModel,
         featureFlagsService: FeatureFlagsServiceAPI = resolve(),
-        analyticsHook: TransactionAnalyticsHook = resolve()
+        analyticsHook: TransactionAnalyticsHook = resolve(),
+        eventsRecorder: Recording = resolve(tag: "CrashlyticsRecorder")
     ) {
         self.action = action
         self.transactionModel = transactionModel
@@ -83,6 +86,7 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
         self.navigationModel = navigationModel
         featureFlagService = featureFlagsService
         self.analyticsHook = analyticsHook
+        self.eventsRecorder = eventsRecorder
         sendAuxiliaryViewInteractor = SendAuxiliaryViewInteractor()
         sendAuxiliaryViewPresenter = SendAuxiliaryViewPresenter(
             interactor: sendAuxiliaryViewInteractor
@@ -230,8 +234,8 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
             }
 
         let userKYCTier = transactionState
-            .map(\.userKYCTiers)
-            .map(\.?.latestApprovedTier)
+            .map(\.userKYCStatus)
+            .map(\.?.tiers.latestApprovedTier)
             .share(scope: .whileConnected)
 
         let bottomAuxiliaryViewEnabled = Observable
@@ -353,7 +357,11 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
             .subscribe(onNext: { [transactionModel, analyticsHook] state in
                 switch state.action {
                 case .buy:
-                    transactionModel.process(action: .performKYCChecks)
+                    if state.userKYCStatus?.canPurchaseCrypto == true {
+                        transactionModel.process(action: .validateSourceAccount)
+                    } else {
+                        transactionModel.process(action: .performKYCChecks)
+                    }
                 default:
                     transactionModel.process(action: .prepareTransaction)
                 }
@@ -449,7 +457,8 @@ final class EnterAmountPageInteractor: PresentableInteractor<EnterAmountPagePres
         if transactionState.action.supportsTopAccountsView {
             presenter = TargetAuxiliaryViewPresenter(
                 delegate: self,
-                transactionState: transactionState
+                transactionState: transactionState,
+                eventsRecorder: eventsRecorder
             )
         } else {
             presenter = InfoAuxiliaryViewPresenter(

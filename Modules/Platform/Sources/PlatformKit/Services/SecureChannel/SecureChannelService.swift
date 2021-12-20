@@ -127,11 +127,15 @@ final class SecureChannelService: SecureChannelAPI {
     }
 
     func isReadyForSecureChannel() -> Single<Bool> {
-        Single.zip(walletRepository.hasGuid, walletRepository.hasSharedKey, walletRepository.hasPassword)
-            .map { hasGuid, hasSharedKey, hasPassword in
-                hasGuid && hasSharedKey && hasPassword
-            }
-            .catchErrorJustReturn(false)
+        Single.zip(
+            walletRepository.hasGuid.asSingle(),
+            walletRepository.hasSharedKey.asSingle(),
+            walletRepository.hasPassword.asSingle()
+        )
+        .map { hasGuid, hasSharedKey, hasPassword in
+            hasGuid && hasSharedKey && hasPassword
+        }
+        .catchErrorJustReturn(false)
     }
 
     func didAcceptSecureChannel(details: SecureChannelConnectionDetails) -> Completable {
@@ -213,6 +217,7 @@ final class SecureChannelService: SecureChannelAPI {
             .eraseToAnyPublisher()
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 
     private func decodePairingCode(payload: String) -> SecureChannel.PairingCode? {
@@ -228,7 +233,7 @@ final class SecureChannelService: SecureChannelAPI {
             .addBrowserIdentity(identity: browserIdentity)
             .single
             .flatMap(weak: self) { (self, _) -> Single<String?> in
-                self.walletRepository.guid
+                self.walletRepository.guid.asSingle()
             }
             .map { guid -> SecureChannel.PairingHandshake in
                 guard let guid = guid else {
@@ -247,30 +252,34 @@ final class SecureChannelService: SecureChannelAPI {
     }
 
     private func sendLoginMessage(channelId: String, pubKeyHash: String) -> Completable {
-        Single.zip(walletRepository.guid, walletRepository.sharedKey, walletRepository.password)
-            .map { guid, sharedKey, password -> (guid: String, sharedKey: String, password: String) in
-                guard let guid = guid else {
-                    throw SecureChannelError.missingGUID
-                }
-                guard let sharedKey = sharedKey else {
-                    throw SecureChannelError.missingSharedKey
-                }
-                guard let password = password else {
-                    throw SecureChannelError.missingPassword
-                }
-                return (guid, sharedKey, password)
+        Single.zip(
+            walletRepository.guid.asSingle(),
+            walletRepository.sharedKey.asSingle(),
+            walletRepository.password.asSingle()
+        )
+        .map { guid, sharedKey, password -> (guid: String, sharedKey: String, password: String) in
+            guard let guid = guid else {
+                throw SecureChannelError.missingGUID
             }
-            .map { guid, sharedKey, password in
-                SecureChannel.LoginMessage(guid: guid, password: password, sharedKey: sharedKey)
+            guard let sharedKey = sharedKey else {
+                throw SecureChannelError.missingSharedKey
             }
-            .flatMapCompletable(weak: self) { (self, message) in
-                self.sendMessage(
-                    message,
-                    channelId: channelId,
-                    pubKeyHash: pubKeyHash,
-                    success: true
-                )
+            guard let password = password else {
+                throw SecureChannelError.missingPassword
             }
+            return (guid, sharedKey, password)
+        }
+        .map { guid, sharedKey, password in
+            SecureChannel.LoginMessage(guid: guid, password: password, sharedKey: sharedKey)
+        }
+        .flatMapCompletable(weak: self) { (self, message) in
+            self.sendMessage(
+                message,
+                channelId: channelId,
+                pubKeyHash: pubKeyHash,
+                success: true
+            )
+        }
     }
 
     private func decryptMessage(
@@ -316,6 +325,7 @@ final class SecureChannelService: SecureChannelAPI {
                 self.secureChannelNetwork.sendMessage(msg: response)
                     .asObservable()
                     .ignoreElements()
+                    .asCompletable()
             }
     }
 }

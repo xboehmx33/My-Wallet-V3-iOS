@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -12,26 +13,23 @@ public final class InterestDepositOnChainTransactionEngine: InterestTransactionE
 
     public var minimumDepositLimits: Single<FiatValue> {
         walletCurrencyService
-            .fiatCurrency
+            .displayCurrency
             .flatMap { [sourceCryptoCurrency, accountLimitsRepository] fiatCurrency in
                 accountLimitsRepository
                     .fetchInterestAccountLimitsForCryptoCurrency(
                         sourceCryptoCurrency,
                         fiatCurrency: fiatCurrency
                     )
-                    .asObservable()
-                    .take(1)
-                    .asSingle()
             }
             .map(\.minDepositAmount)
+            .asSingle()
     }
 
     // MARK: - OnChainTransactionEngine
 
     public let walletCurrencyService: FiatCurrencyServiceAPI
     public let currencyConversionService: CurrencyConversionServiceAPI
-
-    public var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    public var askForRefreshConfirmation: AskForRefreshConfirmation!
 
     public var requireSecondPassword: Bool
 
@@ -203,13 +201,6 @@ public final class InterestDepositOnChainTransactionEngine: InterestTransactionE
                 pendingTransaction: pendingTransaction,
                 secondPassword: secondPassword
             )
-    }
-
-    public func doPostExecute(
-        transactionResult: TransactionResult
-    ) -> Completable {
-        transactionTarget
-            .onTxCompleted(transactionResult)
     }
 
     public func doUpdateFeeLevel(

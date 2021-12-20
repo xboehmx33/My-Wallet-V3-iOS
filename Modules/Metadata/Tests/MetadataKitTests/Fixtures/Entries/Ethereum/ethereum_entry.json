@@ -1,0 +1,16 @@
+{
+    "ethereum": {
+        "accounts": [
+            {
+                "addr": "0x3f0Dc4681f46628B629a7C6A93F5522A6D6F1C85",
+                "archived": false,
+                "correct": true,
+                "label": "Private Key Wallet"
+            }
+        ],
+        "default_account_idx": 0,
+        "has_seen": false,
+        "last_tx_timestamp": 0,
+        "tx_notes": {}
+    }
+}

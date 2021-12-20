@@ -15,23 +15,11 @@ public enum InternalFeature: String, CaseIterable {
     /// - Note: Old manual guid login screen is used only for internal builds
     case disableGUIDLogin
 
-    /// Enable new account SwiftUI picker.
-    case newAccountPicker
-
-    /// Enable new Onboarding Tour on the Welcome Flow
-    case newOnboardingTour
-
     /// Enable unified sign in (account upgrade)
     case unifiedSignIn
 
-    /// Enable polling for email login
-    case pollingForEmailLogin
-
     /// Enables native wallet payload instead of JS
     case nativeWalletPayload
-
-    /// Enables unified QR code scanner
-    case unifiedQRCodeScanner
 
     /// OpenBanking
     case openBanking
@@ -42,18 +30,14 @@ public enum InternalFeature: String, CaseIterable {
     /// Enables the feature for alpha release overriding internal config.
     var isAlphaReady: Bool {
         switch self {
-        case .newAccountPicker,
-             .newOnboardingTour,
-             .openBanking,
-             .pollingForEmailLogin,
-             .unifiedQRCodeScanner:
+        case .openBanking,
+             .redesign:
             return true
         case .disableGUIDLogin,
              .requestConsoleLogging,
              .secureChannel,
              .unifiedSignIn,
-             .nativeWalletPayload,
-             .redesign:
+             .nativeWalletPayload:
             return false
         }
     }
@@ -74,20 +58,12 @@ extension InternalFeature {
             return "Enable Network Request Console Logs"
         case .disableGUIDLogin:
             return "Disable manual (guid) login option"
-        case .newAccountPicker:
-            return "New SwiftUI Account Picker"
-        case .newOnboardingTour:
-            return "New Onboarding Tour"
         case .unifiedSignIn:
             return "Unified Sign In"
-        case .pollingForEmailLogin:
-            return "Polling (Email Login)"
         case .nativeWalletPayload:
             return "Native Wallet Payload"
         case .openBanking:
             return "Open Banking"
-        case .unifiedQRCodeScanner:
-            return "Unified QR Code Scanner"
         case .redesign:
             return "Redesign"
         }

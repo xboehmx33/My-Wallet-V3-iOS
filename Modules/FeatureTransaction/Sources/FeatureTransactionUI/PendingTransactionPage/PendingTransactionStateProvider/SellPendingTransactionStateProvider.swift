@@ -3,6 +3,7 @@
 import FeatureTransactionDomain
 import Foundation
 import Localization
+import MoneyKit
 import PlatformKit
 import RxSwift
 

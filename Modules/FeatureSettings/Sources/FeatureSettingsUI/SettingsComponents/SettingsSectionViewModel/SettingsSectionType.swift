@@ -11,7 +11,7 @@ enum SettingsSectionType: Int, Equatable {
     case security = 4
     case banks = 5
     case cards = 6
-    case about = 7
+    case help = 7
 
     enum CellType: Equatable, IdentifiableType {
 
@@ -25,7 +25,7 @@ enum SettingsSectionType: Int, Equatable {
                 return type.identity
             case .clipboard(let type):
                 return type.rawValue
-            case .plain(let type):
+            case .common(let type):
                 return type.rawValue
             case .switch(let type, _):
                 return type.rawValue
@@ -42,7 +42,7 @@ enum SettingsSectionType: Int, Equatable {
                 return left == right
             case (.cards(let left), .cards(let right)):
                 return left == right
-            case (.plain(let left), .plain(let right)):
+            case (.common(let left), .common(let right)):
                 return left == right
             case (.banks(let left), .banks(let right)):
                 return left == right
@@ -56,7 +56,7 @@ enum SettingsSectionType: Int, Equatable {
         case clipboard(ClipboardCellType)
         case cards(LinkedPaymentMethodCellType<AddPaymentMethodCellPresenter, LinkedCardCellPresenter>)
         case banks(LinkedPaymentMethodCellType<AddPaymentMethodCellPresenter, BeneficiaryLinkedBankViewModel>)
-        case plain(PlainCellType)
+        case common(CommonCellType)
 
         enum BadgeCellType: String {
             case limits
@@ -116,14 +116,19 @@ enum SettingsSectionType: Int, Equatable {
             }
         }
 
-        enum PlainCellType: String {
+        enum CommonCellType: String {
             case loginToWebWallet
+            case webLogin
             case changePassword
             case changePIN
             case rateUs
             case termsOfService
             case privacyPolicy
             case cookiesPolicy
+            case logout
+            case addresses
+            case contactSupport
+            case airdrops
         }
     }
 }
@@ -133,6 +138,6 @@ extension SettingsSectionType {
         .profile,
         .preferences,
         .security,
-        .about
+        .help
     ]
 }

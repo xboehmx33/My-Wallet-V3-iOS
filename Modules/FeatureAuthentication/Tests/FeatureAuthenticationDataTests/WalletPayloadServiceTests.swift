@@ -5,20 +5,12 @@ import DIKit
 @testable import FeatureAuthenticationData
 @testable import FeatureAuthenticationDomain
 @testable import FeatureAuthenticationMock
-import RxBlocking
+import TestKit
 import ToolKit
 @testable import WalletPayloadKit
 import XCTest
 
 class WalletPayloadServiceTests: XCTestCase {
-
-    // TODO: replace with the dedicated method implemented in IOS-4610 for combine related tests
-    private var cancellables: Set<AnyCancellable>!
-
-    override func setUp() {
-        super.setUp()
-        cancellables = []
-    }
 
     /// Tests a valid response to payload fetching that requires 2FA code
     func testValid2FAResponse() throws {
@@ -29,8 +21,11 @@ class WalletPayloadServiceTests: XCTestCase {
             payload: nil
         )
         let repository = MockWalletRepository()
-        _ = try repository.set(sessionToken: "1234-abcd-5678-efgh").toBlocking().first()
-        _ = try repository.set(guid: "fake-guid").toBlocking().first()
+
+        let sessionTokenSetPublisher = repository.set(sessionToken: "1234-abcd-5678-efgh")
+        let guidSetPublisher = repository.set(guid: "fake-guid")
+        XCTAssertPublisherCompletion([sessionTokenSetPublisher, guidSetPublisher])
+
         let client = MockWalletPayloadClient(result: .success(serverResponse))
         let walletRepo = WalletRepo(initialState: .empty)
         let nativeWalletEnabled = false
@@ -47,37 +42,11 @@ class WalletPayloadServiceTests: XCTestCase {
             walletRepo: walletRepo,
             nativeWalletEnabledUse: nativeWalletEnabledUseImpl
         )
-        do {
-            // TODO: delete these once IOS-4610 is ready
-            let serviceAuthTypePublisher = service.requestUsingSessionToken()
-            var serviceAuthType: WalletAuthenticatorType = .standard
-            var error: WalletPayloadServiceError?
-            let expectation = expectation(description: "2FA Response")
-            serviceAuthTypePublisher
-                .sink(
-                    receiveCompletion: { completion in
-                        switch completion {
-                        case .finished:
-                            break
-                        case .failure(let serviceError):
-                            error = serviceError
-                        }
-                        expectation.fulfill()
-                    },
-                    receiveValue: { value in
-                        serviceAuthType = value
-                    }
-                )
-                .store(in: &cancellables)
-            waitForExpectations(timeout: 5)
+        let serviceAuthTypePublisher = service.requestUsingSessionToken()
+        XCTAssertPublisherValues(serviceAuthTypePublisher, expectedAuthType, timeout: 5.0)
 
-            let repositoryAuthType = try repository.authenticatorType.toBlocking().first()
-            XCTAssertNil(error)
-            XCTAssertEqual(repositoryAuthType, serviceAuthType)
-            XCTAssertEqual(serviceAuthType, expectedAuthType)
-        } catch {
-            XCTFail("expected payload fetching to require \(expectedAuthType), got error: \(error)")
-        }
+        let repositoryAuthTypePublisher = repository.authenticatorType
+        XCTAssertPublisherValues(repositoryAuthTypePublisher, expectedAuthType, timeout: 5.0)
     }
 
     func testValidPayloadResponse() throws {
@@ -88,8 +57,11 @@ class WalletPayloadServiceTests: XCTestCase {
             payload: "{\"pbkdf2_iterations\":1,\"version\":3,\"payload\":\"payload-for-wallet\"}"
         )
         let repository = MockWalletRepository()
-        _ = try repository.set(sessionToken: "1234-abcd-5678-efgh").toBlocking().first()
-        _ = try repository.set(guid: "fake-guid").toBlocking().first()
+
+        let sessionTokenSetPublisher = repository.set(sessionToken: "1234-abcd-5678-efgh")
+        let guidSetPublisher = repository.set(guid: "fake-guid")
+        XCTAssertPublisherCompletion([sessionTokenSetPublisher, guidSetPublisher])
+
         let client = MockWalletPayloadClient(result: .success(serverResponse))
         let walletRepo = WalletRepo(initialState: .empty)
         let nativeWalletEnabled = false
@@ -106,37 +78,11 @@ class WalletPayloadServiceTests: XCTestCase {
             walletRepo: walletRepo,
             nativeWalletEnabledUse: nativeWalletEnabledUseImpl
         )
-        do {
-            // TODO: delete these once IOS-4610 is ready
-            let serviceAuthTypePublisher = service.requestUsingSessionToken()
-            var serviceAuthType: WalletAuthenticatorType = .standard
-            var error: WalletPayloadServiceError?
-            let expectation = expectation(description: "2FA Response")
-            serviceAuthTypePublisher
-                .sink(
-                    receiveCompletion: { completion in
-                        switch completion {
-                        case .finished:
-                            break
-                        case .failure(let serviceError):
-                            error = serviceError
-                        }
-                        expectation.fulfill()
-                    },
-                    receiveValue: { value in
-                        serviceAuthType = value
-                    }
-                )
-                .store(in: &cancellables)
-            waitForExpectations(timeout: 5)
+        let serviceAuthTypePublisher = service.requestUsingSessionToken()
+        XCTAssertPublisherValues(serviceAuthTypePublisher, expectedAuthType, timeout: 5.0)
 
-            let repositoryAuthType = try repository.authenticatorType.toBlocking().first()
-            XCTAssertNil(error)
-            XCTAssertEqual(repositoryAuthType, serviceAuthType)
-            XCTAssertEqual(serviceAuthType, expectedAuthType)
-            XCTAssertNotNil(try repository.payload.toBlocking().first())
-        } catch {
-            XCTFail("expected payload fetching to require \(expectedAuthType), got error: \(error)")
-        }
+        let repositoryAuthTypePublisher = repository.authenticatorType
+        XCTAssertPublisherValues(repositoryAuthTypePublisher, expectedAuthType, timeout: 5.0)
+        XCTAssertPublisherValues(repository.payload, repository.expectedPayload, timeout: 5.0)
     }
 }

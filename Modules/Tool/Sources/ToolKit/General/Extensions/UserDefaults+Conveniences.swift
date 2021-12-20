@@ -7,14 +7,12 @@ extension UserDefaults {
         let encoder = JSONEncoder()
         guard codable != nil else {
             set(nil, forKey: key)
-            synchronize()
             return
         }
         do {
             let data = try encoder.encode(codable)
             let jsonString = String(data: data, encoding: .utf8)!
             set(jsonString, forKey: key)
-            synchronize()
         } catch {
             Logger.shared.error("Saving \"\(key)\" failed: \(error)")
         }

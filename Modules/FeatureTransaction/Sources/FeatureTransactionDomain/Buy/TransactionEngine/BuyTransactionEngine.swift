@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -17,7 +18,7 @@ final class BuyTransactionEngine: TransactionEngine {
 
     // Used to convert fiat <-> crypto when user types an amount (mainly crypto -> fiat)
     let currencyConversionService: CurrencyConversionServiceAPI
-    // Used to convert payment method currencies into the wallet's default currency
+    // Used to convert payment method currencies into the wallet's trading currency
     let walletCurrencyService: FiatCurrencyServiceAPI
 
     // Used to convert the user input into an actual quote with fee (takes a fiat amount)
@@ -30,6 +31,8 @@ final class BuyTransactionEngine: TransactionEngine {
     private let orderCancellationService: OrderCancellationServiceAPI
     // Used to fetch limits for the transaction
     private let transactionLimitsService: TransactionLimitsServiceAPI
+    // Used to fetch the user KYC status and adjust limits for Tier 0 and Tier 1 users to let them enter a transaction irrespective of limits
+    private let kycTiersService: KYCTiersServiceAPI
 
     // Used as a workaround to show the correct total fee to the user during checkout.
     // This won't be needed anymore once we migrate the quotes API to v2
@@ -42,7 +45,8 @@ final class BuyTransactionEngine: TransactionEngine {
         orderCreationService: OrderCreationServiceAPI = resolve(),
         orderConfirmationService: OrderConfirmationServiceAPI = resolve(),
         orderCancellationService: OrderCancellationServiceAPI = resolve(),
-        transactionLimitsService: TransactionLimitsServiceAPI = resolve()
+        transactionLimitsService: TransactionLimitsServiceAPI = resolve(),
+        kycTiersService: KYCTiersServiceAPI = resolve()
     ) {
         self.currencyConversionService = currencyConversionService
         self.walletCurrencyService = walletCurrencyService
@@ -51,6 +55,7 @@ final class BuyTransactionEngine: TransactionEngine {
         self.orderConfirmationService = orderConfirmationService
         self.orderCancellationService = orderCancellationService
         self.transactionLimitsService = transactionLimitsService
+        self.kycTiersService = kycTiersService
     }
 
     var fiatExchangeRatePairs: Observable<TransactionMoneyValuePairs> {
@@ -72,24 +77,24 @@ final class BuyTransactionEngine: TransactionEngine {
     var transactionExchangeRatePair: Observable<MoneyValuePair> {
         let cryptoCurrency = transactionTarget.currencyType
         return walletCurrencyService
-            .fiatCurrencyObservable
+            .tradingCurrencyPublisher
             .map(\.currencyType)
-            .flatMap { [currencyConversionService] walletCurrency in
+            .flatMap { [currencyConversionService] tradingCurrency in
                 currencyConversionService
-                    .conversionRate(from: cryptoCurrency, to: walletCurrency)
+                    .conversionRate(from: cryptoCurrency, to: tradingCurrency)
                     .map { quote in
                         MoneyValuePair(
                             base: .one(currency: cryptoCurrency),
                             quote: quote
                         )
                     }
-                    .asObservable()
             }
+            .asObservable()
             .share(replay: 1, scope: .whileConnected)
     }
 
     // Unused but required by `TransactionEngine` protocol
-    var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    var askForRefreshConfirmation: AskForRefreshConfirmation!
 
     func assertInputsValid() {
         assert(sourceAccount is PaymentMethodAccount)
@@ -144,11 +149,12 @@ final class BuyTransactionEngine: TransactionEngine {
 
                 let totalCost = order.inputValue
                 let fee = order.fee ?? .zero(currency: fiatAmount.currency)
+                let purchase = try totalCost - fee
 
                 var confirmations: [TransactionConfirmation] = [
                     .buyCryptoValue(.init(baseValue: cryptoAmount)),
                     .buyExchangeRateValue(.init(baseValue: moneyPair.source.quote, code: moneyPair.source.base.code)),
-                    .buyPaymentMethod(.init(name: sourceAccountLabel)),
+                    .purchase(.init(purchase: purchase)),
                     .transactionFee(.init(fee: fee))
                 ]
 
@@ -156,7 +162,10 @@ final class BuyTransactionEngine: TransactionEngine {
                     confirmations.append(.transactionFee(.init(fee: customFeeAmount)))
                 }
 
-                confirmations.append(.total(.init(total: totalCost)))
+                confirmations += [
+                    .total(.init(total: totalCost)),
+                    .buyPaymentMethod(.init(name: sourceAccountLabel))
+                ]
 
                 return pendingTransaction.update(confirmations: confirmations)
             }
@@ -173,6 +182,12 @@ final class BuyTransactionEngine: TransactionEngine {
         return fetchQuote(for: pendingTransaction.amount)
             // STEP 2: Create an Order for the transaction
             .flatMap { [orderCreationService] refreshedQuote -> Single<CheckoutData> in
+                guard let fiatValue = refreshedQuote.estimatedSourceAmount.fiatValue else {
+                    return .error(TransactionValidationFailure(state: .incorrectSourceCurrency))
+                }
+                guard let cryptoValue = refreshedQuote.estimatedDestinationAmount.cryptoValue else {
+                    return .error(TransactionValidationFailure(state: .incorrectDestinationCurrency))
+                }
                 let paymentMethodId: String?
                 if sourceAccount.paymentMethod.type.isFunds {
                     // NOTE: This fixes IOS-5389
@@ -181,9 +196,10 @@ final class BuyTransactionEngine: TransactionEngine {
                     paymentMethodId = sourceAccount.paymentMethodType.id
                 }
                 let orderDetails = CandidateOrderDetails.buy(
+                    quoteId: refreshedQuote.quoteId,
                     paymentMethod: sourceAccount.paymentMethodType,
-                    fiatValue: refreshedQuote.estimatedFiatAmount,
-                    cryptoValue: refreshedQuote.estimatedCryptoAmount,
+                    fiatValue: fiatValue,
+                    cryptoValue: cryptoValue,
                     paymentMethodId: paymentMethodId
                 )
                 return orderCreationService.create(using: orderDetails)
@@ -237,10 +253,6 @@ final class BuyTransactionEngine: TransactionEngine {
             })
     }
 
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        transactionTarget.onTxCompleted(transactionResult)
-    }
-
     func doUpdateFeeLevel(
         pendingTransaction: PendingTransaction,
         level: FeeLevel,
@@ -256,6 +268,7 @@ extension BuyTransactionEngine {
 
     enum MakeTransactionError: Error {
         case priceError(PriceServiceError)
+        case kycError(KYCTierServiceError)
         case limitsError(TransactionLimitsServiceError)
     }
 
@@ -289,20 +302,32 @@ extension BuyTransactionEngine {
     }
 
     private func fetchQuote(for amount: MoneyValue) -> Single<Quote> {
+        guard let source = sourceAccount as? FiatAccount else {
+            return .error(TransactionValidationFailure(state: .uninitialized))
+        }
         guard let destination = transactionTarget as? CryptoAccount else {
             return .error(TransactionValidationFailure(state: .uninitialized))
         }
-        return convertAmountIntoWalletFiatCurrency(amount)
-            .flatMap { [orderQuoteService] fiatValue in
+        let paymentMethod = (sourceAccount as? PaymentMethodAccount)?.paymentMethodType.method
+        let paymentMethodId = (sourceAccount as? PaymentMethodAccount)?.paymentMethodType.id
+        return convertAmountIntoTradingCurrency(amount)
+            .flatMap { [sourceAccount, orderQuoteService] fiatValue in
                 orderQuoteService.getQuote(
-                    for: .buy,
-                    cryptoCurrency: destination.asset,
-                    fiatValue: fiatValue
+                    query: QuoteQuery(
+                        profile: .simpleBuy,
+                        sourceCurrency: source.fiatCurrency,
+                        destinationCurrency: destination.asset,
+                        amount: MoneyValue(fiatValue: fiatValue),
+                        paymentMethod: paymentMethod?.rawType,
+                        // the endpoint only accepts paymentMethodId parameter if paymentMethod is bank transfer
+                        // refactor this by gracefully handle at the model level
+                        paymentMethodId: (paymentMethod?.isBankTransfer ?? false) ? paymentMethodId : nil
+                    )
                 )
             }
     }
 
-    private func convertAmountIntoWalletFiatCurrency(_ amount: MoneyValue) -> Single<FiatValue> {
+    private func convertAmountIntoTradingCurrency(_ amount: MoneyValue) -> Single<FiatValue> {
         fiatExchangeRatePairsSingle
             .map { moneyPair in
                 guard !amount.isFiat else {
@@ -330,13 +355,25 @@ extension BuyTransactionEngine {
         for paymentMethod: PaymentMethod,
         inputCurrency: CurrencyType
     ) -> AnyPublisher<TransactionLimits, MakeTransactionError> {
-        transactionLimitsService
-            .fetchLimits(
-                for: paymentMethod,
-                targetCurrency: transactionTarget.currencyType,
-                limitsCurrency: inputCurrency
-            )
-            .mapError(MakeTransactionError.limitsError)
+        let targetCurrency = transactionTarget.currencyType
+        return kycTiersService.canPurchaseCrypto
+            .setFailureType(to: MakeTransactionError.self)
+            .flatMap { [transactionLimitsService] canPurchaseCrypto -> AnyPublisher<TransactionLimits, MakeTransactionError> in
+                // if the user cannot purchase crypto, still just use the limits from the payment method to let them move on with the transaction
+                // this way, the logic of checking email verification and KYC status will kick-in when they attempt to navigate to the checkout screen.
+                guard canPurchaseCrypto else {
+                    return .just(TransactionLimits(paymentMethod))
+                }
+                return transactionLimitsService
+                    .fetchLimits(
+                        for: paymentMethod,
+                        targetCurrency: targetCurrency,
+                        limitsCurrency: inputCurrency,
+                        product: .simplebuy
+                    )
+                    .mapError(MakeTransactionError.limitsError)
+                    .eraseToAnyPublisher()
+            }
             .eraseToAnyPublisher()
     }
 }

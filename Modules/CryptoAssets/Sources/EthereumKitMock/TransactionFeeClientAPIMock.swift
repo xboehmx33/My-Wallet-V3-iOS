@@ -2,6 +2,7 @@
 
 import Combine
 @testable import EthereumKit
+import MoneyKit
 import NetworkError
 import PlatformKit
 
@@ -10,7 +11,6 @@ class TransactionFeeClientAPIMock: TransactionFeeClientAPI {
         .init(
             gasLimit: 10,
             gasLimitContract: 10,
-            limits: .init(min: 10, max: 10),
             regular: 10,
             priority: 10
         )

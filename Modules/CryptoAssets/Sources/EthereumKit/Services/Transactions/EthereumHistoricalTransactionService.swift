@@ -31,7 +31,7 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
 
     // MARK: - Private properties
 
-    private var latestBlock: Single<Int> {
+    private var latestBlock: Single<BigInt> {
         cachedLatestBlock.valueSingle
     }
 
@@ -40,13 +40,17 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
     }
 
     private let cachedTransactions: CachedValue<[EthereumHistoricalTransaction]>
-    private let cachedLatestBlock: CachedValue<Int>
+    private let cachedLatestBlock: CachedValue<BigInt>
     private let accountRepository: EthereumWalletAccountRepositoryAPI
     private let client: TransactionClientAPI
 
     // MARK: - Init
 
-    init(accountRepository: EthereumWalletAccountRepositoryAPI = resolve(), client: TransactionClientAPI = resolve()) {
+    init(
+        accountRepository: EthereumWalletAccountRepositoryAPI = resolve(),
+        client: TransactionClientAPI = resolve(),
+        latestBlockClient: LatestBlockClientAPI = resolve()
+    ) {
         self.accountRepository = accountRepository
         self.client = client
         cachedTransactions = CachedValue(
@@ -57,7 +61,7 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
         )
         cachedLatestBlock = CachedValue(
             configuration: .periodic(
-                seconds: 5,
+                seconds: 10,
                 schedulerIdentifier: "EthereumHistoricalTransactionService.LatestBlock"
             )
         )
@@ -69,11 +73,10 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
             return self.fetch()
         }
 
-        cachedLatestBlock.setFetch { [weak self] () -> Single<Int> in
-            guard let self = self else {
-                return .error(ToolKitError.nullReference(Self.self))
-            }
-            return self.fetchLatestBlock()
+        cachedLatestBlock.setFetch { [latestBlockClient] () -> Single<BigInt> in
+            latestBlockClient.latestBlock
+                .map(\.result)
+                .asSingle()
         }
     }
 
@@ -108,10 +111,9 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
             }
     }
 
-    private func fetch(account: EthereumWalletAccount, latestBlock: Int) -> Single<[EthereumHistoricalTransaction]> {
+    private func fetch(account: EthereumWalletAccount, latestBlock: BigInt) -> Single<[EthereumHistoricalTransaction]> {
         client
             .transactions(for: account.publicKey)
-            .asSingle()
             .map { response -> [EthereumHistoricalTransaction] in
                 response
                     .map { transactionResponse -> EthereumHistoricalTransaction in
@@ -124,11 +126,6 @@ final class EthereumHistoricalTransactionService: EthereumHistoricalTransactionS
                     // Sort backwards
                     .sorted(by: >)
             }
-    }
-
-    private func fetchLatestBlock() -> Single<Int> {
-        client.latestBlock
-            .map(\.number)
             .asSingle()
     }
 }

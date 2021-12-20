@@ -8,8 +8,5 @@ public protocol OnChainTransactionEngineFactory {
 }
 
 public protocol WalletConnectEngineFactoryAPI {
-    func build(
-        target: TransactionTarget,
-        onChainEngine: OnChainTransactionEngine
-    ) -> TransactionEngine
+    func build(target: TransactionTarget) -> TransactionEngine
 }

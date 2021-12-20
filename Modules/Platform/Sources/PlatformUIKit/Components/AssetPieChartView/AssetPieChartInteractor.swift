@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -18,7 +19,7 @@ public final class AssetPieChartInteractor: AssetPieChartInteracting {
     private lazy var setup: Void = {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 refreshRelay.asObservable()
             )
             .map(\.0)

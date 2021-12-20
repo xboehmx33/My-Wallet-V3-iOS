@@ -5,6 +5,7 @@ import DIKit
 import FeatureKYCDomain
 import FeatureKYCUI
 import FeatureOnboardingUI
+import FeatureSettingsUI
 import PlatformKit
 import PlatformUIKit
 import RxSwift
@@ -183,5 +184,12 @@ extension KYCAdapter: PlatformUIKit.TierUpgradeRouterAPI {
                 completion()
             })
             .store(in: &cancellables)
+    }
+}
+
+extension KYCAdapter: FeatureSettingsUI.KYCRouterAPI {
+
+    func presentLimitsOverview(from presenter: UIViewController) {
+        router.presentLimitsOverview(from: presenter)
     }
 }

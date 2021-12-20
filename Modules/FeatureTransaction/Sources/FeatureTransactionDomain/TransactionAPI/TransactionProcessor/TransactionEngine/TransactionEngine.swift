@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -21,7 +22,7 @@ public protocol TransactionEngine: AnyObject {
     /// Does this engine accept fiat input amounts
     var canTransactFiat: Bool { get }
     /// askForRefreshConfirmation: Must be set by TransactionProcessor
-    var askForRefreshConfirmation: (AskForRefreshConfirmation)! { get set }
+    var askForRefreshConfirmation: AskForRefreshConfirmation! { get set }
 
     /// The account the user is transacting from
     var sourceAccount: BlockchainAccount! { get set }
@@ -208,6 +209,17 @@ extension TransactionEngine {
     ) -> Single<TransactionResult> {
         execute(pendingTransaction: pendingTransaction, secondPassword: secondPassword)
     }
+
+    public func doPostExecute(
+        transactionResult: TransactionResult
+    ) -> Completable {
+        sourceAccount.invalidateAccountBalance()
+        if let target = transactionTarget as? BlockchainAccount {
+            target.invalidateAccountBalance()
+        }
+        return transactionTarget
+            .onTxCompleted(transactionResult)
+    }
 }
 
 private struct TransactionValidationConversionRates {
@@ -255,7 +267,7 @@ extension TransactionEngine {
         for pendingTransaction: PendingTransaction
     ) -> AnyPublisher<TransactionValidationConversionRates, PriceServiceError> {
         walletCurrencyService
-            .fiatCurrencyPublisher
+            .tradingCurrencyPublisher
             .setFailureType(to: PriceServiceError.self)
             .flatMap { [currencyConversionService, sourceAsset] walletCurrency in
                 currencyConversionService.conversionRate(

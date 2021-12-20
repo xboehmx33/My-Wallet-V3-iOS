@@ -2,6 +2,7 @@
 
 import FeatureTransactionDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import ToolKit
 import UIComponentsKit

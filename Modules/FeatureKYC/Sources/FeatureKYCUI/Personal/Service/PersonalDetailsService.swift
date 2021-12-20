@@ -16,5 +16,6 @@ final class PersonalDetailsService {
         client.updatePersonalDetails(firstName: firstName, lastName: lastName, birthday: birthday)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 }

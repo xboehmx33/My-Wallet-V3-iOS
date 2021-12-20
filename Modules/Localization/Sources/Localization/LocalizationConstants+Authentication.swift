@@ -415,10 +415,15 @@ extension LocalizationConstants.FeatureAuthentication {
     // MARK: - Create Account
 
     public enum CreateAccount {
-        public static let navigationTitle = NSLocalizedString(
-            "Create Account",
-            comment: "Create Account screen: navigation title"
+        public static let headerTitle = NSLocalizedString(
+            "Create Your Account.",
+            comment: "Create Account screen: header title"
         )
+        public static let headerSubtitle = NSLocalizedString(
+            "Let’s get you set up.",
+            comment: "Create Account screen: header subtitle"
+        )
+
         public enum TextFieldTitle {
             public static let email = NSLocalizedString(
                 "Email",
@@ -428,28 +433,31 @@ extension LocalizationConstants.FeatureAuthentication {
                 "Password",
                 comment: "Create Account screen: password text field"
             )
-            public static let confirmPassword = NSLocalizedString(
-                "Confirm New Password",
-                comment: "Create Account screen: confirm password text field"
+            public static let country = NSLocalizedString(
+                "Country of Residence",
+                comment: "Create Account screen: country text field"
             )
         }
 
-        public static let passwordInstruction = NSLocalizedString(
-            "Use at least 8 characters and a mix of letters, numbers, and symbols",
-            comment: "Reset password screen: password instruction"
-        )
         public enum TextFieldPlaceholder {
             public static let email = NSLocalizedString(
                 "your@email.com",
                 comment: "Create Account screen: email text field placeholder"
             )
-            public static let password = NSLocalizedString(
-                "Enter new password",
-                comment: "Create Account screen: password text field placeholder"
+        }
+
+        public enum PasswordStrengthIndicator {
+            public static let regularPassword = NSLocalizedString(
+                "Regular",
+                comment: "Create Account screen: regular password"
             )
-            public static let confirmPassword = NSLocalizedString(
-                "Re-enter new password",
-                comment: "Create Account screen: confirm password text field placeholder"
+            public static let strongPassword = NSLocalizedString(
+                "Strong",
+                comment: "Create Account screen: strong password"
+            )
+            public static let weakPassword = NSLocalizedString(
+                "Weak",
+                comment: "Create Account screen: weak password"
             )
         }
 
@@ -465,8 +473,12 @@ extension LocalizationConstants.FeatureAuthentication {
         }
 
         public static let agreementPrompt = NSLocalizedString(
-            "By creating a wallet you agree to Blockchain’s",
-            comment: "Create Account screen: agreement prompt footnote"
+            "I understand that Blockchain.com never stores passwords and therefore cannot recover or reset my password. If I lose access to my wallet, I must use my |RECOVERY_PHRASE| to access my funds. By creating a wallet, you agree to Blockchain’s",
+            comment: "Create Account screen: agreement prompt footnote. Don't change |RECOVERY_PHRASE|, it's a placeholder!"
+        )
+        public static let recoveryPhrase = NSLocalizedString(
+            "Secret Private Key Recovery Phrase",
+            comment: "Create Account screen: 'Secret Private Key Recovery Phrase' text, split to add emphasis"
         )
         public static let termsOfServiceLink = NSLocalizedString(
             "Terms of Services",
@@ -481,8 +493,12 @@ extension LocalizationConstants.FeatureAuthentication {
             comment: "Create Account screen: privacy policy link"
         )
         public static let createAccountButton = NSLocalizedString(
-            "Create Account",
+            "Get Started",
             comment: "Create Account screen: create account CTA button"
+        )
+        public static let nextButton = NSLocalizedString(
+            "Next",
+            comment: "Create Account screen: create account CTA button in nav bar"
         )
     }
 

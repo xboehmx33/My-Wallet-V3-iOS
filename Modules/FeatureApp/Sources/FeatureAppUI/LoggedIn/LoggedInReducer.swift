@@ -154,7 +154,7 @@ let loggedInReducer = Reducer<
                 guard shouldShowOnboarding else {
                     // display old buy flow
                     return environment.fiatCurrencySettingsService
-                        .update(currency: .locale, context: .walletCreation)
+                        .update(displayCurrency: .locale, context: .walletCreation)
                         .receive(on: environment.mainQueue)
                         .catchToEffect()
                         .map { result -> LoggedIn.Action in

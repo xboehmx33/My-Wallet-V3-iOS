@@ -5,36 +5,56 @@ import PlatformKit
 import WalletCore
 
 public struct EthereumTransactionCandidateCosted {
+
     let transaction: EthereumSigningInput
 
-    init(transaction: EthereumTransactionCandidate, nonce: BigUInt) throws {
+    private init(transaction: EthereumSigningInput) {
+        self.transaction = transaction
+    }
+
+    static func create(
+        transaction: EthereumTransactionCandidate,
+        nonce: BigUInt
+    ) -> Result<EthereumTransactionCandidateCosted, EthereumKitValidationError> {
         guard transaction.gasPrice > 0 else {
-            throw EthereumKitValidationError.noGasPrice
+            return .failure(.noGasPrice)
         }
         guard transaction.gasLimit > 0 else {
-            throw EthereumKitValidationError.noGasLimit
+            return .failure(.noGasLimit)
         }
-        self.transaction = Self.signingInput(with: transaction, nonce: nonce)
+        let costed = EthereumTransactionCandidateCosted(
+            transaction: signingInput(with: transaction, nonce: nonce)
+        )
+        return .success(costed)
     }
 
     private static func signingInput(
         with candidate: EthereumTransactionCandidate,
         nonce: BigUInt
     ) -> EthereumSigningInput {
-        EthereumSigningInput.with {
-            $0.chainID = Data(hexString: "01")!
-            $0.nonce = Data(hexString: nonce.hexString)!
-            $0.gasPrice = Data(hexString: candidate.gasPrice.hexString)!
-            $0.gasLimit = Data(hexString: candidate.gasLimit.hexString)!
+        EthereumSigningInput.with { input in
+            input.chainID = Data(hexString: "01")!
+            input.nonce = Data(hexString: nonce.hexString)!
+            input.gasPrice = Data(hexString: candidate.gasPrice.hexString)!
+            input.gasLimit = Data(hexString: candidate.gasLimit.hexString)!
+
             switch candidate.transferType {
             case .erc20Transfer(let contractAddress):
-                $0.toAddress = contractAddress.publicKey
-                $0.transaction.erc20Transfer.to = candidate.to.publicKey
-                $0.transaction.erc20Transfer.amount = Data(hexString: candidate.value.hexString)!
-            case .transfer:
-                $0.toAddress = candidate.to.publicKey
-                $0.transaction.transfer.amount = Data(hexString: candidate.value.hexString)!
-                $0.transaction.transfer.data = candidate.data ?? Data()
+                input.toAddress = contractAddress.publicKey
+                input.transaction = EthereumTransaction.with { transaction in
+                    transaction.erc20Transfer = EthereumTransaction.ERC20Transfer.with { transfer in
+                        transfer.to = candidate.to.publicKey
+                        transfer.amount = Data(hexString: candidate.value.hexString)!
+                    }
+                }
+            case .transfer(let data):
+                input.toAddress = candidate.to.publicKey
+                input.transaction = EthereumTransaction.with { transaction in
+                    transaction.transfer = EthereumTransaction.Transfer.with { transfer in
+                        transfer.amount = Data(hexString: candidate.value.hexString)!
+                        transfer.data = data ?? Data()
+                    }
+                }
             }
         }
     }

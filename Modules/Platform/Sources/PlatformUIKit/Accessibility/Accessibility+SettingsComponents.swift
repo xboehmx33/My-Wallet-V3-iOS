@@ -11,7 +11,7 @@ extension Accessibility.Identifier {
             public static let titleLabelFormat = "\(prefix)titleLabel."
             public static let badgeView = "\(prefix)badgeView."
 
-            public enum Plain {
+            public enum Common {
                 public static let title = "\(SettingsCell.prefix)Plain"
                 public static let titleLabelFormat = ".\(title)titleLabel."
             }

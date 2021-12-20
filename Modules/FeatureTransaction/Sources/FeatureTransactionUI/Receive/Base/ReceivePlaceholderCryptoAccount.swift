@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Foundation
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -63,5 +64,9 @@ final class ReceivePlaceholderCryptoAccount: CryptoAccount, NonCustodialAccount 
         asset: CryptoCurrency
     ) {
         self.asset = asset
+    }
+
+    func invalidateAccountBalance() {
+        // NO-OP
     }
 }

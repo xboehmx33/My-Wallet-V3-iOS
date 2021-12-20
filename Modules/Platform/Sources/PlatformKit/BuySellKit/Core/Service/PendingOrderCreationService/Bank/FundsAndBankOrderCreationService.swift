@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxSwift
 
 final class FundsAndBankOrderCreationService: PendingOrderCreationServiceAPI {
@@ -20,11 +21,17 @@ final class FundsAndBankOrderCreationService: PendingOrderCreationServiceAPI {
     }
 
     func create(using candidateOrderDetails: CandidateOrderDetails) -> Single<PendingConfirmationCheckoutData> {
+        let paymentMethod = candidateOrderDetails.paymentMethod?.method
         let quote = orderQuoteService
             .getQuote(
-                for: .buy,
-                cryptoCurrency: candidateOrderDetails.cryptoCurrency,
-                fiatValue: candidateOrderDetails.fiatValue
+                query: QuoteQuery(
+                    profile: .simpleBuy,
+                    sourceCurrency: candidateOrderDetails.fiatCurrency,
+                    destinationCurrency: candidateOrderDetails.cryptoCurrency,
+                    amount: MoneyValue(fiatValue: candidateOrderDetails.fiatValue),
+                    paymentMethod: paymentMethod?.rawType,
+                    paymentMethodId: (paymentMethod?.isBankTransfer ?? false) ? candidateOrderDetails.paymentMethodId : nil
+                )
             )
 
         let paymentAccount = paymentAccountService

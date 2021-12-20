@@ -67,7 +67,8 @@ struct TabBarExamplesView: View {
                     .tabBarItem(
                         .fab(
                             identifier: "floatingActionButtonIdentifier",
-                            isActive: $fabIsActive
+                            isActive: $fabIsActive,
+                            isPulsing: true
                         )
                     )
 

@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 public struct Beneficiary {
     public enum AccountType: Equatable {
         case funds

@@ -252,7 +252,7 @@ let emailLoginReducer = Reducer.combine(
         // MARK: - Local Reducers
 
         case .verifyDevice(.deviceRejected):
-            return .navigate(to: nil)
+            return .dismiss()
 
         case .verifyDevice:
             // handled in verify device reducer

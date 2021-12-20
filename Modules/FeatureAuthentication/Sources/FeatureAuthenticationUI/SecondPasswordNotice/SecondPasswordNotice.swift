@@ -144,7 +144,7 @@ struct SecondPasswordNoticeView_Previews: PreviewProvider {
                 initialState: .init(),
                 reducer: secondPasswordNoticeReducer,
                 environment: SecondPasswordNotice.Environment(
-                    externalAppOpener: PrintAppOpen()
+                    externalAppOpener: ToLogAppOpener()
                 )
             )
         )

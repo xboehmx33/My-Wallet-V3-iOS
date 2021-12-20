@@ -21,11 +21,20 @@ public enum WalletError: LocalizedError, Equatable {
 }
 
 public enum WalletInitializationError: LocalizedError, Equatable {
-    case none
+    case unknown
+    case missingSeedHex
+    case metadataInitialization
+    case needsSecondPassword
 
     public var errorDescription: String? {
         switch self {
-        case .none:
+        case .unknown:
+            return ""
+        case .missingSeedHex:
+            return ""
+        case .metadataInitialization:
+            return ""
+        case .needsSecondPassword:
             return ""
         }
     }

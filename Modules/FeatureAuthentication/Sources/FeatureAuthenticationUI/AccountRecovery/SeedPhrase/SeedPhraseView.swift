@@ -32,11 +32,13 @@ public struct SeedPhraseView: View {
         static let textEditorInsets = EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)
         static let textEditorPlaceholderInsets = EdgeInsets(top: 20, leading: 16, bottom: 14, trailing: 14)
         static let callOutInsets = EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
+
+        static let largeNavigationTitleFontSize: CGFloat = 20
+        static let largeNavigationTitleTopPadding: CGFloat = 15
     }
 
     // MARK: - Properties
 
-    private let context: AccountRecoveryContext
     private let store: Store<SeedPhraseState, SeedPhraseAction>
     @ObservedObject private var viewStore: ViewStore<SeedPhraseState, SeedPhraseAction>
 
@@ -51,8 +53,7 @@ public struct SeedPhraseView: View {
 
     // MARK: - Setup
 
-    public init(context: AccountRecoveryContext, store: Store<SeedPhraseState, SeedPhraseAction>) {
-        self.context = context
+    public init(store: Store<SeedPhraseState, SeedPhraseAction>) {
         self.store = store
         viewStore = ViewStore(store)
     }
@@ -73,7 +74,7 @@ public struct SeedPhraseView: View {
                     .accessibility(identifier: AccessibilityIdentifiers.SeedPhraseScreen.invalidPhraseErrorText)
             }
 
-            if context == .troubleLoggingIn {
+            if viewStore.context == .troubleLoggingIn {
                 resetAccountCallOut
                     .padding(.top, Layout.resetAccountCallOutTopPadding)
             }
@@ -81,7 +82,7 @@ public struct SeedPhraseView: View {
             Spacer()
 
             PrimaryButton(
-                title: context == .troubleLoggingIn ?
+                title: viewStore.context == .troubleLoggingIn ?
                     LocalizedString.loginInButton :
                     LocalizedString.NavigationTitle.restoreWallet
             ) {
@@ -157,12 +158,7 @@ public struct SeedPhraseView: View {
                 then: ResetAccountWarningView.init(store:)
             )
         }
-        .navigationBarTitle(
-            context == .troubleLoggingIn ?
-                LocalizedString.NavigationTitle.troubleLoggingIn :
-                LocalizedString.NavigationTitle.restoreWallet,
-            displayMode: .inline
-        )
+        .modifier(CustomNavigationTitle(viewStore: viewStore))
         .hideBackButtonTitle()
         .padding(
             EdgeInsets(
@@ -174,8 +170,30 @@ public struct SeedPhraseView: View {
         )
     }
 
+    private struct CustomNavigationTitle: ViewModifier {
+        let viewStore: ViewStore<SeedPhraseState, SeedPhraseAction>
+
+        @ViewBuilder
+        func body(content: Content) -> some View {
+            if viewStore.context == .restoreWallet {
+                content.whiteNavigationBarStyle().toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Text(LocalizedString.NavigationTitle.restoreWallet)
+                            .font(Font(weight: .semibold, size: Layout.largeNavigationTitleFontSize))
+                            .padding(.top, Layout.largeNavigationTitleTopPadding)
+                    }
+                }
+            } else {
+                content.whiteNavigationBarStyle().navigationBarTitle(
+                    LocalizedString.NavigationTitle.troubleLoggingIn,
+                    displayMode: .inline
+                )
+            }
+        }
+    }
+
     private var instructionText: some View {
-        Text(context == .troubleLoggingIn ?
+        Text(viewStore.context == .troubleLoggingIn ?
             LocalizedString.instruction :
             LocalizedString.restoreWalletInstruction
         )
@@ -250,13 +268,12 @@ public struct SeedPhraseView: View {
 struct SeedPhraseView_Previews: PreviewProvider {
     static var previews: some View {
         SeedPhraseView(
-            context: .none,
             store: .init(
-                initialState: .init(emailAddress: ""),
+                initialState: .init(context: .restoreWallet, emailAddress: ""),
                 reducer: seedPhraseReducer,
                 environment: .init(
                     mainQueue: .main,
-                    externalAppOpener: PrintAppOpen(),
+                    externalAppOpener: ToLogAppOpener(),
                     analyticsRecorder: NoOpAnalyticsRecorder()
                 )
             )

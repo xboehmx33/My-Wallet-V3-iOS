@@ -28,7 +28,7 @@ final class OpenBankingLiveTestCase: XCTestCase {
                     isRecording: true,
                     directory: "/tmp/OpenBanking"
                 )
-            ),
+            ).network,
             scheduler: DispatchQueue.main.eraseToAnyScheduler(),
             state: .init([.currency: "GBP"])
         )

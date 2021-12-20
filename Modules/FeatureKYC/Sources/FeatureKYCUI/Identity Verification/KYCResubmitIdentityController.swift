@@ -51,6 +51,7 @@ final class KYCResubmitIdentityController: KYCBaseViewController, ProgressableVi
 
     private var presenter: KYCVerifyIdentityPresenter!
     private let loadingViewPresenter: LoadingViewPresenting = resolve()
+    private let identityVerificationAnalyticsService: IdentityVerificationAnalyticsServiceAPI = resolve()
     let analyticsRecorder: AnalyticsEventRecorderAPI = resolve()
 
     // MARK: - KYCRouterDelegate
@@ -124,6 +125,20 @@ extension KYCResubmitIdentityController: LoadingView {
 
 extension KYCResubmitIdentityController: VeriffController {
 
+    func sessionDidEndWithResult(_ result: VeriffSdk.Result) {
+        switch result.status {
+        case .error(let error):
+            trackInternalVeriffError(.init(veriffError: error))
+            onVeriffError(message: error.localizedErrorMessage)
+        case .done:
+            onVeriffSubmissionCompleted()
+        case .canceled:
+            onVeriffCancelled()
+        @unknown default:
+            onVeriffCancelled()
+        }
+    }
+
     func onVeriffSubmissionCompleted() {
         loadingViewPresenter.show(with: LocalizationConstants.KYC.submittingInformation)
         delegate?.submitVerification(
@@ -143,6 +158,27 @@ extension KYCResubmitIdentityController: VeriffController {
 
     func onVeriffError(message: String) {
         showErrorMessage(message)
+    }
+
+    func trackInternalVeriffError(_ error: InternalVeriffError) {
+        switch error {
+        case .localError:
+            identityVerificationAnalyticsService.recordLocalError()
+        case .serverError:
+            identityVerificationAnalyticsService.recordServerError()
+        case .networkError:
+            identityVerificationAnalyticsService.recordNetworkError()
+        case .uploadError:
+            identityVerificationAnalyticsService.recordUploadError()
+        case .videoFailed:
+            identityVerificationAnalyticsService.recordVideoFailure()
+        case .unknown:
+            identityVerificationAnalyticsService.recordUnknownError()
+        case .cameraUnavailable,
+             .microphoneUnavailable,
+             .deprecatedSDKVersion:
+            break
+        }
     }
 
     func onVeriffCancelled() {

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxRelay
 import RxSwift
 import ToolKit
@@ -39,7 +40,8 @@ final class EligiblePaymentMethodsService: PaymentMethodsServiceAPI {
         self.enabledCurrenciesService = enabledCurrenciesService
 
         let enabledFiatCurrencies = enabledCurrenciesService.allEnabledFiatCurrencies
-        let fetch = fiatCurrencyService.fiatCurrencyObservable
+        let fetch = fiatCurrencyService.tradingCurrencyPublisher
+            .asObservable()
             .flatMap { [tiersService, eligibleMethodsClient] fiatCurrency -> Observable<[PaymentMethod]> in
                 let fetchTiers = tiersService.fetchTiers().asSingle()
                 return fetchTiers.flatMap { tiersResult -> Single<(KYC.UserTiers, SimplifiedDueDiligenceResponse)> in
@@ -129,7 +131,6 @@ final class EligiblePaymentMethodsService: PaymentMethodsServiceAPI {
                 let fetchTiers = tiersService.fetchTiers().asSingle()
                 return fetchTiers.flatMap { tiersResult -> Single<(KYC.UserTiers, SimplifiedDueDiligenceResponse)> in
                     tiersService.simplifiedDueDiligenceEligibility(for: tiersResult.latestApprovedTier)
-                        .asObservable()
                         .asSingle()
                         .map { sddEligibiliy in (tiersResult, sddEligibiliy) }
                 }

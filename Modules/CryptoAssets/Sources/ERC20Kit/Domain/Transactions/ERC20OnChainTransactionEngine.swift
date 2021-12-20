@@ -4,6 +4,7 @@ import BigInt
 import DIKit
 import EthereumKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import RxToolKit
@@ -11,14 +12,12 @@ import ToolKit
 
 final class ERC20OnChainTransactionEngine: OnChainTransactionEngine {
 
-    typealias AskForRefreshConfirmations = (Bool) -> Completable
-
     // MARK: - OnChainTransactionEngine
 
     let currencyConversionService: CurrencyConversionServiceAPI
     let walletCurrencyService: FiatCurrencyServiceAPI
 
-    var askForRefreshConfirmation: (AskForRefreshConfirmations)!
+    var askForRefreshConfirmation: AskForRefreshConfirmation!
 
     var fiatExchangeRatePairs: Observable<TransactionMoneyValuePairs> {
         sourceExchangeRatePair
@@ -92,7 +91,8 @@ final class ERC20OnChainTransactionEngine: OnChainTransactionEngine {
     func initializeTransaction() -> Single<PendingTransaction> {
         Single.zip(
             walletCurrencyService
-                .fiatCurrency,
+                .displayCurrency
+                .asSingle(),
             availableBalance
         )
 
@@ -115,7 +115,7 @@ final class ERC20OnChainTransactionEngine: OnChainTransactionEngine {
     func start(
         sourceAccount: CryptoAccount,
         transactionTarget: TransactionTarget,
-        askForRefreshConfirmation: @escaping AskForRefreshConfirmations
+        askForRefreshConfirmation: @escaping AskForRefreshConfirmation
     ) {
         self.sourceAccount = sourceAccount
         self.transactionTarget = transactionTarget
@@ -227,15 +227,15 @@ final class ERC20OnChainTransactionEngine: OnChainTransactionEngine {
 
     func execute(pendingTransaction: PendingTransaction, secondPassword: String) -> Single<TransactionResult> {
         Single.zip(feeCache.valueSingle, .just(target.address))
-            .flatMap(weak: self) { (self, values) -> Single<EthereumTransactionCandidate> in
-                let (fee, address) = values
-                return self.transactionBuildingService.buildTransaction(
+            .flatMap { [erc20Token, transactionBuildingService] fee, address -> Single<EthereumTransactionCandidate> in
+                transactionBuildingService.buildTransaction(
                     amount: pendingTransaction.amount,
                     to: EthereumAddress(address: address)!,
                     feeLevel: pendingTransaction.feeLevel,
                     fee: fee,
-                    contractAddress: self.erc20Token.contractAddress
+                    contractAddress: erc20Token.contractAddress
                 )
+                .single
             }
             .flatMap(weak: self) { (self, candidate) -> Single<EthereumTransactionPublished> in
                 self.ethereumTransactionDispatcher.send(
@@ -311,11 +311,7 @@ extension ERC20OnChainTransactionEngine {
     private func makeFeeSelectionOption(
         pendingTransaction: PendingTransaction
     ) -> Single<TransactionConfirmation.Model.FeeSelection> {
-        Single
-            .just(pendingTransaction)
-            .map(weak: self) { (self, pendingTransaction) -> FeeState in
-                try self.getFeeState(pendingTransaction: pendingTransaction)
-            }
+        getFeeState(pendingTransaction: pendingTransaction)
             .map { feeState -> TransactionConfirmation.Model.FeeSelection in
                 TransactionConfirmation.Model.FeeSelection(
                     feeState: feeState,
@@ -357,24 +353,24 @@ extension ERC20OnChainTransactionEngine {
     /// Streams `MoneyValuePair` for the exchange rate of the source ERC20 Asset in the current fiat currency.
     private var sourceExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
-            .flatMap { [currencyConversionService, sourceAsset] fiatCurrency -> Single<MoneyValuePair> in
+            .displayCurrency
+            .flatMap { [currencyConversionService, sourceAsset] fiatCurrency in
                 currencyConversionService
                     .conversionRate(from: sourceAsset, to: fiatCurrency.currencyType)
-                    .asSingle()
                     .map { MoneyValuePair(base: .one(currency: sourceAsset), quote: $0) }
             }
+            .asSingle()
     }
 
     /// Streams `MoneyValuePair` for the exchange rate of Ethereum in the current fiat currency.
     private var ethereumExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
-            .flatMap { [currencyConversionService] fiatCurrency -> Single<MoneyValuePair> in
+            .displayCurrency
+            .flatMap { [currencyConversionService] fiatCurrency in
                 currencyConversionService
                     .conversionRate(from: .crypto(.coin(.ethereum)), to: fiatCurrency.currencyType)
-                    .asSingle()
                     .map { MoneyValuePair(base: .one(currency: .crypto(.coin(.ethereum))), quote: $0) }
             }
+            .asSingle()
     }
 }

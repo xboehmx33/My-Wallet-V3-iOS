@@ -58,7 +58,7 @@ public struct CredentialsView: View {
     @State private var isPasswordVisible: Bool = false
     @State private var isHardwareKeyCodeVisible: Bool = false
 
-    init(context: CredentialsContext, store: Store<CredentialsState, CredentialsAction>) {
+    public init(context: CredentialsContext, store: Store<CredentialsState, CredentialsAction>) {
         self.context = context
         self.store = store
         viewStore = ViewStore(store)
@@ -155,7 +155,7 @@ public struct CredentialsView: View {
                         action: CredentialsAction.seedPhrase
                     ),
                     then: { store in
-                        SeedPhraseView(context: .troubleLoggingIn, store: store)
+                        SeedPhraseView(store: store)
                     }
                 ),
                 isActive: viewStore.binding(

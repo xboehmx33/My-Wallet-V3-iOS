@@ -3,6 +3,7 @@
 import Combine
 import ERC20Kit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import ToolKit
 
@@ -35,5 +36,11 @@ final class ERC20TokenAccountsRepositoryMock: ERC20TokenAccountsRepositoryAPI {
         skipStale: Bool
     ) -> StreamOf<ERC20TokenAccounts, ERC20TokenAccountsError> {
         .just(.success(tokenAccounts))
+    }
+
+    func invalidateERC20TokenAccountsForAddress(
+        _ address: EthereumAddress
+    ) {
+        // no-op
     }
 }

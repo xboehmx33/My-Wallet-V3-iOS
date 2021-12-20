@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxRelay
 import RxSwift
 
@@ -26,7 +27,7 @@ public final class PairExchangeService: PairExchangeServiceAPI {
     public func fiatPrice(at time: PriceTime) -> Observable<FiatValue> {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 fetchTriggerRelay.asObservable().startWith(())
             )
             .throttle(.milliseconds(250), scheduler: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -35,7 +36,7 @@ public final class PairExchangeService: PairExchangeServiceAPI {
                 self.priceService
                     .price(of: self.currency, in: fiatCurrency, at: time)
                     .asSingle()
-                    .catchErrorJustReturn(
+                    .catchAndReturn(
                         PriceQuoteAtTime(
                             timestamp: time.date,
                             moneyValue: .zero(currency: fiatCurrency)
@@ -54,8 +55,9 @@ public final class PairExchangeService: PairExchangeServiceAPI {
 
     private var zero: Observable<FiatValue> {
         fiatCurrencyService
-            .fiatCurrencyObservable
+            .displayCurrencyPublisher
             .map(FiatValue.zero)
+            .asObservable()
     }
 
     /// A trigger for a fetch

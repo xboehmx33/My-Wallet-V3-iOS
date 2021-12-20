@@ -3,6 +3,7 @@
 import BigInt
 import Combine
 import Foundation
+import MoneyKit
 import PlatformKit
 import ToolKit
 
@@ -57,6 +58,9 @@ public enum CryptoCurrenciesServiceError: Error, Equatable {
 }
 
 public protocol CryptoCurrenciesServiceAPI {
+    /// Fetches purchasable crypto currencies for fiat currency defaulted to USD.
+    /// This is used for showing the list of crypto in buy button as card payment.
+    func fetchPurchasableCryptoCurrencies() -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError>
 
     func fetchPurchasableCryptoCurrencies(
         using fiatCurrency: FiatCurrency
@@ -79,12 +83,15 @@ internal final class CryptoCurrenciesService: CryptoCurrenciesServiceAPI {
 
     // MARK: - CryptoCurrenciesServiceAPI
 
+    func fetchPurchasableCryptoCurrencies() -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError> {
+        fetchPurchasableCryptoCurrencies(using: FiatCurrency.USD)
+    }
+
     func fetchPurchasableCryptoCurrencies(
         using fiatCurrency: FiatCurrency
     ) -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError> {
         // Step 1: Fetch all Crypto Currencies that can be purchased using the passed-in Fiat Currency
         pairsService.fetchPairs(for: .only(fiatCurrency: fiatCurrency))
-            .asPublisher()
             .mapError(CryptoCurrenciesServiceError.other)
             .flatMap { [priceService] data -> AnyPublisher<[CryptoCurrencyQuote], CryptoCurrenciesServiceError> in
                 // Step 2: Combine each purchasable Crypto Currency with its price data from the last 24h and merge results into a single value

@@ -80,25 +80,9 @@ final class PendingTransactionPageInteractor: PresentableInteractor<PendingTrans
                 }
             })
             .disposed(by: disposeBag)
-
-        let completion = executionStatus
-            .map(\.isComplete)
-            .filter { $0 == true }
-            .delay(.milliseconds(500), scheduler: MainScheduler.asyncInstance)
-            .asDriverCatchError()
-
-        completion
-            .drive(weak: self) { (self, _) in
-                self.requestReview()
-            }
-            .disposeOnDeactivate(interactor: self)
     }
 
     // MARK: - Private methods
-
-    private func requestReview() {
-        StoreReviewController.requestReview()
-    }
 
     private func handle(effect: PendingTransactionPageState.Effect) {
         switch effect {
@@ -112,11 +96,25 @@ final class PendingTransactionPageInteractor: PresentableInteractor<PendingTrans
     }
 
     private func triggerSendEmailNotification(_ transactionState: TransactionState) {
-        if transactionState.action == .send, transactionState.source is NonCustodialAccount {
-            sendEmailNotificationService
-                .postSendEmailNotificationTrigger(transactionState.amount)
-                .subscribe()
-                .store(in: &cancellables)
+        switch transactionState.action {
+        case .interestTransfer,
+             .send:
+            if transactionState.source is NonCustodialAccount {
+                sendEmailNotificationService
+                    .postSendEmailNotificationTrigger(transactionState.amount)
+                    .subscribe()
+                    .store(in: &cancellables)
+            }
+        case .deposit,
+             .receive,
+             .interestWithdraw,
+             .buy,
+             .sell,
+             .swap,
+             .withdraw,
+             .viewActivity,
+             .sign:
+            break
         }
     }
 

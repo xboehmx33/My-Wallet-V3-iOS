@@ -39,6 +39,7 @@ final class OrderCreationService: OrderCreationServiceAPI {
 
     func create(using candidateOrderDetails: CandidateOrderDetails) -> Single<CheckoutData> {
         let data = OrderPayload.Request(
+            quoteId: candidateOrderDetails.quoteId,
             action: candidateOrderDetails.action,
             fiatValue: candidateOrderDetails.fiatValue,
             fiatCurrency: candidateOrderDetails.fiatCurrency,

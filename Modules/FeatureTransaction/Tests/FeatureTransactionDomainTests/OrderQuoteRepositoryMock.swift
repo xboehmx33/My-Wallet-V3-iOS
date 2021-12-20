@@ -2,6 +2,7 @@
 
 import Combine
 @testable import FeatureTransactionDomain
+import MoneyKit
 import NabuNetworkError
 import PlatformKit
 

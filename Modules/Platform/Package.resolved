@@ -20,6 +20,15 @@
         }
       },
       {
+        "package": "CheckoutEventLoggerKit",
+        "repositoryURL": "https://github.com/checkout/checkout-event-logger-ios-framework.git",
+        "state": {
+          "branch": null,
+          "revision": "917efddacf253a09c17921d268c0aa817a5011d5",
+          "version": "1.1.1"
+        }
+      },
+      {
         "package": "combine-schedulers",
         "repositoryURL": "https://github.com/pointfreeco/combine-schedulers",
         "state": {
@@ -47,6 +56,15 @@
         }
       },
       {
+        "package": "Frames",
+        "repositoryURL": "https://github.com/checkout/frames-ios.git",
+        "state": {
+          "branch": null,
+          "revision": "021a6f500744f975306b73595bc4409f4a5b1a61",
+          "version": "3.5.2"
+        }
+      },
+      {
         "package": "Nuke",
         "repositoryURL": "https://github.com/kean/Nuke.git",
         "state": {
@@ -66,11 +84,11 @@
       },
       {
         "package": "RIBs",
-        "repositoryURL": "https://github.com/paulo-bc/RIBs.git",
+        "repositoryURL": "https://github.com/uber/RIBs.git",
         "state": {
           "branch": null,
           "revision": "6cad1e953d9b60ab177a963dd63715806ed0d192",
-          "version": "0.10.2"
+          "version": "0.12.1"
         }
       },
       {
@@ -88,7 +106,25 @@
         "state": {
           "branch": null,
           "revision": "cec68169a048a079f461ba203fe85636548d7a89",
-          "version": "5.1.3"
+          "version": "6.2.0"
+        }
+      },
+      {
+        "package": "Stripe",
+        "repositoryURL": "https://github.com/stripe/stripe-ios",
+        "state": {
+          "branch": null,
+          "revision": "00fe1bc3b6abedd7b3a08776ac121d07289cd560",
+          "version": "21.9.0"
+        }
+      },
+      {
+        "package": "swift-algorithms",
+        "repositoryURL": "https://github.com/apple/swift-algorithms.git",
+        "state": {
+          "branch": null,
+          "revision": "2327673b0e9c7e90e6b1826376526ec3627210e4",
+          "version": "0.2.1"
         }
       },
       {
@@ -137,6 +173,15 @@
         }
       },
       {
+        "package": "swift-numerics",
+        "repositoryURL": "https://github.com/apple/swift-numerics",
+        "state": {
+          "branch": null,
+          "revision": "6583ac70c326c3ee080c1d42d9ca3361dca816cd",
+          "version": "0.1.0"
+        }
+      },
+      {
         "package": "SnapshotTesting",
         "repositoryURL": "https://github.com/pointfreeco/swift-snapshot-testing",
         "state": {
@@ -150,8 +195,8 @@
         "repositoryURL": "https://github.com/oliveratkinson-bc/wallet-core.git",
         "state": {
           "branch": null,
-          "revision": "985832e0a0746608ded3cc3984066f455d28c30f",
-          "version": "2.6.31"
+          "revision": "b9810df6aeddf2360fea0165e055afeec77ea579",
+          "version": "2.6.34"
         }
       },
       {

@@ -13,15 +13,19 @@ final class QRCodeScannerFlashService {
     }
 
     /// Whether or not the flash is enabled
-    let isEnabledRelay = CurrentValueSubject<Bool, Never>(false)
+    private let isEnabledRelay = CurrentValueSubject<Bool, Never>(false)
 
     func toggleFlash() {
-        guard let device = AVCaptureDevice.default(for: .video) else { return }
-        guard device.hasTorch else { return }
+        guard let device = AVCaptureDevice.default(for: .video) else {
+            return
+        }
+        guard device.isTorchAvailable else {
+            return
+        }
         do {
             try device.lockForConfiguration()
             if device.torchMode == .off {
-                try device.setTorchModeOn(level: 1.0)
+                device.torchMode = .on
             } else {
                 device.torchMode = .off
             }

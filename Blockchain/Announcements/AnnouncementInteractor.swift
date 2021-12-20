@@ -4,6 +4,7 @@ import Combine
 import DIKit
 import ERC20Kit
 import FeatureAuthenticationDomain
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxSwift
@@ -45,7 +46,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
                         )
                     }
             }
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
 
         let hasLinkedBanks = beneficiariesService.hasLinkedBank
             .take(1)
@@ -83,7 +84,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
             .asSingle()
             .map(\.accounts)
             .flatMap { accounts -> Single<[Bool]> in
-                Single.zip(accounts.map { $0.isFunded.catchErrorJustReturn(false) })
+                Single.zip(accounts.map { $0.isFunded.catchAndReturn(false) })
             }
             .map { values in
                 values.contains(true)
@@ -98,7 +99,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
                     enabledCurrenciesService: enabledCurrenciesService
                 )
             }
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
 
         let celoEUR: CryptoCurrency? = enabledCurrenciesService
             .allEnabledCryptoCurrencies
@@ -111,7 +112,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
             nabuUser,
             tiers,
             countries,
-            authenticatorType,
+            authenticatorType.asSingle(),
             hasAnyWalletBalance,
             Single.zip(
                 newAsset,
@@ -147,7 +148,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
                 celoEUR: celoEUR
             )
         }
-        .observeOn(MainScheduler.instance)
+        .observe(on: MainScheduler.instance)
     }
 
     // MARK: - Private properties
@@ -168,7 +169,7 @@ final class AnnouncementInteractor: AnnouncementInteracting {
     // MARK: - Setup
 
     init(
-        repository: AuthenticatorRepositoryAPI = WalletManager.shared.repository,
+        repository: AuthenticatorRepositoryAPI = resolve(),
         wallet: WalletProtocol = WalletManager.shared.wallet,
         userService: NabuUserServiceAPI = resolve(),
         tiersService: KYCTiersServiceAPI = resolve(),

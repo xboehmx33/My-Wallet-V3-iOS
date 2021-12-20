@@ -2,6 +2,7 @@
 
 import AnalyticsKit
 import BigInt
+import MoneyKit
 
 public struct SellOrderDetails {
 

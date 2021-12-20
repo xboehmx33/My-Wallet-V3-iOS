@@ -60,7 +60,6 @@ final class VerifyDeviceReducerTests: XCTestCase {
     }
 
     func test_on_appear_should_poll_wallet_info() {
-        mockFeatureFlagsService.enable(.local(.pollingForEmailLogin)).subscribe().store(in: &cancellables)
         mockFeatureFlagsService.enable(.remote(.pollingForEmailLogin))
             .subscribe().store(in: &cancellables)
         testStore.assert(

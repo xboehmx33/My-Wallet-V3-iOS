@@ -19,7 +19,8 @@ public final class SelectPaymentMethodService {
             .zip(
                 isUserEligibleForFunds,
                 methodTypes,
-                fiatCurrencyService.fiatCurrency,
+                fiatCurrencyService.displayCurrency
+                    .asSingle(),
                 featureFlagsService
                     .isEnabled(.remote(.openBanking))
                     .asSingle()

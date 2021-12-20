@@ -8,24 +8,32 @@ import SwiftUI
 ///
 /// [Tag](https://www.figma.com/file/nlSbdUyIxB64qgypxJkm74/03---iOS-%7C-Shared?node-id=212%3A5974)
 public struct Tag: View {
+
+    public enum Size: Equatable {
+        case small
+        case large
+    }
+
     private let text: String
     private let variant: Variant
+    private let size: Size
 
     /// Create a tag view
     /// - Parameters:
     ///   - text: Text displayed in the tag
     ///   - variant: Color variant. See `extension Tag.Variant` below for options.
-    public init(text: String, variant: Variant = .default) {
+    public init(text: String, variant: Variant = .default, size: Size = .small) {
         self.text = text
         self.variant = variant
+        self.size = size
     }
 
     public var body: some View {
         Text(text)
             .typography(.caption2)
             .foregroundColor(variant.textColor)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+            .padding(.horizontal, size == .small ? 6 : 12)
+            .padding(.vertical, size == .small ? 4 : 6)
             .background(
                 RoundedRectangle(cornerRadius: 4)
                     .fill(variant.backgroundColor)
@@ -82,6 +90,15 @@ struct Tag_Previews: PreviewProvider {
         .previewDisplayName("Default")
 
         VStack {
+            Tag(text: "Informational", size: .large)
+
+            Tag(text: "Informational", size: .large)
+                .colorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .previewDisplayName("Default Large")
+
+        VStack {
             Tag(text: "Info Alt", variant: .infoAlt)
 
             Tag(text: "Info Alt", variant: .infoAlt)
@@ -89,6 +106,15 @@ struct Tag_Previews: PreviewProvider {
         }
         .previewLayout(.sizeThatFits)
         .previewDisplayName("InfoAlt")
+
+        VStack {
+            Tag(text: "Info Alt", variant: .infoAlt, size: .large)
+
+            Tag(text: "Info Alt", variant: .infoAlt, size: .large)
+                .colorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .previewDisplayName("InfoAlt Large")
 
         VStack {
             Tag(text: "Success", variant: .success)
@@ -100,6 +126,15 @@ struct Tag_Previews: PreviewProvider {
         .previewDisplayName("Success")
 
         VStack {
+            Tag(text: "Success", variant: .success, size: .large)
+
+            Tag(text: "Success", variant: .success, size: .large)
+                .colorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .previewDisplayName("Success Large")
+
+        VStack {
             Tag(text: "Warning", variant: .warning)
 
             Tag(text: "Warning", variant: .warning)
@@ -109,6 +144,15 @@ struct Tag_Previews: PreviewProvider {
         .previewDisplayName("Warning")
 
         VStack {
+            Tag(text: "Warning", variant: .warning, size: .large)
+
+            Tag(text: "Warning", variant: .warning, size: .large)
+                .colorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .previewDisplayName("Warning Large")
+
+        VStack {
             Tag(text: "Error", variant: .error)
 
             Tag(text: "Error", variant: .error)
@@ -116,5 +160,14 @@ struct Tag_Previews: PreviewProvider {
         }
         .previewLayout(.sizeThatFits)
         .previewDisplayName("Error")
+
+        VStack {
+            Tag(text: "Error", variant: .error, size: .large)
+
+            Tag(text: "Error", variant: .error, size: .large)
+                .colorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
+        .previewDisplayName("Error Large")
     }
 }

@@ -6,100 +6,181 @@ import ComposableArchitectureExtensions
 private struct UpdateSubscriptionId: Hashable {}
 private struct UpdateHeaderId: Hashable {}
 
-let accountPickerReducer = Reducer<AccountPickerState, AccountPickerAction, AccountPickerEnvironment>.combine(
-    accountPickerRowReducer.forEach(
-        state: \.self,
-        action: /SuccessRowsAction.accountPickerRow(id:action:),
-        environment: { environment in
-            AccountPickerRowEnvironment(
-                mainQueue: environment.mainQueue,
-                updateSingleAccount: environment.updateSingleAccount,
-                updateAccountGroup: environment.updateAccountGroup
-            )
+private struct UpdateAccountIds: Hashable {
+    let identities: Set<AnyHashable>
+}
+
+// swiftlint:disable closure_body_length
+let accountPickerReducer = Reducer<
+    AccountPickerState,
+    AccountPickerAction,
+    AccountPickerEnvironment
+> { state, action, environment in
+    switch action {
+
+    case .rowsLoaded(.success(.accountPickerRowDidTap(let id))):
+        environment.rowSelected(id)
+        return .none
+
+    case .prefetching(.fetch(indices: let indices)):
+        guard case .loaded(.success(let rows)) = state.rows else {
+            return .none
         }
-    )
-    .pullback(state: /Result.success, action: /LoadedRowsAction.success, environment: { $0 })
-    .pullback(state: /LoadingState.loaded, action: /AccountPickerAction.rowsLoaded, environment: { $0 })
-    .pullback(state: \.rows, action: /AccountPickerAction.self, environment: { $0 }),
-    Reducer { state, action, environment in
-        switch action {
 
-        case .rowsLoaded(.success(.accountPickerRow(
-            id: let id,
-            action: .accountPickerRowDidTap
-        ))):
-            environment.rowSelected(id)
-            return .none
+        let fetchingRows = indices.map { rows.content[$0] }
+        let singleAccountIds = Set(
+            fetchingRows
+                .filter(\.isSingleAccount)
+                .map(\.id)
+        )
 
-        case .rowsLoaded(.success(.accountPickerRow(
-            id: let id,
-            action: .singleAccount(action: .update(balances: let balances))
-        ))):
-            state.fiatBalances[id] = balances.fiatBalance.value
-            state.cryptoBalances[id] = balances.cryptoBalance.value
-            return .none
+        let accountGroupIds = Set(
+            fetchingRows
+                .filter(\.isAccountGroup)
+                .map(\.id)
+        )
 
-        case .rowsLoaded(.success(.accountPickerRow(
-            id: let id,
-            action: .accountGroup(action: .update(balances: let balances))
-        ))):
-            state.fiatBalances[id] = balances.fiatBalance.value
-            state.currencyCodes[id] = balances.currencyCode.value
-            return .none
+        var effects: [Effect<AccountPickerAction, Never>] = []
 
-        case .rowsLoading:
-            return .none
-
-        case .updateRows(rows: let rows):
-            state.rows = .loaded(next: .success(IdentifiedArrayOf(uniqueElements: rows)))
-            return .none
-
-        case .failedToUpdateRows:
-            state.rows = .loaded(next: .failure(.testError))
-            return .none
-
-        case .updateHeader(header: let header):
-            state.header = header
-            return .none
-
-        case .failedToUpdateHeader:
-            return .none
-
-        case .search(let text):
-            state.searchText = text
-            environment.search(text)
-            return .none
-
-        case .subscribeToUpdates:
-            return .merge(
-                environment.sections()
+        if !singleAccountIds.isEmpty {
+            effects.append(
+                environment.updateSingleAccounts(singleAccountIds)
                     .receive(on: environment.mainQueue)
                     .catchToEffect()
-                    .cancellable(id: UpdateSubscriptionId(), cancelInFlight: true)
+                    .cancellable(id: UpdateAccountIds(identities: singleAccountIds), cancelInFlight: true)
                     .map { result in
                         switch result {
-                        case .success(let rows):
-                            return .updateRows(rows)
-                        case .failure(let error):
-                            return .failedToUpdateRows(error)
-                        }
-                    },
-                environment.header()
-                    .receive(on: environment.mainQueue)
-                    .catchToEffect()
-                    .cancellable(id: UpdateHeaderId(), cancelInFlight: true)
-                    .map { result in
-                        switch result {
-                        case .success(let header):
-                            return .updateHeader(header)
-                        case .failure(let error):
-                            return .failedToUpdateHeader(error)
+                        case .success(let balances):
+                            return .updateSingleAccounts(balances)
+                        case .failure:
+                            return .prefetching(.requeue(indices: indices))
                         }
                     }
             )
-
-        default:
-            return .none
         }
+
+        if !accountGroupIds.isEmpty {
+            effects.append(
+                environment.updateAccountGroups(accountGroupIds)
+                    .receive(on: environment.mainQueue)
+                    .catchToEffect()
+                    .cancellable(id: UpdateAccountIds(identities: accountGroupIds), cancelInFlight: true)
+                    .map { result in
+                        switch result {
+                        case .success(let balances):
+                            return .updateAccountGroups(balances)
+                        case .failure:
+                            return .prefetching(.requeue(indices: indices))
+                        }
+                    }
+            )
+        }
+
+        return .merge(effects)
+
+    case .updateSingleAccounts(let values):
+        var requeue: Set<Int> = []
+
+        values.forEach { key, value in
+            state.fiatBalances[key] = value.fiatBalance.value
+            state.cryptoBalances[key] = value.cryptoBalance.value
+
+            if value.fiatBalance == .loading || value.cryptoBalance == .loading,
+               case .loaded(.success(let rows)) = state.rows,
+               let index = rows.content.indexed().first(where: { $1.id == key })?.index
+            {
+                requeue.insert(index)
+            }
+        }
+
+        if requeue.isEmpty {
+            return .none
+        } else {
+            return Effect(value: .prefetching(.requeue(indices: requeue)))
+        }
+
+    case .updateAccountGroups(let values):
+        var requeue: Set<Int> = []
+
+        values.forEach { key, value in
+            state.fiatBalances[key] = value.fiatBalance.value
+            state.currencyCodes[key] = value.currencyCode.value
+
+            if value.fiatBalance == .loading || value.currencyCode == .loading,
+               case .loaded(.success(let rows)) = state.rows,
+               let index = rows.content.indexed().first(where: { $1.id == key })?.index
+            {
+                requeue.insert(index)
+            }
+        }
+
+        if requeue.isEmpty {
+            return .none
+        } else {
+            return Effect(value: .prefetching(.requeue(indices: requeue)))
+        }
+
+    case .rowsLoading:
+        return .none
+
+    case .updateRows(rows: let rows):
+        state.prefetching.validIndices = rows.indices
+        state.rows = .loaded(next: .success(Rows(content: rows)))
+        return .none
+
+    case .failedToUpdateRows:
+        state.rows = .loaded(next: .failure(.testError))
+        return .none
+
+    case .updateHeader(header: let header):
+        state.header.headerStyle = header
+        return .none
+
+    case .failedToUpdateHeader:
+        return .none
+
+    case .search(let text):
+        state.header.searchText = text
+        environment.search(text)
+        return .none
+
+    case .subscribeToUpdates:
+        return .merge(
+            environment.sections()
+                .receive(on: environment.mainQueue)
+                .catchToEffect()
+                .cancellable(id: UpdateSubscriptionId())
+                .map { result in
+                    switch result {
+                    case .success(let rows):
+                        return .updateRows(rows)
+                    case .failure(let error):
+                        return .failedToUpdateRows(error)
+                    }
+                },
+            environment.header()
+                .receive(on: environment.mainQueue)
+                .catchToEffect()
+                .cancellable(id: UpdateHeaderId(), cancelInFlight: true)
+                .map { result in
+                    switch result {
+                    case .success(let header):
+                        return .updateHeader(header)
+                    case .failure(let error):
+                        return .failedToUpdateHeader(error)
+                    }
+                }
+        )
+
+    default:
+        return .none
     }
+}
+.combined(
+    with: PrefetchingReducer(
+        state: \AccountPickerState.prefetching,
+        action: /AccountPickerAction.prefetching,
+        environment: { PrefetchingEnvironment(mainQueue: $0.mainQueue) }
+    )
 )
+// swiftlint:enable closure_body_length

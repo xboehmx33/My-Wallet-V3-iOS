@@ -13,7 +13,7 @@ import ToolKit
 import UIComponentsKit
 
 /// A view controller that displays the dashboard
-final class PortfolioViewController: BaseScreenViewController {
+public final class PortfolioViewController: BaseScreenViewController {
 
     // MARK: - Private Types
 
@@ -29,7 +29,7 @@ final class PortfolioViewController: BaseScreenViewController {
 
     // MARK: - Setup
 
-    init(
+    public init(
         fiatBalanceCellProvider: FiatBalanceCellProviding,
         presenter: PortfolioScreenPresenter
     ) {
@@ -50,7 +50,7 @@ final class PortfolioViewController: BaseScreenViewController {
 
     // MARK: - Lifecycle
 
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         setupNavigationBar()
@@ -58,9 +58,13 @@ final class PortfolioViewController: BaseScreenViewController {
         presenter.setup()
         tableView.reloadData()
         presenter.refreshRelay.accept(())
+
+        NotificationCenter.when(.transaction) { [weak self] _ in
+            self?.presenter.refreshRelay.accept(())
+        }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
+    override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.navigationBar.isTranslucent = false
     }
@@ -162,7 +166,7 @@ final class PortfolioViewController: BaseScreenViewController {
 
     // MARK: - Navigation
 
-    override func navigationBarLeadingButtonPressed() {
+    override public func navigationBarLeadingButtonPressed() {
         presenter.navigationBarLeadingButtonPressed()
     }
 

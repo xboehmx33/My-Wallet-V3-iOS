@@ -7,6 +7,165 @@ import Foundation
 extension LocalizationConstants {
 
     public enum KYC {
+
+        public enum LimitsStatus {
+
+            public static let pageTitle = NSLocalizedString(
+                "Upgrade Now",
+                comment: "Title for the scren showing the current KYC Tiers application/eligibility status"
+            )
+        }
+
+        public enum LimitsOverview {
+
+            public enum Feature {
+
+                public static let enabled = NSLocalizedString("Enabled", comment: "Feature is enabled")
+                public static let disabled = NSLocalizedString("Disabled", comment: "Feature is disabled")
+                public static let unlimited = NSLocalizedString("No Limit", comment: "Feature has no trading limits")
+                public static let limitedPerDay = NSLocalizedString(
+                    "%@ a Day",
+                    comment: "Limit per Day period - E.g. $2,000 a Day"
+                )
+                public static let limitedPerMonth = NSLocalizedString(
+                    "%@ a Month",
+                    comment: "Limit per Month period - E.g. $2,000 a Month"
+                )
+                public static let limitedPerYear = NSLocalizedString(
+                    "%@ a Year",
+                    comment: "Limit per Year period - E.g. $2,000 a Year"
+                )
+
+                public static let fromTradingAccountsOnlyNote = NSLocalizedString(
+                    "from Trading Accounts",
+                    comment: "Note for limits that apply only to money going out from trading accounts"
+                )
+                public static let toTradingAccountsOnlyNote = NSLocalizedString(
+                    "to Trading Accounts",
+                    comment: "Note for limits that apply only to money going into trading accounts"
+                )
+
+                public static let featureName_send = NSLocalizedString(
+                    "Send Crypto",
+                    comment: "Feature name - send"
+                )
+                public static let featureName_receive = NSLocalizedString(
+                    "Receive Crypto",
+                    comment: "Feature name - receive"
+                )
+                public static let featureName_swap = NSLocalizedString(
+                    "Swap Crypto",
+                    comment: "Feature name - swap"
+                )
+                public static let featureName_sell = NSLocalizedString(
+                    "Buy & Sell",
+                    comment: "Feature name - sell"
+                )
+                public static let featureName_buyWithCard = NSLocalizedString(
+                    "Card Purchases",
+                    comment: "Feature name - buyWithCard"
+                )
+                public static let featureName_buyWithBankAccount = NSLocalizedString(
+                    "Bank Buys / Deposits",
+                    comment: "Feature name - buyWithBankAccount"
+                )
+                public static let featureName_withdraw = NSLocalizedString(
+                    "Bank Withdrawals",
+                    comment: "Feature name - withdraw"
+                )
+                public static let featureName_rewards = NSLocalizedString(
+                    "Earn Rewards",
+                    comment: "Feature name - rewards"
+                )
+
+                public static let goldLimitsTitle = NSLocalizedString(
+                    "Gold Limits",
+                    comment: "Gold Limits - Title"
+                )
+                public static let silverLimitsTitle = NSLocalizedString(
+                    "Silver Limits",
+                    comment: "Silver Limits - Title"
+                )
+                public static let goldLimitsMessage = NSLocalizedString(
+                    "Buy & Sell. Earn Rewards.",
+                    comment: "Gold Limits - Message"
+                )
+                public static let silverLimitsMessage = NSLocalizedString(
+                    "Unlock Trade Accounts and Swap.",
+                    comment: "Silver Limits - Message"
+                )
+                public static let goldLimitsDetails = NSLocalizedString(
+                    "Connect your bank or card to your Wallet. Hold cash in your wallet. Earn crypto with Rewards.",
+                    comment: "Gold Limits - Details"
+                )
+                public static let silverLimitsDetails = NSLocalizedString(
+                    "Unclock Swap - our in-app exchange.",
+                    comment: "Silver Limits - Details"
+                )
+                public static let silverLimitsNote = NSLocalizedString(
+                    "Includes Silver Features",
+                    comment: "Silver Limits Note"
+                )
+            }
+
+            public static let pageTitle = NSLocalizedString(
+                "Limits & Features",
+                comment: "Limits overview page title"
+            )
+
+            public static let footerTemplate = NSLocalizedString(
+                "Transaction limits may apply to certain banks and card issuers.\n\nPurchase or deposit limits are determined by many factors, including verification completed on your account, your purchase history, your payment type, and more.\n\nLearn more about Trading Accounts, Limits, and features by visiting our |SUPPORT_CENTER|.",
+                comment: "Page footer. |SUPPORT_CENTER| is a placeholder for formatting purposes. Don't change it!"
+            )
+            public static let supportCenterLink = NSLocalizedString(
+                "Support Center",
+                comment: "Link to support center. This is what gets inserted in place of |SUPPORT_CENTER|."
+            )
+
+            public static let headerTitle_tier0 = NSLocalizedString(
+                "Upgrade Your Wallet",
+                comment: "Limits overview page - header - title for tier0 users"
+            )
+            public static let headerMessage_tier0 = NSLocalizedString(
+                "Blockchain.com offers two types of Account Limits, each designed to suit your crypto goals and needs.",
+                comment: "Limits overview page - header - message for tier0 users"
+            )
+            public static let headerTitle_tier1 = NSLocalizedString(
+                "Upgrade to Gold Limits",
+                comment: "Limits overview page - header - title for tier1 users"
+            )
+            public static let headerMessage_tier1 = NSLocalizedString(
+                "Verify your ID and link your bank to Buy & Sell Crypto straight from your wallet.",
+                comment: "Limits overview page - header - message for tier1 users"
+            )
+            public static let headerMessage_tier2 = NSLocalizedString(
+                "You currently have the highest level of Account Limits and features available.",
+                comment: "Limits overview page - header - message for tier2 users"
+            )
+            public static let headerCTA_tier0 = NSLocalizedString(
+                "Get Started",
+                comment: "Limits overview page - header - call to action button title for tier0 users"
+            )
+            public static let headerCTA_tier1 = NSLocalizedString(
+                "Apply Now",
+                comment: "Limits overview page - header - call to action button title for tier1 users"
+            )
+
+            public static let featureListHeader = NSLocalizedString(
+                "Your Limits & Features",
+                comment: "Limits overview page - header for the list of features and their trading limits."
+            )
+
+            public static let emptyPageMessage = NSLocalizedString(
+                "There was a problem retrieving your limits information. Please try again.",
+                comment: "Limits overview page empty state message"
+            )
+            public static let emptyPageRetryButton = NSLocalizedString(
+                "Retry",
+                comment: "Limits overview page empty state retry action"
+            )
+        }
+
         public static let welcome = NSLocalizedString("Welcome", comment: "Welcome")
         public static let welcomeMainText = NSLocalizedString(
             "Introducing Blockchain's faster, smarter way to trade your crypto. Upgrade now to enjoy benefits such as better prices, higher trade limits and live rates.",
@@ -64,9 +223,17 @@ extension LocalizationConstants {
             "Congratulations! We successfully verified your identity. You can now Exchange cryptocurrencies at Blockchain.",
             comment: "Description for when KYC verification is approved."
         )
+        public static let mostPopularBadge = NSLocalizedString(
+            "Most Popular",
+            comment: "KYC Tier Badge - Most Popular option"
+        )
         public static let accountApprovedBadge = NSLocalizedString(
             "Approved",
             comment: "KYC verification is approved."
+        )
+        public static let accountInManualReviewBadge = NSLocalizedString(
+            "In Manual Review",
+            comment: "KYC verification is in manual review."
         )
         public static let accountInReviewBadge = NSLocalizedString(
             "In Review",
@@ -391,7 +558,7 @@ extension LocalizationConstants {
         public static let zipCode = NSLocalizedString("Zip Code", comment: "zip code")
         public static let required = NSLocalizedString("Required", comment: "required")
         public static let state = NSLocalizedString("State", comment: "state")
-        public static let stateRegionProvinceCountry = NSLocalizedString("State / Region / Province / Country", comment: "State / Region / Province / Country")
+        public static let country = NSLocalizedString("Country", comment: "Country")
         public static let postalCode = NSLocalizedString("Postal Code", comment: "postal code")
 
         public enum Errors {

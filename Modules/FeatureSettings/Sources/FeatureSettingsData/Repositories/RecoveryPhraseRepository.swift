@@ -27,8 +27,8 @@ final class RecoveryPhraseRepository: RecoveryPhraseRepositoryAPI {
 
     func sendExposureAlertEmail() -> AnyPublisher<Void, RecoveryPhraseRepositoryError> {
         Publishers.Zip(
-            credentialsRepository.guidPublisher,
-            credentialsRepository.sharedKeyPublisher
+            credentialsRepository.guid,
+            credentialsRepository.sharedKey
         )
         .flatMap { [exposureAlertClient] guidOrNil, sharedKeyOrNil
             -> AnyPublisher<Void, RecoveryPhraseRepositoryError> in
@@ -48,8 +48,8 @@ final class RecoveryPhraseRepository: RecoveryPhraseRepositoryAPI {
 
     func updateMnemonicBackup() -> AnyPublisher<Void, RecoveryPhraseRepositoryError> {
         Publishers.Zip(
-            credentialsRepository.guidPublisher,
-            credentialsRepository.sharedKeyPublisher
+            credentialsRepository.guid,
+            credentialsRepository.sharedKey
         )
         .flatMap { [backupClient] guidOrNil, sharedKeyOrNil -> AnyPublisher<Void, RecoveryPhraseRepositoryError> in
             guard let guid = guidOrNil else {

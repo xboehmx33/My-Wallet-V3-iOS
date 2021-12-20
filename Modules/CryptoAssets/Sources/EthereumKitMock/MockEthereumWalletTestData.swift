@@ -43,8 +43,7 @@ extension EthereumTransactionCandidate {
             gasPrice: MockEthereumWalletTestData.Transaction.gasPrice,
             gasLimit: MockEthereumWalletTestData.Transaction.gasLimit,
             value: MockEthereumWalletTestData.Transaction.value,
-            data: nil,
-            transferType: .transfer
+            transferType: .transfer()
         )
     }
 }

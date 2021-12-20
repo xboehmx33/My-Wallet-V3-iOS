@@ -10,21 +10,21 @@ public final class WebView: NSObject, UIViewRepresentable, WKScriptMessageHandle
 
     // MARK: - Properties
 
-    @Binding private var sendMessage: String
+    /// Update this message to trigger sending message to web
+    @Binding private var currentMessage: String
 
     private let request: URLRequest
     private let webView: WKWebView
-
     private let messageHandlers: MessageHandlers
 
     // MARK: - Setup
 
     public init(
-        sendMessage: Binding<String>,
+        currentMessage: Binding<String>,
         url: URL,
         messageHandlers: [String: ((String) -> Void)?]
     ) {
-        _sendMessage = sendMessage
+        _currentMessage = currentMessage
         request = URLRequest(url: url)
         webView = WKWebView(
             frame: .zero,
@@ -51,8 +51,8 @@ public final class WebView: NSObject, UIViewRepresentable, WKScriptMessageHandle
 
     /// Methods to interact with the Webview.
     public func updateUIView(_ uiView: WKWebView, context: Context) {
-        guard !sendMessage.isEmpty else { return }
-        uiView.evaluateJavaScript("receiveMessage(\"\(sendMessage)\");")
+        guard !currentMessage.isEmpty else { return }
+        uiView.evaluateJavaScript("receiveMessageFromMobile(\"\(currentMessage)\");")
     }
 
     public func userContentController(

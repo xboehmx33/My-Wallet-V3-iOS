@@ -4,6 +4,7 @@ import AnalyticsKit
 import BigInt
 import FeatureOpenBankingDomain
 import Localization
+import MoneyKit
 
 /// `OrderDetails` is the primary model that should be accessed by
 /// `Buy`, `Sell`, etc. It has an internal `value` of type `OrderDetailsValue`.

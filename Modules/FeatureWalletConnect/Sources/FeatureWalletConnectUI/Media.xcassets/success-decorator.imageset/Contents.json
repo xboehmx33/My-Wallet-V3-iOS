@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "success-decorator.pdf",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

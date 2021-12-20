@@ -11,7 +11,6 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
 
     private enum Constants {
         static let animationDuration: TimeInterval = 0.25
-        static let defaultHeight: CGFloat = 144
         static let heightSearchBarFocus: CGFloat = 64
     }
 
@@ -30,7 +29,6 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
             subtitleLabel.content = model.subtitleLabel
             separator.isHidden = model.tableTitleLabel == nil || model.searchable
             uiSearchBar.isHidden = !model.searchable
-            heightConstraint?.constant = model.height
         }
     }
 
@@ -76,8 +74,7 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
     // MARK: Setup
 
     private func setup() {
-        heightConstraint = layout(dimension: .height, to: Constants.defaultHeight)
-
+        widthAnchor.constraint(equalToConstant: UIScreen.main.bounds.width).isActive = true
         addSubview(uiSearchBar)
         addSubview(patternImageView)
         addSubview(assetImageView)
@@ -106,11 +103,13 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
 
         subtitleLabel.layout(edge: .top, to: .bottom, of: titleLabel, offset: 8)
         subtitleLabel.layoutToSuperview(axis: .horizontal, offset: 24)
+        subtitleLabel.lineBreakMode = .byWordWrapping
         subtitleLabel.numberOfLines = 0
 
         // MARK: Separator
 
         separator.backgroundColor = .lightBorder
+        separator.layout(edge: .top, to: .bottom, of: subtitleLabel, offset: 8)
         separator.layout(dimension: .height, to: 1)
         separator.layoutToSuperview(axis: .horizontal)
         separator.layoutToSuperview(.bottom)
@@ -174,7 +173,9 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
     // MARK: Search
 
     private func enableSearch() {
-        heightConstraint?.constant = Constants.heightSearchBarFocus
+        if heightConstraint == nil {
+            heightConstraint = layout(dimension: .height, to: Constants.heightSearchBarFocus)
+        }
         UIView.animate(
             withDuration: Constants.animationDuration,
             animations: { [weak self] in
@@ -187,7 +188,8 @@ final class AccountPickerHeaderView: UIView, AccountPickerHeaderViewAPI {
     }
 
     private func disableSearch() {
-        heightConstraint?.constant = model?.height ?? Constants.defaultHeight
+        heightConstraint?.isActive = false
+        heightConstraint = nil
         UIView.animate(
             withDuration: Constants.animationDuration,
             animations: { [weak self] in

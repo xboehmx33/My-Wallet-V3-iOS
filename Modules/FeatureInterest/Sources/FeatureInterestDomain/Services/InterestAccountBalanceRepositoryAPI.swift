@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import NetworkKit
 import PlatformKit
 import ToolKit
@@ -10,6 +11,10 @@ public enum InterestAccountBalanceRepositoryError: Error {
 }
 
 public protocol InterestAccountBalanceRepositoryAPI: AnyObject {
+
+    /// Invalidates the cached balance for a given `FiatCurrency`
+    /// This `FiatCurrency` should be the users displayCurrency.
+    func invalidateAccountBalanceCacheWithKey(_ fiatCurrency: FiatCurrency)
 
     /// Fetches `InterestAccountBalances` for a given `FiatCurrency`.
     /// Use the subscript function on `InterestAccountBalances` to

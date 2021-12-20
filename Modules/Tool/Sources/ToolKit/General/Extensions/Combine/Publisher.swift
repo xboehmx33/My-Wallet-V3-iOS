@@ -262,6 +262,11 @@ extension Publisher {
     public func filter(_ keyPath: KeyPath<Output, Bool>) -> Publishers.Filter<Self> {
         filter { $0[keyPath: keyPath] }
     }
+
+    /// Find the first where the keyPath predicate is true. Allowing usage of \.self syntax.
+    public func first(where keyPath: KeyPath<Output, Bool>) -> Publishers.FirstWhere<Self> {
+        first { $0[keyPath: keyPath] }
+    }
 }
 
 extension Publisher where Output == Bool, Failure == Never {
@@ -321,5 +326,17 @@ extension Publisher {
     @_disfavoredOverload
     public func map<T>(_ action: @autoclosure @escaping () -> T) -> Publishers.Map<Self, T> {
         map { _ -> T in action() }
+    }
+}
+
+extension Publisher where Failure == Never {
+
+    @inlinable public func assign<Root>(
+        to keyPath: ReferenceWritableKeyPath<Root, Output>,
+        on root: Root
+    ) -> AnyCancellable where Root: AnyObject {
+        sink { [weak root] in
+            root?[keyPath: keyPath] = $0
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 import Foundation
 import Localization
+import MoneyKit
 import PlatformKit
 
 extension DashboardAsset.Value.Interaction {

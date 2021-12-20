@@ -2,6 +2,7 @@
 
 import Charts
 import Localization
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxSwift

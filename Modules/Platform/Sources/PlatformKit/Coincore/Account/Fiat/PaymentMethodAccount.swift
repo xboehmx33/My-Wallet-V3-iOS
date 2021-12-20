@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -72,5 +73,9 @@ public final class PaymentMethodAccount: FiatAccount {
                 MoneyValuePair(base: balance, exchangeRate: fiatPrice.moneyValue)
             }
             .eraseToAnyPublisher()
+    }
+
+    public func invalidateAccountBalance() {
+        // NO-OP
     }
 }

@@ -2,6 +2,7 @@
 
 import DIKit
 import Localization
+import MoneyKit
 import PlatformKit
 import RIBs
 import RxCocoa

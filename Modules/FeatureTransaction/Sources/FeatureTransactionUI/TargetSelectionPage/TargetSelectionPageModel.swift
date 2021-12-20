@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -38,7 +39,7 @@ final class TargetSelectionPageModel {
         case .sourceAccountSelected(let account, let action):
             return processTargetListUpdate(sourceAccount: account, action: action)
         case .validateAddress(let address, let account):
-            return validateCrypto(address: address, account: account as! CryptoAccount)
+            return validateCrypto(address: address, account: account)
         case .validateBitPayPayload(let value, let currency):
             return processBitPayValue(payload: value, currency: currency)
         case .destinationSelected,
@@ -72,7 +73,7 @@ final class TargetSelectionPageModel {
             }
     }
 
-    private func validateCrypto(address: String, account: CryptoAccount) -> Disposable {
+    private func validateCrypto(address: String, account: BlockchainAccount) -> Disposable {
         interactor
             .validateCrypto(address: address, account: account)
             .map { result -> TargetSelectionInputValidation.TextInput in

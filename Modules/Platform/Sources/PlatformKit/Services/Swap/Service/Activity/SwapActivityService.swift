@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxSwift
 import RxToolKit
 import ToolKit
@@ -31,7 +32,8 @@ final class SwapActivityService: SwapActivityServiceAPI {
             )
         )
         cache.setFetch {
-            fiatCurrencyProvider.fiatCurrency
+            fiatCurrencyProvider.displayCurrency
+                .asSingle()
                 .flatMap { fiatCurrency -> Single<[SwapActivityItemEvent]> in
                     client.fetchActivity(
                         from: Date(),

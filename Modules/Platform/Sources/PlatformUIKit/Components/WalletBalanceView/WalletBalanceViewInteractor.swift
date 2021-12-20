@@ -2,6 +2,7 @@
 
 import ComposableArchitectureExtensions
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -49,7 +50,8 @@ public final class WalletBalanceViewInteractor {
         fiatCurrencyService: FiatCurrencyServiceAPI = resolve()
     ) {
         stateObservableProvider = {
-            fiatCurrencyService.fiatCurrencyObservable
+            fiatCurrencyService.displayCurrencyPublisher
+                .asObservable()
                 .flatMapLatest { fiatCurrency in
                     account.fiatBalance(fiatCurrency: fiatCurrency).asObservable()
                 }

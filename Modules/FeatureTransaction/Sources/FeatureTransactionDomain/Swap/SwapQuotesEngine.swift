@@ -2,6 +2,7 @@
 
 import BigInt
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 
@@ -73,7 +74,7 @@ final class SwapQuotesEngine {
                 }
                 .startWith(quote)
             }
-            .takeUntil(stopSubject)
+            .take(until: stopSubject)
     }
 
     private func fetchQuote(direction: OrderDirection, pair: OrderPair) -> Single<OrderQuotePayload> {

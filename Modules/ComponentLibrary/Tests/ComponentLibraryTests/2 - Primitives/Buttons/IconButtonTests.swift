@@ -6,7 +6,7 @@ import XCTest
 
 final class IconButtonTexts: XCTestCase {
 
-    let button = IconButton(icon: .qRCode) {}
+    let button = IconButton(icon: .qrCode) {}
 
     func testDefault() {
         assertSnapshot(matching: button, as: .image)
@@ -14,5 +14,10 @@ final class IconButtonTexts: XCTestCase {
 
     func testDisabled() {
         assertSnapshot(matching: button.disabled(true), as: .image)
+    }
+
+    func testCircle() {
+        let button = IconButton(icon: .qrCode.circle()) {}.frame(width: 32, height: 32)
+        assertSnapshot(matching: button, as: .image)
     }
 }

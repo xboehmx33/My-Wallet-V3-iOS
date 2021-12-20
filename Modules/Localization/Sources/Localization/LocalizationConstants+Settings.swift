@@ -12,11 +12,11 @@ extension LocalizationConstants.Settings {
     public enum Section {
         public static let profile = NSLocalizedString("Profile", comment: "Profile")
         public static let preferences = NSLocalizedString("Preferences", comment: "Preferences")
-        public static let exchangeLink = NSLocalizedString("Exchange Link", comment: "Exchange Link")
+        public static let walletConnect = NSLocalizedString("Wallet Connect", comment: "Wallet Connect")
         public static let security = NSLocalizedString("Security", comment: "Security")
         public static let linkedCards = NSLocalizedString("Linked Cards", comment: "Linked Cards")
         public static let linkedBanks = NSLocalizedString("Linked Banks", comment: "Linked Banks")
-        public static let about = NSLocalizedString("About", comment: "About")
+        public static let help = NSLocalizedString("Help", comment: "Help settings section title")
     }
 
     public enum Badge {
@@ -64,8 +64,13 @@ extension LocalizationConstants.Settings {
     public static let termsOfService = NSLocalizedString("Terms of Service", comment: "Terms of Service")
     public static let privacyPolicy = NSLocalizedString("Privacy Policy", comment: "Privacy Policy")
     public static let cookiesPolicy = NSLocalizedString("Cookies Policy", comment: "Cookies Policy")
+    public static let logout = NSLocalizedString("Logout", comment: "Logout cell title in settings")
+    public static let addresses = NSLocalizedString("Addresses", comment: "Addresses title in settings")
+    public static let contactSupport = NSLocalizedString("Contact Support", comment: "Contact support cell title in settings")
+    public static let airdrops = NSLocalizedString("Airdrops", comment: "Airdrops cell title in settings")
     public static let changePIN = NSLocalizedString("Change PIN", comment: "Change PIN")
-    public static let loginToWebWallet = NSLocalizedString("Log in to Web Wallet", comment: "Log in to Web Wallet")
+    public static let loginToWebWallet = NSLocalizedString("Login to Web Wallet", comment: "Log in to Web Wallet")
+    public static let webLogin = NSLocalizedString("Web Log In", comment: "Log in to Web Wallet")
     public static let changePassword = NSLocalizedString("Change Password", comment: "Change Password")
     public static let enableTouchID = NSLocalizedString("Enable Touch ID", comment: "Enable Touch ID")
     public static let enableFaceID = NSLocalizedString("Enable Face ID", comment: "Enable Face ID")

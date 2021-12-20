@@ -29,7 +29,10 @@ final class DebugCoordinator: NSObject, DebugCoordinating {
 
     private var isDisplayed = PublishRelay<Bool>()
 
+    private var window: UIWindow?
+
     func enableDebugMenu(for window: UIWindow?) {
+        self.window = window
         guard let window = window else { return }
 
         let motionEnded = window.rx.motionEnded
@@ -100,6 +103,14 @@ final class DebugCoordinator: NSObject, DebugCoordinating {
             let view = Examples.RootView()
             let viewController = UIHostingController(rootView: view)
             navigationController?.pushViewController(viewController, animated: true)
+        case .colorScheme:
+            guard let window = window else { return }
+            switch window.overrideUserInterfaceStyle {
+            case .dark:
+                window.overrideUserInterfaceStyle = .light
+            default:
+                window.overrideUserInterfaceStyle = .dark
+            }
         }
     }
 }

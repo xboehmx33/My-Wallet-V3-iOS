@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import RxToolKit
@@ -80,7 +81,33 @@ final class TradingToOnChainTransactionEngine: TransactionEngine {
         precondition(sourceAsset == targetAsset)
     }
 
+    func restart(
+        transactionTarget: TransactionTarget,
+        pendingTransaction: PendingTransaction
+    ) -> Single<PendingTransaction> {
+        let memoModel = TransactionConfirmation.Model.Memo(
+            textMemo: target.memo,
+            required: false
+        )
+        return defaultRestart(
+            transactionTarget: transactionTarget,
+            pendingTransaction: pendingTransaction
+        )
+        .map { [sourceTradingAccount] pendingTransaction -> PendingTransaction in
+            guard sourceTradingAccount!.isMemoSupported else {
+                return pendingTransaction
+            }
+            var pendingTransaction = pendingTransaction
+            pendingTransaction.setMemo(memo: memoModel)
+            return pendingTransaction
+        }
+    }
+
     func initializeTransaction() -> Single<PendingTransaction> {
+        let memoModel = TransactionConfirmation.Model.Memo(
+            textMemo: target.memo,
+            required: false
+        )
         let transactionLimits = transactionLimitsService
             .fetchLimits(
                 source: LimitsAccount(
@@ -92,28 +119,25 @@ final class TradingToOnChainTransactionEngine: TransactionEngine {
                     accountType: .nonCustodial // even exchange accounts are considered non-custodial atm.
                 )
             )
-            .asSingle()
-        let walletCurrency = walletCurrencyService
-            .fiatCurrencyPublisher
-            .asSingle()
-        return Single
-            .zip(
-                transactionLimits,
-                walletCurrency
-            )
-            .flatMap { [sourceAsset] transactionLimits, walletCurrency -> Single<PendingTransaction> in
-                .just(
-                    .init(
-                        amount: .zero(currency: sourceAsset),
-                        available: .zero(currency: sourceAsset),
-                        feeAmount: .zero(currency: sourceAsset),
-                        feeForFullAvailable: .zero(currency: sourceAsset),
-                        feeSelection: .empty(asset: sourceAsset),
-                        selectedFiatCurrency: walletCurrency,
-                        limits: transactionLimits
-                    )
+
+        return transactionLimits.eraseError()
+            .zip(walletCurrencyService.displayCurrencyPublisher.eraseError())
+            .map { [sourceTradingAccount, sourceAsset] transactionLimits, walletCurrency -> PendingTransaction in
+                var pendingTransaction = PendingTransaction(
+                    amount: .zero(currency: sourceAsset),
+                    available: .zero(currency: sourceAsset),
+                    feeAmount: .zero(currency: sourceAsset),
+                    feeForFullAvailable: .zero(currency: sourceAsset),
+                    feeSelection: .empty(asset: sourceAsset),
+                    selectedFiatCurrency: walletCurrency,
+                    limits: transactionLimits
                 )
+                if sourceTradingAccount!.isMemoSupported {
+                    pendingTransaction.setMemo(memo: memoModel)
+                }
+                return pendingTransaction
             }
+            .asSingle()
     }
 
     func update(amount: MoneyValue, pendingTransaction: PendingTransaction) -> Single<PendingTransaction> {
@@ -151,23 +175,45 @@ final class TradingToOnChainTransactionEngine: TransactionEngine {
 
     func doBuildConfirmations(pendingTransaction: PendingTransaction) -> Single<PendingTransaction> {
         fiatAmountAndFees(from: pendingTransaction)
-            .map(weak: self) { (self, fiatAmountAndFees) -> [TransactionConfirmation] in
+            .map { [sourceTradingAccount, target, isNoteSupported] fiatAmountAndFees -> [TransactionConfirmation] in
                 var confirmations: [TransactionConfirmation] = [
-                    .source(.init(value: self.sourceAccount.label)),
-                    .destination(.init(value: self.target.label)),
+                    .source(.init(value: sourceTradingAccount!.label)),
+                    .destination(.init(value: target.label)),
                     .networkFee(.init(
                         primaryCurrencyFee: fiatAmountAndFees.fees.moneyValue,
                         feeType: .withdrawalFee
                     )),
                     .total(.init(total: fiatAmountAndFees.amount.moneyValue))
                 ]
-                if self.isNoteSupported {
+                if isNoteSupported {
                     confirmations.append(.destination(.init(value: "")))
+                }
+                if sourceTradingAccount!.isMemoSupported {
+                    confirmations.append(
+                        .memo(.init(textMemo: target.memo, required: false))
+                    )
                 }
                 return confirmations
             }
             .map { confirmations -> PendingTransaction in
                 pendingTransaction.update(confirmations: confirmations)
+            }
+    }
+
+    func doOptionUpdateRequest(
+        pendingTransaction: PendingTransaction,
+        newConfirmation: TransactionConfirmation
+    ) -> Single<PendingTransaction> {
+        defaultDoOptionUpdateRequest(pendingTransaction: pendingTransaction, newConfirmation: newConfirmation)
+            .map { pendingTransaction -> PendingTransaction in
+                var pendingTransaction = pendingTransaction
+                switch newConfirmation {
+                case .memo(let memo):
+                    pendingTransaction.setMemo(memo: memo)
+                default:
+                    break
+                }
+                return pendingTransaction
             }
     }
 
@@ -180,17 +226,12 @@ final class TradingToOnChainTransactionEngine: TransactionEngine {
             .transfer(
                 moneyValue: pendingTransaction.amount,
                 destination: target.address,
-                memo: target.memo
+                memo: pendingTransaction.memo?.value?.string
             )
-            .asObservable()
-            .asSingle()
             .map { identifier -> TransactionResult in
-                TransactionResult.hashed(txHash: identifier, amount: pendingTransaction.amount)
+                .hashed(txHash: identifier, amount: pendingTransaction.amount)
             }
-    }
-
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        target.onTxCompleted(transactionResult)
+            .asSingle()
     }
 
     func doUpdateFeeLevel(
@@ -225,12 +266,34 @@ final class TradingToOnChainTransactionEngine: TransactionEngine {
 
     private var sourceExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
-            .flatMap { [currencyConversionService, sourceAsset] fiatCurrency -> Single<MoneyValuePair> in
+            .displayCurrency
+            .flatMap { [currencyConversionService, sourceAsset] fiatCurrency in
                 currencyConversionService
                     .conversionRate(from: sourceAsset, to: fiatCurrency.currencyType)
-                    .asSingle()
                     .map { MoneyValuePair(base: .one(currency: sourceAsset), quote: $0) }
             }
+            .asSingle()
+    }
+}
+
+extension CryptoTradingAccount {
+    fileprivate var isMemoSupported: Bool {
+        switch asset {
+        case .coin(.stellar):
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+extension PendingTransaction {
+
+    fileprivate var memo: TransactionConfirmation.Model.Memo? {
+        engineState[.xlmMemo] as? TransactionConfirmation.Model.Memo
+    }
+
+    fileprivate mutating func setMemo(memo: TransactionConfirmation.Model.Memo) {
+        engineState[.xlmMemo] = memo
     }
 }

@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -94,6 +95,10 @@ public final class CryptoExchangeAccount: ExchangeAccount {
 
     public func can(perform action: AssetAction) -> Single<Bool> {
         .just(false)
+    }
+
+    public func invalidateAccountBalance() {
+        // NO-OP
     }
 
     public let featureFlagsService: FeatureFlagsServiceAPI

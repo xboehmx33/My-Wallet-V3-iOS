@@ -5,6 +5,7 @@ import BigInt
 import DIKit
 import Foundation
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxSwift

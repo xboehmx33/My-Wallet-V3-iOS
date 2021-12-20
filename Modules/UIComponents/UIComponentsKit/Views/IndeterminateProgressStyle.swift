@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 
 public struct IndeterminateProgressStyle: ProgressViewStyle {
@@ -44,8 +48,10 @@ public struct IndeterminateProgressStyle: ProgressViewStyle {
                     .rotationEffect(angle)
                     .onAppear {
                         if indeterminate {
-                            withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
-                                angle = .degrees(angle.degrees + 360)
+                            DispatchQueue.main.async {
+                                withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
+                                    angle = .degrees(angle.degrees + 360)
+                                }
                             }
                         }
                     }

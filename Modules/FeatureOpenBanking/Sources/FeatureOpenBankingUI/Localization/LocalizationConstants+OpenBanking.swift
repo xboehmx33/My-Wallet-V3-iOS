@@ -283,6 +283,32 @@ extension Localization {
             )
         }
 
+        public enum Buying {
+
+            public static let title = NSLocalizedString(
+                "Buying %@",
+                comment: "e.g. Buying 0.0052568 BTC"
+            )
+
+            public static let subtitle = NSLocalizedString(
+                "Order is being processed, we will let you know when its done. You can safely close this sheet while we update the order in the background.",
+                comment: "Order is being processed, we will let you know when its done. You can safely close this sheet while we update the order in the background."
+            )
+        }
+
+        public enum Buy {
+
+            public static let title = NSLocalizedString(
+                "%@ Purchased",
+                comment: "e.g. 0.0052568 BTC Purchased"
+            )
+
+            public static let subtitle = NSLocalizedString(
+                "These funds are available now to Sell & Swap. Note: You will not be able to Send or Withdraw these funds from your Wallet.",
+                comment: "These funds are available now to Sell & Swap. Note: You will not be able to Send or Withdraw these funds from your Wallet."
+            )
+        }
+
         public enum Error {
 
             public static let bankTransferAccountNameMismatch = (

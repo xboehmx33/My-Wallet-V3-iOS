@@ -1,7 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import CasePaths
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 
 extension View {

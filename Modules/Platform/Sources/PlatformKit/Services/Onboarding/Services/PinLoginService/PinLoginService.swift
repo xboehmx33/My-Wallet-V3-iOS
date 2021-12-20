@@ -11,8 +11,6 @@ public final class PinLoginService: PinLoginServiceAPI {
 
     // MARK: - Types
 
-    public typealias PasscodeRepositoryAPI = SharedKeyRepositoryAPI & FeatureAuthenticationDomain.GuidRepositoryAPI & PasswordRepositoryAPI
-
     /// Potential errors
     public enum ServiceError: Error {
         case missingEncryptedPassword
@@ -26,20 +24,27 @@ public final class PinLoginService: PinLoginServiceAPI {
 
     private let settings: AppSettingsAuthenticating
     private let service: WalletPayloadServiceAPI
-    private let walletRepository: PasscodeRepositoryAPI
     private let walletCryptoService: WalletCryptoServiceAPI
+
+    private let sharedKeyRepository: SharedKeyRepositoryAPI
+    private let guidRepository: GuidRepositoryAPI
+    private let passwordRepository: PasswordRepositoryAPI
 
     // MARK: - Setup
 
     public init(
         settings: AppSettingsAuthenticating,
         service: WalletPayloadServiceAPI,
-        walletRepository: PasscodeRepositoryAPI,
+        sharedKeyRepository: SharedKeyRepositoryAPI = resolve(),
+        guidRepository: GuidRepositoryAPI = resolve(),
+        passwordRepository: PasswordRepositoryAPI = resolve(),
         walletCryptoService: WalletCryptoServiceAPI = resolve()
     ) {
         self.service = service
         self.settings = settings
-        self.walletRepository = walletRepository
+        self.sharedKeyRepository = sharedKeyRepository
+        self.guidRepository = guidRepository
+        self.passwordRepository = passwordRepository
         self.walletCryptoService = walletCryptoService
     }
 
@@ -48,6 +53,7 @@ public final class PinLoginService: PinLoginServiceAPI {
             .requestUsingSharedKey()
             .asObservable()
             .ignoreElements()
+            .asCompletable()
             .flatMapSingle(weak: self) { (self) -> Single<PasscodePayload> in
                 self.passcodePayload(from: pinDecryptionKey)
             }
@@ -61,8 +67,8 @@ public final class PinLoginService: PinLoginServiceAPI {
     private func passcodePayload(from pinDecryptionKey: String) -> Single<PasscodePayload> {
         Single
             .zip(
-                walletRepository.guid,
-                walletRepository.sharedKey,
+                guidRepository.guid.asSingle(),
+                sharedKeyRepository.sharedKey.asSingle(),
                 decrypt(pinDecryptionKey: pinDecryptionKey)
             )
             .map { payload -> PasscodePayload in
@@ -84,9 +90,9 @@ public final class PinLoginService: PinLoginServiceAPI {
     private func cache(passcodePayload: PasscodePayload) -> Completable {
         Completable
             .zip(
-                walletRepository.set(sharedKey: passcodePayload.sharedKey),
-                walletRepository.set(password: passcodePayload.password),
-                walletRepository.set(guid: passcodePayload.guid)
+                sharedKeyRepository.set(sharedKey: passcodePayload.sharedKey).asCompletable(),
+                passwordRepository.set(password: passcodePayload.password).asCompletable(),
+                guidRepository.set(guid: passcodePayload.guid).asCompletable()
             )
     }
 

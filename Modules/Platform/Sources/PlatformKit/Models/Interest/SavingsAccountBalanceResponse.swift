@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 public struct SavingsAccountBalanceResponse: Decodable {
 
     public static let empty = SavingsAccountBalanceResponse()

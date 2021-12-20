@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -34,17 +35,13 @@ final class EthereumCryptoAccount: CryptoNonCustodialAccount {
     var actions: Single<AvailableActions> {
         Single.zip(
             isFunded,
-            isInterestTransferAvailable.asSingle(),
-            featureFlagsService
-                .isEnabled(.remote(.sellUsingTransactionFlowEnabled)).asSingle()
+            isInterestTransferAvailable.asSingle()
         )
-        .map { isFunded, isInterestEnabled, isSellEnabled -> AvailableActions in
+        .map { isFunded, isInterestEnabled -> AvailableActions in
             var base: AvailableActions = [.viewActivity, .receive, .send, .buy]
             if isFunded {
                 base.insert(.swap)
-                if isSellEnabled {
-                    base.insert(.sell)
-                }
+                base.insert(.sell)
                 if isInterestEnabled {
                     base.insert(.interestTransfer)
                 }
@@ -154,14 +151,7 @@ final class EthereumCryptoAccount: CryptoNonCustodialAccount {
              .interestWithdraw:
             return .just(false)
         case .sell:
-            return featureFlagsService
-                .isEnabled(.remote(.sellUsingTransactionFlowEnabled))
-                .asSingle()
-                .flatMap(weak: self) { _, isEnabled in
-                    isEnabled
-                        ? self.isFunded
-                        : .just(false)
-                }
+            return isFunded
         case .swap:
             return isFunded
         }
@@ -180,5 +170,9 @@ final class EthereumCryptoAccount: CryptoNonCustodialAccount {
 
     func updateLabel(_ newLabel: String) -> Completable {
         bridge.update(accountIndex: hdAccountIndex, label: newLabel)
+    }
+
+    func invalidateAccountBalance() {
+        accountDetailsService.invalidateEthereumAccountDetails()
     }
 }

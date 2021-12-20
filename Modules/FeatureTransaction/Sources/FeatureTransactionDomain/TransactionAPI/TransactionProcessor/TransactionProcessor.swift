@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -103,6 +104,7 @@ public final class TransactionProcessor {
                 })
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
         } catch {
             return .just(event: .error(error))
         }
@@ -110,36 +112,44 @@ public final class TransactionProcessor {
 
     public func updateAmount(amount: MoneyValue) -> Completable {
         Logger.shared.debug("!TRANSACTION!> in `updateAmount: \(amount.displayString)`")
-        do {
-            if !canTransactFiat, amount.isFiat {
-                throw PlatformKitError.illegalStateException(
+
+        if !canTransactFiat, amount.isFiat {
+            return .error(
+                PlatformKitError.illegalStateException(
                     message: "Engine.canTransactFiat \(canTransactFiat) but amount.isFiat: \(amount.isFiat)"
                 )
-            }
-            return engine
-                .update(amount: amount, pendingTransaction: try pendingTransaction())
-                .flatMap(weak: self) { (self, transaction) -> Single<PendingTransaction> in
-                    let isFreshTx = transaction.validationState == .uninitialized
-                    return self.engine
-                        .validateAmount(pendingTransaction: transaction)
-                        .map { transaction -> PendingTransaction in
-                            // Remove initial "insufficient funds' warning
-                            if transaction.amount.isZero, isFreshTx {
-                                var newTx = transaction
-                                newTx.validationState = .uninitialized
-                                return newTx
-                            } else {
-                                return transaction
-                            }
-                        }
-                }
-                .do(onSuccess: { [weak self] pendingTransaction in
-                    self?.updatePendingTx(pendingTransaction)
-                })
-                .asCompletable()
-        } catch {
-            return .just(event: .error(error))
+            )
         }
+
+        let transaction: PendingTransaction
+        do {
+            transaction = try pendingTransaction()
+        } catch {
+            return .error(error)
+        }
+
+        return engine
+            .update(amount: amount, pendingTransaction: transaction)
+            .flatMap(weak: self) { (self, transaction) -> Single<PendingTransaction> in
+                let isFreshTx = transaction.validationState.isUninitialized
+                return self.engine
+                    .validateAmount(pendingTransaction: transaction)
+                    .map { transaction -> PendingTransaction in
+                        var transaction = transaction
+                        // Remove initial "insufficient funds" warning.
+                        if isFreshTx,
+                           transaction.amount.isZero,
+                           !transaction.validationState.isCanExecute
+                        {
+                            transaction.validationState = .uninitialized
+                        }
+                        return transaction
+                    }
+            }
+            .do(onSuccess: { [weak self] pendingTransaction in
+                self?.updatePendingTx(pendingTransaction)
+            })
+            .asCompletable()
     }
 
     public func createOrder() -> Single<TransactionOrder?> {

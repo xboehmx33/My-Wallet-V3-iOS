@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 extension MoneyValuePair {
 
     /// Returns a new `MoneyValuePair` instance intended to get the FX quote from an existing quote.

@@ -18,11 +18,12 @@ final class SecuritySectionPresenter: SettingsSectionPresenting {
                         items: [
                             .init(cellType: .switch(.sms2FA, smsTwoFactorSwitchCellPresenter)),
                             .init(cellType: .switch(.cloudBackup, cloudBackupSwitchCellPresenter)),
-                            .init(cellType: .plain(.changePassword)),
+                            .init(cellType: .common(.changePassword)),
                             .init(cellType: .badge(.recoveryPhrase, recoveryCellPresenter)),
-                            .init(cellType: .plain(.changePIN)),
+                            .init(cellType: .common(.changePIN)),
                             .init(cellType: .switch(.bioAuthentication, bioAuthenticationCellPresenter)),
-                            .init(cellType: .switch(.balanceSyncing, balanceSyncingCellPresenter))
+                            .init(cellType: .switch(.balanceSyncing, balanceSyncingCellPresenter)),
+                            .init(cellType: .common(.addresses))
                         ]
                     )
                 )

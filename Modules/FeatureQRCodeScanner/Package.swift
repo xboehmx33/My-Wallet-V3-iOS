@@ -45,7 +45,8 @@ let package = Package(
         ),
         .package(path: "../Localization"),
         .package(path: "../UIComponents"),
-        .package(path: "../Platform")
+        .package(path: "../Platform"),
+        .package(path: "../FeatureWalletConnect")
     ],
     targets: [
         .target(
@@ -72,7 +73,8 @@ let package = Package(
                 .product(name: "Localization", package: "Localization"),
                 .product(name: "PlatformKit", package: "Platform"),
                 .product(name: "PlatformUIKit", package: "Platform"),
-                .product(name: "UIComponents", package: "UIComponents")
+                .product(name: "UIComponents", package: "UIComponents"),
+                .product(name: "FeatureWalletConnectDomain", package: "FeatureWalletConnect")
             ]
         ),
         .target(

@@ -2,6 +2,7 @@
 
 import Combine
 import Foundation
+import MoneyKit
 import PlatformKit
 import RxSwift
 

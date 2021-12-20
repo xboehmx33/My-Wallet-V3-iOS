@@ -31,13 +31,6 @@ import ToolKit
 
     // MARK: - Private IBOutlets
 
-    /// NOTE: All `PulseContainerViews` are added to a `PassthroughView`. This permits user interaction
-    /// when the view has not been added. A `PassthroughView` sits above each `UITabBarItem`
-    @IBOutlet private var activityPassthroughContainer: PassthroughView!
-    @IBOutlet private var swapPassthroughContainer: PassthroughView!
-    @IBOutlet private var homePassthroughContainer: PassthroughView!
-    @IBOutlet private var sendPassthroughContainer: PassthroughView!
-    @IBOutlet private var receivePassthroughContainer: PassthroughView!
     @IBOutlet private var receiveTabBarItem: UITabBarItem!
     @IBOutlet private var sendTabBarItem: UITabBarItem!
     @IBOutlet private var homeTabBarItem: UITabBarItem!
@@ -60,7 +53,6 @@ import ToolKit
     }
 
     private var tabBarGestureView: UIView?
-    private var introductionPresenter: WalletIntroductionPresenter!
     private let disposeBag = DisposeBag()
 
     override func awakeFromNib() {
@@ -141,19 +133,6 @@ import ToolKit
         }
     }
 
-    func setupIntroduction() {
-        introductionPresenter = WalletIntroductionPresenter(screen: .dashboard)
-        introductionPresenter
-            .introductionEvent
-            .drive(onNext: { [weak self] event in
-                guard let self = self else { return }
-                self.execute(event: event)
-            })
-            .disposed(by: disposeBag)
-
-        introductionPresenter.start()
-    }
-
     // MARK: - Private Methods
 
     private func insertActiveView() {
@@ -167,41 +146,5 @@ import ToolKit
         activeViewController.view.frame = contentView.bounds
         activeViewController.view.setNeedsLayout()
         contentView.addSubview(activeViewController.view)
-    }
-
-    private func execute(event: WalletIntroductionPresentationEvent) {
-        switch event {
-        case .introductionComplete:
-            break
-        case .presentSheet(let type):
-            let controller = IntroductionSheetViewController.make(with: type)
-            controller.transitioningDelegate = sheetPresenter
-            controller.modalPresentationStyle = .custom
-            present(controller, animated: true, completion: nil)
-        case .showPulse(let pulseViewModel):
-            let location = pulseViewModel.location
-            let position = location.position
-            let screen = location.screen
-            guard screen == .dashboard else { return }
-
-            switch position {
-            case .home:
-                PulseViewPresenter.shared.show(
-                    viewModel: .init(container: homePassthroughContainer, onSelection: pulseViewModel.action)
-                )
-            case .send:
-                PulseViewPresenter.shared.show(
-                    viewModel: .init(container: sendPassthroughContainer, onSelection: pulseViewModel.action)
-                )
-            case .receive:
-                PulseViewPresenter.shared.show(
-                    viewModel: .init(container: receivePassthroughContainer, onSelection: pulseViewModel.action)
-                )
-            case .swap:
-                PulseViewPresenter.shared.show(
-                    viewModel: .init(container: swapPassthroughContainer, onSelection: pulseViewModel.action)
-                )
-            }
-        }
     }
 }

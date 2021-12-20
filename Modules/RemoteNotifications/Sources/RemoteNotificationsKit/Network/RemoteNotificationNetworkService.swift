@@ -74,8 +74,8 @@ extension RemoteNotificationNetworkService: RemoteNotificationNetworkServicing {
     ) -> Single<NetworkRequest> {
         Single
             .zip(
-                sharedKeyProvider.sharedKey,
-                guidProvider.guid
+                sharedKeyProvider.sharedKey.asSingle(),
+                guidProvider.guid.asSingle()
             )
             .map { credentials -> RemoteNotificationTokenQueryParametersBuilder in
                 guard let guid: String = credentials.1,

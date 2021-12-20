@@ -61,7 +61,7 @@ extension BankState.UI {
         }
     )
 
-    static func payment(success payment: OpenBanking.Payment.Details, in environment: OpenBankingEnvironment) -> Self {
+    static func deposit(success payment: OpenBanking.Payment.Details, in environment: OpenBankingEnvironment) -> Self {
 
         guard let fiat = environment.fiatCurrencyFormatter.displayString(
             amountMinor: payment.amountMinor,
@@ -80,14 +80,87 @@ extension BankState.UI {
             formatted.date = formatter.date.string(from: date)
         }
 
+        let resource = environment.fiatCurrencyFormatter.displayImage(currency: payment.amount.symbol)
+        let media: Media
+        switch resource {
+        case .remote(url: let url):
+            media = .image(at: url)
+        default:
+            media = .bankIcon
+        }
+
         return Self(
             info: .init(
-                media: .bankIcon,
-                overlay: .init(media: .success),
+                media: media,
+                overlay: .init(progress: true),
                 title: Localization.Bank.Payment.title
                     .interpolating(formatted.amount),
                 subtitle: Localization.Bank.Payment.subtitle
                     .interpolating(formatted.amount, formatted.currency, formatted.date)
+            ),
+            action: [.ok]
+        )
+    }
+
+    static func buy(pending order: OpenBanking.Order, in environment: OpenBankingEnvironment) -> Self {
+
+        guard
+            let crypto = environment.cryptoCurrencyFormatter.displayString(
+                amountMinor: order.outputQuantity,
+                currency: order.outputCurrency
+            )
+        else {
+            return .errorMessage(Localization.Error.title)
+        }
+
+        let resource = environment.cryptoCurrencyFormatter.displayImage(currency: order.outputCurrency)
+        let media: Media
+        switch resource {
+        case .remote(url: let url):
+            media = .image(at: url)
+        default:
+            media = .blockchainLogo
+        }
+
+        return Self(
+            info: .init(
+                media: media,
+                overlay: .init(progress: true),
+                title: Localization.Bank.Buying.title
+                    .interpolating(crypto),
+                subtitle: Localization.Bank.Buying.subtitle
+            ),
+            action: [.ok]
+        )
+    }
+
+    static func buy(finished order: OpenBanking.Order, in environment: OpenBankingEnvironment) -> Self {
+
+        guard
+            let crypto = environment.cryptoCurrencyFormatter.displayString(
+                amountMinor: order.outputQuantity,
+                currency: order.outputCurrency
+            )
+        else {
+            return .errorMessage(Localization.Error.title)
+        }
+
+        let resource = environment.cryptoCurrencyFormatter.displayImage(currency: order.outputCurrency)
+        let media: Media
+        switch resource {
+        case .remote(url: let url):
+            media = .image(at: url)
+        default:
+            media = .blockchainLogo
+        }
+
+        return Self(
+            info: .init(
+                media: media,
+                overlay: .init(media: .success),
+                title: Localization.Bank.Buy.title
+                    .interpolating(crypto),
+                subtitle: Localization.Bank.Buy.subtitle
             ),
             action: [.ok]
         )

@@ -7,27 +7,36 @@ import UIComponentsKit
 
 struct WebUpgradeAccountView: View {
 
-    private enum MessageHandler {
-        /// Message handler name for unified sign in communication
-        static let ssi = "BCiOSSSI"
+    private enum MessageHandlers {
+        /// Message handlers name for unified sign in communication
+        static let connectionStatus = "connectionStatusHandler"
+        static let credentials = "credentialsHandler"
     }
 
-    @Binding private var sendMessage: String
-    private let callback: (String) -> Void
+    private static let url = "\(Constants.HostURL.loginOnWeb)?product=wallet&platform=ios"
+
+    private let connectionStatusCallback: (String) -> Void
+    private let credentialsCallback: (String) -> Void
+    @Binding private var currentMessage: String
 
     init(
-        sendMessage: Binding<String>,
-        callback: @escaping (String) -> Void
+        currentMessage: Binding<String>,
+        connectionStatusCallback: @escaping (String) -> Void,
+        credentialsCallback: @escaping (String) -> Void
     ) {
-        _sendMessage = sendMessage
-        self.callback = callback
+        _currentMessage = currentMessage
+        self.connectionStatusCallback = connectionStatusCallback
+        self.credentialsCallback = credentialsCallback
     }
 
     var body: some View {
         WebView(
-            sendMessage: $sendMessage,
-            url: URL(string: Constants.HostURL.loginOnWeb)!,
-            messageHandlers: [MessageHandler.ssi: callback]
+            currentMessage: $currentMessage,
+            url: URL(string: WebUpgradeAccountView.url)!,
+            messageHandlers: [
+                MessageHandlers.connectionStatus: connectionStatusCallback,
+                MessageHandlers.credentials: credentialsCallback
+            ]
         )
         .navigationBarHidden(true)
     }
@@ -37,8 +46,9 @@ struct WebUpgradeAccountView: View {
 struct WebUpgradeAccountView_Previews: PreviewProvider {
     static var previews: some View {
         WebUpgradeAccountView(
-            sendMessage: .constant("Test Message"),
-            callback: { print($0) }
+            currentMessage: .constant("Test Message"),
+            connectionStatusCallback: { print($0) },
+            credentialsCallback: { print($0) }
         )
     }
 }

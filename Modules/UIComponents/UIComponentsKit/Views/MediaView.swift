@@ -1,7 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import AVKit
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 import ToolKit
 
@@ -67,7 +71,7 @@ extension Media {
 
 public struct MediaView<Failure: View>: View {
 
-    @State public var media: Media
+    public var media: Media
 
     public let bundle: Bundle
     public let failure: () -> Failure
@@ -85,7 +89,7 @@ public struct MediaView<Failure: View>: View {
         in bundle: Bundle = .main,
         @ViewBuilder failure: @escaping () -> Failure
     ) {
-        _media = .init(initialValue: media)
+        self.media = media
         self.bundle = bundle
         self.failure = failure
     }
@@ -148,16 +152,12 @@ extension MediaView where Failure == EmptyView {
     }
 }
 
-#if DEBUG
+// swiftlint:disable line_length
 struct MediaView_Previews: PreviewProvider {
 
     static var previews: some View {
-        Image(Icon.chartBubble.name, bundle: .componentLibrary)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .imageScale(.small)
-            .scaledToFit()
-            .frame(width: 300, height: 300)
+        MediaView(
+            .image(at: "https://raw.githubusercontent.com/blockchain/coin-definitions/master/extensions/blockchains/celo/assets/0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73/logo.png")
+        )
     }
 }
-#endif

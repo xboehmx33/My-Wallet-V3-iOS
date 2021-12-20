@@ -65,7 +65,7 @@ final class ChangePasswordScreenInteractor {
         passwordRepository = passwordAPI
         self.analyticsRecorder = analyticsRecorder
 
-        passwordRepository.hasPassword
+        passwordRepository.hasPassword.asSingle()
             .observeOn(MainScheduler.instance)
             .map { hasPassword -> State in
                 hasPassword ? .passwordUnknown : .ready
@@ -97,8 +97,8 @@ final class ChangePasswordScreenInteractor {
         }
 
         update(state: .updating)
-            .andThen(passwordRepository.set(password: input.newPassword))
-            .andThen(passwordRepository.sync())
+            .andThen(passwordRepository.set(password: input.newPassword).asCompletable())
+            .andThen(passwordRepository.sync().asCompletable())
             .subscribeOn(MainScheduler.instance)
             .subscribe(
                 onCompleted: { [weak self] in

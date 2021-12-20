@@ -34,7 +34,7 @@ public final class CardAuthorizationScreenPresenter: RibBridgePresenter {
         super.init(interactable: interactor)
     }
 
-    func redirect() {
+    public func redirect() {
         // Might get called multiple times from the `WKNavigationDelegate`
         guard !hasRedirected else { return }
         hasRedirected = true

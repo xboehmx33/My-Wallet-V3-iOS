@@ -1,5 +1,6 @@
 # Created by https://www.gitignore.io/api/node,xcode,macos,swift,jetbrains,objective-c
 
+*.xcworkspace
 !*.xcworkspace/contents.xcworkspacedata
 !default.mode1v3
 !default.mode2v3

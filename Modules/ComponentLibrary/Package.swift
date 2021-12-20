@@ -34,13 +34,19 @@ let package = Package(
             name: "swift-case-paths",
             url: "https://github.com/pointfreeco/swift-case-paths",
             from: "0.7.0"
+        ),
+        .package(
+            name: "swift-markdown",
+            url: "https://github.com/apple/swift-markdown.git",
+            .revision("1023300b1d6847360ac9ceebbcff2bccacbcf2a5")
         )
     ],
     targets: [
         .target(
             name: "ComponentLibrary",
             dependencies: [
-                .product(name: "CasePaths", package: "swift-case-paths")
+                .product(name: "CasePaths", package: "swift-case-paths"),
+                .product(name: "Markdown", package: "swift-markdown")
             ],
             resources: [
                 .process("Resources/Fonts")
@@ -61,6 +67,7 @@ let package = Package(
                 "3 - Compositions/__Snapshots__",
                 "3 - Compositions/Rows/__Snapshots__",
                 "3 - Compositions/SectionHeaders/__Snapshots__",
+                "3 - Compositions/Sheets/__Snapshots__",
                 "Utilities/__Snapshots__"
             ]
         ),

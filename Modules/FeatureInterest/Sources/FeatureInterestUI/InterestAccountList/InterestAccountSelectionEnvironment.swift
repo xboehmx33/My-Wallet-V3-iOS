@@ -8,7 +8,7 @@ import FeatureTransactionUI
 import PlatformKit
 
 struct InterestAccountSelectionEnvironment {
-    let fiatCurrencyService: FiatCurrencyPublisherAPI
+    let fiatCurrencyService: FiatCurrencyServiceAPI
     let accountOverviewRepository: InterestAccountOverviewRepositoryAPI
     let accountBalanceRepository: InterestAccountBalanceRepositoryAPI
     let accountRepository: BlockchainAccountRepositoryAPI

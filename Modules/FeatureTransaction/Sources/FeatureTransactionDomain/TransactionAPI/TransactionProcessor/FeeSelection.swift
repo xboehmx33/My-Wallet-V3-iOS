@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 public struct FeeSelection: Equatable {
     public var selectedLevel: FeeLevel = .none

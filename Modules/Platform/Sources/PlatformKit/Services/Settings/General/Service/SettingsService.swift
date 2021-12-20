@@ -3,8 +3,10 @@
 import Combine
 import DIKit
 import FeatureAuthenticationDomain
+import MoneyKit
 import RxRelay
 import RxSwift
+import RxToolKit
 import ToolKit
 
 final class SettingsService: SettingsServiceAPI {
@@ -33,6 +35,7 @@ final class SettingsService: SettingsServiceAPI {
 
     private let client: SettingsClientAPI
     private let credentialsRepository: CredentialsRepositoryAPI
+    private let supportedPairsService: SupportedPairsServiceAPI
 
     private let settingsRelay = BehaviorRelay<WalletSettings?>(value: nil)
     private let disposeBag = DisposeBag()
@@ -43,10 +46,12 @@ final class SettingsService: SettingsServiceAPI {
 
     init(
         client: SettingsClientAPI = resolve(),
-        credentialsRepository: CredentialsRepositoryAPI = resolve()
+        credentialsRepository: CredentialsRepositoryAPI = resolve(),
+        supportedPairsService: SupportedPairsServiceAPI = resolve()
     ) {
         self.client = client
         self.credentialsRepository = credentialsRepository
+        self.supportedPairsService = supportedPairsService
 
         NotificationCenter.when(.login) { [weak self] _ in
             self?.settingsRelay.accept(nil)
@@ -75,7 +80,7 @@ final class SettingsService: SettingsServiceAPI {
                     switch event {
                     case .success(let settings):
                         observer(.success(settings))
-                    case .error(let error):
+                    case .failure(let error):
                         observer(.error(error))
                     }
                 }
@@ -85,12 +90,12 @@ final class SettingsService: SettingsServiceAPI {
                 self.semaphore.signal()
             }
         }
-        .subscribeOn(scheduler)
+        .subscribe(on: scheduler)
     }
 
     private func fetchSettings(settings: WalletSettings?, force: Bool) -> Single<WalletSettings> {
         guard force || settings == nil else { return Single.just(settings!) }
-        return credentialsRepository.credentials
+        return credentialsRepository.credentials.asSingle()
             .flatMap(weak: self) { (self, credentials) in
                 self.client.settings(
                     by: credentials.guid,
@@ -158,75 +163,92 @@ extension SettingsService {
 
 extension SettingsService: FiatCurrencySettingsServiceAPI {
 
-    var fiatCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
-        fiatCurrency
-            .asPublisher()
-            .replaceError(with: .USD)
-            .eraseToAnyPublisher()
-    }
-
-    var fiatCurrencyObservable: Observable<FiatCurrency> {
+    var displayCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
         valueObservable
             .map { settings -> FiatCurrency in
-                guard let currency = FiatCurrency(rawValue: settings.fiatCurrency) else {
+                guard let currency = settings.displayCurrency else {
                     throw PlatformKitError.default
                 }
                 return currency
             }
             .distinctUntilChanged()
+            .asPublisher()
+            .replaceError(with: .USD)
+            .eraseToAnyPublisher()
     }
 
-    var fiatCurrency: Single<FiatCurrency> {
-        valueSingle
-            .map { settings -> FiatCurrency in
-                guard let currency = settings.currency else {
-                    throw PlatformKitError.default
+    var tradingCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
+        valueObservable
+            .distinctUntilChanged()
+            .asPublisher()
+            .flatMap { [displayCurrencyPublisher] settings -> AnyPublisher<FiatCurrency, Never> in
+                guard let currency = settings.tradingCurrency else {
+                    // fallback to the displayCurrency if a trading currency is not set
+                    return displayCurrencyPublisher
                 }
-                return currency
+                return .just(currency)
             }
+            .replaceError(with: .USD)
+            .eraseToAnyPublisher()
     }
 
-    func update(currency: FiatCurrency, context: FlowContext) -> Completable {
-        credentialsRepository.credentials
-            .flatMapCompletable(weak: self) { (self, payload) -> Completable in
-                self.client.update(
-                    currency: currency.code,
-                    context: context,
-                    guid: payload.guid,
-                    sharedKey: payload.sharedKey
-                )
-                .asObservable()
-                .ignoreElements()
-            }
-            .flatMapSingle(weak: self) { (self) in
-                self.fetch(force: true)
-            }
-            .asCompletable()
+    var supportedFiatCurrencies: AnyPublisher<Set<FiatCurrency>, Never> {
+        supportedPairsService
+            .fetchSupportedTradingCurrencies()
+            .replaceError(with: [.USD, .GBP, .USD])
+            .eraseToAnyPublisher()
     }
 
-    func update(currency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
+    func update(displayCurrency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
         let fetch = fetchPublisher(force: true)
-        return credentialsRepository.credentialsPublisher
+        return credentialsRepository.credentials
             .mapError(CurrencyUpdateError.credentialsError)
             .flatMap { [client] (guid: String, sharedKey: String) in
                 client.updatePublisher(
-                    currency: currency.code,
+                    currency: displayCurrency.code,
                     context: context,
                     guid: guid,
                     sharedKey: sharedKey
                 )
             }
-            .flatMap { _ in
+            .zip(
+                singleValuePublisher
+                    .replaceError(with: CurrencyUpdateError.fetchError(SettingsServiceError.timedOut))
+            )
+            .flatMap { _, settings -> AnyPublisher<Void, CurrencyUpdateError> in
                 fetch
                     .mapToVoid()
                     .mapError(CurrencyUpdateError.fetchError)
+                    .handleEvents(
+                        receiveSubscription: { _ in
+                            // when setting the currency succeeds, clear the trading currency
+                            // this way, the next time the trading currency is fetched, it will fallback to the new displayCurrency
+                            settings.clearTradingCurrency()
+                        }
+                    )
+                    .eraseToAnyPublisher()
             }
             .eraseToAnyPublisher()
     }
 
-    @available(*, deprecated, message: "Do not use this. Instead use `FiatCurrencyServiceAPI`")
-    var legacyCurrency: FiatCurrency? {
-        settingsRelay.value?.currency
+    func update(tradingCurrency: FiatCurrency, context: FlowContext) -> AnyPublisher<Void, CurrencyUpdateError> {
+        let fetch = fetchPublisher(force: true)
+        return valueSingle
+            .asPublisher()
+            .receive(on: DispatchQueue.main)
+            .map { settings -> Void in
+                settings.setTradingCurrency(to: tradingCurrency)
+            }
+            .mapError { error -> CurrencyUpdateError in
+                CurrencyUpdateError.fetchError(SettingsServiceError.fetchFailed(error))
+            }
+            .flatMap { _ -> AnyPublisher<Void, CurrencyUpdateError> in
+                fetch
+                    .mapToVoid()
+                    .mapError(CurrencyUpdateError.fetchError)
+                    .eraseToAnyPublisher()
+            }
+            .eraseToAnyPublisher()
     }
 }
 
@@ -247,7 +269,7 @@ extension SettingsService: EmailSettingsServiceAPI {
     }
 
     func update(email: String, context: FlowContext?) -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.update(
                     email: email,
@@ -257,11 +279,12 @@ extension SettingsService: EmailSettingsServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
     }
 
     func update(email: String) -> AnyPublisher<String, EmailSettingsServiceError> {
-        credentialsRepository.credentialsPublisher
+        credentialsRepository.credentials
             .mapError(EmailSettingsServiceError.credentialsError)
             .flatMap { [client] guid, sharedKey in
                 client.update(
@@ -280,7 +303,7 @@ extension SettingsService: EmailSettingsServiceAPI {
 
 extension SettingsService: LastTransactionSettingsUpdateServiceAPI {
     func updateLastTransaction() -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.updateLastTransactionTime(
                     guid: payload.guid,
@@ -288,6 +311,7 @@ extension SettingsService: LastTransactionSettingsUpdateServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .flatMapSingle(weak: self) { (self) in
                 self.fetch(force: true)
@@ -300,7 +324,7 @@ extension SettingsService: LastTransactionSettingsUpdateServiceAPI {
 
 extension SettingsService: EmailNotificationSettingsServiceAPI {
     func emailNotifications(enabled: Bool) -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.emailNotifications(
                     enabled: enabled,
@@ -309,6 +333,7 @@ extension SettingsService: EmailNotificationSettingsServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .flatMapSingle(weak: self) { (self) in
                 self.fetch(force: true)
@@ -321,7 +346,7 @@ extension SettingsService: EmailNotificationSettingsServiceAPI {
 
 extension SettingsService: UpdateMobileSettingsServiceAPI {
     func update(mobileNumber: String) -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.update(
                     smsNumber: mobileNumber,
@@ -331,6 +356,7 @@ extension SettingsService: UpdateMobileSettingsServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .flatMapSingle(weak: self) { (self) in
                 self.fetch(force: true)
@@ -343,7 +369,7 @@ extension SettingsService: UpdateMobileSettingsServiceAPI {
 
 extension SettingsService: VerifyMobileSettingsServiceAPI {
     func verify(with code: String) -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.verifySMS(
                     code: code,
@@ -352,6 +378,7 @@ extension SettingsService: VerifyMobileSettingsServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .flatMapSingle(weak: self) { (self) in
                 self.fetch(force: true)
@@ -364,7 +391,7 @@ extension SettingsService: VerifyMobileSettingsServiceAPI {
 
 extension SettingsService: SMSTwoFactorSettingsServiceAPI {
     func smsTwoFactorAuthentication(enabled: Bool) -> Completable {
-        credentialsRepository.credentials
+        credentialsRepository.credentials.asSingle()
             .flatMapCompletable(weak: self) { (self, payload) -> Completable in
                 self.client.smsTwoFactorAuthentication(
                     enabled: enabled,
@@ -373,6 +400,7 @@ extension SettingsService: SMSTwoFactorSettingsServiceAPI {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .flatMapSingle(weak: self) { (self) in
                 self.fetch(force: true)

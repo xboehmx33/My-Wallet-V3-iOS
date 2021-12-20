@@ -2,6 +2,7 @@
 
 import DIKit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 
@@ -38,10 +39,10 @@ final class ERC20ActivityDetailsInteractor {
             .details(for: identifier)
         let price = price(of: cryptoCurrency, at: createdAt)
             .optional()
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
         let feePrice = self.price(of: .coin(.ethereum), at: createdAt)
             .optional()
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
 
         return Observable
             .combineLatest(
@@ -62,7 +63,8 @@ final class ERC20ActivityDetailsInteractor {
 
     private func price(of cryptoCurrency: CryptoCurrency, at date: Date) -> Single<PriceQuoteAtTime> {
         fiatCurrencySettings
-            .fiatCurrency
+            .displayCurrency
+            .asSingle()
             .flatMap(weak: self) { (self, fiatCurrency) in
                 self.price(of: cryptoCurrency, in: fiatCurrency, at: date)
             }

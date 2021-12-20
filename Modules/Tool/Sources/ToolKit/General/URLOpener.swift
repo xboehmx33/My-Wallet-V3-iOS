@@ -18,7 +18,7 @@ public protocol ExternalAppOpener: URLOpener {
     func openSettingsApp(completionHandler: @escaping (Bool) -> Void)
 }
 
-public struct PrintAppOpen: ExternalAppOpener {
+public struct ToLogAppOpener: ExternalAppOpener {
 
     public init() {}
 

@@ -2,6 +2,7 @@
 
 import Combine
 import FeatureTransactionDomain
+import MoneyKit
 import NabuNetworkError
 import PlatformKit
 

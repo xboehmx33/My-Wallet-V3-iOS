@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Localization
+import MoneyKit
 import ToolKit
 
 public enum PaymentMethodPayloadType: String, CaseIterable, Encodable {

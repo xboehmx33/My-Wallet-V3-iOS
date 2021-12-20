@@ -51,6 +51,11 @@ public final class CryptoTargetQRCodeParser: QRCodeScannerParsing {
                             guard case .success(let target) = targetResult else {
                                 return nil
                             }
+                            if case .address(let account, let receiveAddress) = target {
+                                if receiveAddress is BitPayInvoiceTarget {
+                                    return account.isBitPaySupported ? target : nil
+                                }
+                            }
                             return target
                         }
                     }

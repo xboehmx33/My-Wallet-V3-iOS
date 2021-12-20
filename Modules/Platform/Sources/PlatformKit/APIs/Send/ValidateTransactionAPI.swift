@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Foundation
+import MoneyKit
 import RxSwift
 
 /// Each asset class may have its own reason as to why a proposed transaction

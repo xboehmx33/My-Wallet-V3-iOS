@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import NabuNetworkError
 import NetworkKit
 
@@ -21,6 +22,7 @@ typealias SimpleBuyClientAPI = EligibilityClientAPI &
     LinkedBanksClientAPI
 
 /// Simple-Buy network client
+// swiftlint:disable type_body_length
 final class APIClient: SimpleBuyClientAPI {
 
     // MARK: - Types
@@ -47,13 +49,16 @@ final class APIClient: SimpleBuyClientAPI {
         static let transactions = ["payments", "transactions"]
         static let paymentMethods = ["payments", "methods"]
         static let eligiblePaymentMethods = ["eligible", "payment-methods"]
+        static let paymentsCardAcquirers = ["payments", "card-acquirers"]
         static let beneficiaries = ["payments", "beneficiaries"]
         static let banks = ["payments", "banks"]
         static let supportedPairs = ["simple-buy", "pairs"]
         static let suggestedAmounts = ["simple-buy", "amounts"]
         static let trades = ["simple-buy", "trades"]
         static let paymentAccount = ["payments", "accounts", "simplebuy"]
-        static let quote = ["simple-buy", "quote"]
+        // TODO: remove old quote endpoint when the new pricing model becomes stable
+        static let oldQuote = ["simple-buy", "quote"]
+        static let quote = ["brokerage", "quote"]
         static let eligible = ["simple-buy", "eligible"]
         static let withdrawalLocks = ["payments", "withdrawals", "locks"]
         static let withdrawalLocksCheck = ["payments", "withdrawals", "locks", "check"]
@@ -311,15 +316,16 @@ final class APIClient: SimpleBuyClientAPI {
 
     // MARK: - QuoteClientAPI
 
-    func getQuote(
+    @available(*, deprecated, message: "This should not be used when new quote model becomes stable")
+    func getOldQuote(
         for action: Order.Action,
-        to cryptoCurrency: CryptoCurrency,
-        amount: FiatValue
-    ) -> AnyPublisher<QuoteResponse, NabuNetworkError> {
+        to currency: Currency,
+        amount: MoneyValue
+    ) -> AnyPublisher<OldQuoteResponse, NabuNetworkError> {
         let parameters = [
             URLQueryItem(
                 name: Parameter.currencyPair,
-                value: "\(cryptoCurrency.code)-\(amount.code)"
+                value: "\(currency.code)-\(amount.code)"
             ),
             URLQueryItem(
                 name: Parameter.action,
@@ -330,10 +336,19 @@ final class APIClient: SimpleBuyClientAPI {
                 value: amount.minorString
             )
         ]
-        let path = Path.quote
         let request = requestBuilder.get(
-            path: path,
+            path: Path.oldQuote,
             parameters: parameters,
+            authenticated: true
+        )!
+        return networkAdapter.perform(request: request)
+    }
+
+    func getQuote(queryRequest: QuoteQueryRequest) -> AnyPublisher<QuoteResponse, NabuNetworkError> {
+        let path = Path.quote
+        let request = requestBuilder.post(
+            path: path,
+            body: try? queryRequest.encode(),
             authenticated: true
         )!
         return networkAdapter.perform(request: request)
@@ -373,6 +388,14 @@ final class APIClient: SimpleBuyClientAPI {
         let request = requestBuilder.get(
             path: Path.eligiblePaymentMethods,
             parameters: queryParameters,
+            authenticated: true
+        )!
+        return networkAdapter.perform(request: request)
+    }
+
+    func paymentsCardAcquirers() -> AnyPublisher<[PaymentCardAcquirer], NabuNetworkError> {
+        let request = requestBuilder.get(
+            path: Path.paymentsCardAcquirers,
             authenticated: true
         )!
         return networkAdapter.perform(request: request)

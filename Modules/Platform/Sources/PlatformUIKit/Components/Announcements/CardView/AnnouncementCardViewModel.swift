@@ -227,6 +227,7 @@ public final class AnnouncementCardViewModel {
         dismissalRelay
             .take(1)
             .ignoreElements()
+            .asCompletable()
             .observeOn(MainScheduler.instance)
     }
 

@@ -1,11 +1,16 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
+import ComponentLibrary
+#endif
 import Localization
 import PlatformUIKit
 
-extension SettingsSectionType.CellType.PlainCellType {
+extension SettingsSectionType.CellType.CommonCellType {
 
-    private typealias AccessibilityIDs = Accessibility.Identifier.Settings.SettingsCell.Plain
+    private typealias AccessibilityIDs = Accessibility.Identifier.Settings.SettingsCell.Common
 
     var title: String {
         switch self {
@@ -13,6 +18,8 @@ extension SettingsSectionType.CellType.PlainCellType {
             return LocalizationConstants.Settings.rateUs
         case .loginToWebWallet:
             return LocalizationConstants.Settings.loginToWebWallet
+        case .webLogin:
+            return LocalizationConstants.Settings.webLogin
         case .changePassword:
             return LocalizationConstants.Settings.changePassword
         case .changePIN:
@@ -23,6 +30,49 @@ extension SettingsSectionType.CellType.PlainCellType {
             return LocalizationConstants.Settings.privacyPolicy
         case .cookiesPolicy:
             return LocalizationConstants.Settings.cookiesPolicy
+        case .logout:
+            return LocalizationConstants.Settings.logout
+        case .addresses:
+            return LocalizationConstants.Settings.addresses
+        case .contactSupport:
+            return LocalizationConstants.Settings.contactSupport
+        case .airdrops:
+            return LocalizationConstants.Settings.airdrops
+        }
+    }
+
+    var icon: UIImage? {
+        switch self {
+        case .loginToWebWallet:
+            return Icon.phone.uiImage
+        case .webLogin:
+            return Icon.computer.uiImage
+        case .contactSupport:
+            return Icon.chat.uiImage
+        case .airdrops:
+            return Icon.airdrop.uiImage
+        case .logout:
+            return Icon.logout.uiImage
+        default:
+            return nil
+        }
+    }
+
+    var showsIndicator: Bool {
+        switch self {
+        case .logout:
+            return false
+        default:
+            return true
+        }
+    }
+
+    var overrideTintColor: UIColor? {
+        switch self {
+        case .logout:
+            return Color.destructive
+        default:
+            return nil
         }
     }
 
@@ -30,9 +80,12 @@ extension SettingsSectionType.CellType.PlainCellType {
         rawValue
     }
 
-    var viewModel: PlainCellViewModel {
+    var viewModel: CommonCellViewModel {
         .init(
             title: title,
+            icon: icon,
+            showsIndicator: showsIndicator,
+            overrideTintColor: overrideTintColor,
             accessibilityID: "\(AccessibilityIDs.titleLabelFormat)\(accessibilityID)",
             titleAccessibilityID: "\(AccessibilityIDs.title).\(accessibilityID)"
         )

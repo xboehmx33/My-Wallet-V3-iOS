@@ -38,7 +38,10 @@ final class MockFeatureFlagsService: FeatureFlagsServiceAPI {
         return .just(features[feature] ?? false)
     }
 
-    func object<Feature: Codable>(for feature: FeatureFlag) -> AnyPublisher<Feature?, FeatureFlagError> {
+    func object<Feature: Codable>(
+        for feature: FeatureFlag,
+        type: Feature.Type
+    ) -> AnyPublisher<Feature?, FeatureFlagError> {
         recordedInvocations.object.append(feature)
         return stubbedResults.object
             .map { $0 as? Feature }

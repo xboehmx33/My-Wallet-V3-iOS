@@ -84,19 +84,16 @@ extension CoincoreAPI {
                             )
                         }
                 }
-        case (is WalletConnectTarget, .sign):
+        case (is WalletConnectTarget, _):
             return account
                 .requireSecondPassword
-                .map { requiresSecondPassword -> TransactionProcessor in
+                .map { _ -> TransactionProcessor in
                     let walletConnectEngineFactory: WalletConnectEngineFactoryAPI = resolve()
                     return .init(
                         sourceAccount: account,
                         transactionTarget: target,
                         engine: walletConnectEngineFactory.build(
-                            target: target,
-                            onChainEngine: factory.build(
-                                requiresSecondPassword: requiresSecondPassword
-                            )
+                            target: target
                         )
                     )
                 }

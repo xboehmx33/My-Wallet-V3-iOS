@@ -43,7 +43,7 @@ private typealias CredentialsLocalization = LocalizationConstants.FeatureAuthent
 
 // MARK: - Properties
 
-struct CredentialsState: Equatable {
+public struct CredentialsState: Equatable {
     var walletPairingState: WalletPairingState
     var passwordState: PasswordState
     var twoFAState: TwoFAState?
@@ -348,6 +348,7 @@ let credentialsReducer = Reducer.combine(
             state.isTroubleLoggingInScreenVisible = isVisible
             if isVisible {
                 state.seedPhraseState = .init(
+                    context: .troubleLoggingIn,
                     emailAddress: state.walletPairingState.emailAddress,
                     nabuInfo: state.nabuInfo
                 )

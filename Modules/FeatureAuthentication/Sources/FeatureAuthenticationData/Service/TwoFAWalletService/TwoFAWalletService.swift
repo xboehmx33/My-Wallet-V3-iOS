@@ -53,8 +53,8 @@ public final class TwoFAWalletService: TwoFAWalletServiceAPI {
     }
 
     private func old_send(code: String) -> AnyPublisher<Void, TwoFAWalletServiceError> {
-        repository.guidPublisher
-            .zip(repository.sessionTokenPublisher)
+        repository.guid
+            .zip(repository.sessionToken)
             .flatMap { credentials -> AnyPublisher<(guid: String, sessionToken: String), TwoFAWalletServiceError> in
                 guard let guid = credentials.0 else {
                     return .failure(.missingCredentials(.guid))
@@ -89,7 +89,7 @@ public final class TwoFAWalletService: TwoFAWalletServiceAPI {
                 return .just(rawPayload)
             }
             .flatMap { [repository] rawPayload -> AnyPublisher<Void, TwoFAWalletServiceError> in
-                repository.setPublisher(payload: rawPayload)
+                repository.set(payload: rawPayload)
                     .mapError()
             }
             .eraseToAnyPublisher()
@@ -97,6 +97,7 @@ public final class TwoFAWalletService: TwoFAWalletServiceAPI {
 
     private func new_send(code: String) -> AnyPublisher<Void, TwoFAWalletServiceError> {
         walletRepo.credentials
+            .first()
             .flatMap { credentials -> AnyPublisher<(guid: String, sessionToken: String), TwoFAWalletServiceError> in
                 guard !credentials.guid.isEmpty else {
                     return .failure(.missingCredentials(.guid))

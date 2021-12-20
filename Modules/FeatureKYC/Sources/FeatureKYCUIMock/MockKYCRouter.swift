@@ -15,6 +15,7 @@ public final class MockKYCRouter: FeatureKYCUI.Routing {
         public var presentKYCIfNeeded: [UIViewController] = []
         public var presentPromptToUnlockMoreTrading: [UIViewController] = []
         public var presentPromptToUnlockMoreTradingIfNeeded: [UIViewController] = []
+        public var presentLimitsOverview: [UIViewController] = []
     }
 
     public struct StubbedResults {
@@ -82,5 +83,9 @@ public final class MockKYCRouter: FeatureKYCUI.Routing {
     ) -> AnyPublisher<FlowResult, RouterError> {
         recordedInvocations.presentPromptToUnlockMoreTradingIfNeeded.append(presenter)
         return stubbedResults.presentPromptToUnlockMoreTradingIfNeeded
+    }
+
+    public func presentLimitsOverview(from presenter: UIViewController) {
+        recordedInvocations.presentLimitsOverview.append(presenter)
     }
 }

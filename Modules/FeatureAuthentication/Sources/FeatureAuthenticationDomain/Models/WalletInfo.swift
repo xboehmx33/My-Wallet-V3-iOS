@@ -9,7 +9,7 @@ public enum WalletInfoError: Error {
     case missingSessionToken(originSession: String, base64Str: String)
 }
 
-public struct WalletInfo: Decodable, Equatable {
+public struct WalletInfo: Codable, Equatable {
 
     // MARK: - Type
 
@@ -23,9 +23,30 @@ public struct WalletInfo: Decodable, Equatable {
         case isMobileSetup = "is_mobile_setup"
         case hasCloudBackup = "has_cloud_backup"
         case nabu
+        case unified
+        case upgradeable
+        case mergeable
+        case userType = "user_type"
     }
 
-    public struct NabuInfo: Decodable, Equatable {
+    public enum UserType: String, Codable {
+        /// only wallet
+        case wallet = "WALLET"
+
+        /// only exchange
+        case exchange = "EXCHANGE"
+
+        /// wallet object has embedded exchange object
+        case linked = "WALLET_EXCHANGE_LINKED"
+
+        /// payload has only root-level wallet & exchange objects
+        case notLinked = "WALLET_EXCHANGE_NOT_LINKED"
+
+        /// there are root-level wallet & exchange objects, but wallet also has embedded exchange object (e.g. tied to different e-mail & linked via legacy linking)
+        case both = "WALLET_EXCHANGE_BOTH"
+    }
+
+    public struct NabuInfo: Codable, Equatable {
         public let userId: String
         public let recoveryToken: String
 
@@ -47,6 +68,12 @@ public struct WalletInfo: Decodable, Equatable {
             userId = try container.decode(String.self, forKey: .userId)
             recoveryToken = try container.decode(String.self, forKey: .recoveryToken)
         }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: NabuInfoCodingKeys.self)
+            try container.encode(userId, forKey: .userId)
+            try container.encode(recoveryToken, forKey: .recoveryToken)
+        }
     }
 
     // MARK: - Properties
@@ -59,7 +86,11 @@ public struct WalletInfo: Decodable, Equatable {
         twoFAType: nil,
         isMobileSetup: nil,
         hasCloudBackup: nil,
-        nabuInfo: nil
+        nabuInfo: nil,
+        unified: nil,
+        upgradeable: nil,
+        mergeable: nil,
+        userType: nil
     )
 
     public let guid: String
@@ -70,6 +101,10 @@ public struct WalletInfo: Decodable, Equatable {
     public let isMobileSetup: Bool?
     public let hasCloudBackup: Bool?
     public let nabuInfo: NabuInfo?
+    public let unified: Bool?
+    public let upgradeable: Bool?
+    public let mergeable: Bool?
+    public let userType: UserType?
 
     // MARK: - Setup
 
@@ -81,7 +116,11 @@ public struct WalletInfo: Decodable, Equatable {
         twoFAType: WalletAuthenticatorType? = nil,
         isMobileSetup: Bool? = nil,
         hasCloudBackup: Bool? = nil,
-        nabuInfo: NabuInfo? = nil
+        nabuInfo: NabuInfo? = nil,
+        unified: Bool? = nil,
+        upgradeable: Bool? = nil,
+        mergeable: Bool? = nil,
+        userType: UserType? = nil
     ) {
         self.guid = guid
         self.email = email
@@ -91,6 +130,10 @@ public struct WalletInfo: Decodable, Equatable {
         self.isMobileSetup = isMobileSetup
         self.hasCloudBackup = hasCloudBackup
         self.nabuInfo = nabuInfo
+        self.unified = unified
+        self.upgradeable = upgradeable
+        self.mergeable = mergeable
+        self.userType = userType
     }
 
     public init(from decoder: Decoder) throws {
@@ -109,5 +152,41 @@ public struct WalletInfo: Decodable, Equatable {
             .decodeIfPresent(Bool.self, forKey: .hasCloudBackup)
         nabuInfo = try wallet
             .decodeIfPresent(NabuInfo.self, forKey: .nabu)
+        unified = try container.decodeIfPresent(Bool.self, forKey: .unified)
+        upgradeable = try container.decodeIfPresent(Bool.self, forKey: .upgradeable)
+        mergeable = try container.decodeIfPresent(Bool.self, forKey: .mergeable)
+        userType = try container.decodeIfPresent(UserType.self, forKey: .userType)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        var wallet = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .wallet)
+        try wallet.encode(guid, forKey: .guid)
+        try wallet.encode(email, forKey: .email)
+        try wallet.encode(emailCode, forKey: .emailCode)
+        try wallet.encode(twoFAType, forKey: .twoFAType)
+        try wallet.encodeIfPresent(sessionId, forKey: .sessionId)
+        try wallet.encodeIfPresent(isMobileSetup, forKey: .isMobileSetup)
+        try wallet.encodeIfPresent(hasCloudBackup, forKey: .hasCloudBackup)
+        try wallet.encodeIfPresent(nabuInfo, forKey: .nabu)
+        try wallet.encodeIfPresent(unified, forKey: .unified)
+        try wallet.encodeIfPresent(upgradeable, forKey: .upgradeable)
+        try wallet.encodeIfPresent(mergeable, forKey: .mergeable)
+        try wallet.encodeIfPresent(userType, forKey: .userType)
+    }
+}
+
+extension WalletInfo {
+
+    /// Determine whether the account attached could be upgraded
+    public var shouldUpgradeAccount: Bool {
+        guard let unified = unified,
+              let upgradeable = upgradeable,
+              let mergeable = mergeable,
+              self.userType != nil
+        else {
+            return false
+        }
+        return !unified && (upgradeable || mergeable)
     }
 }

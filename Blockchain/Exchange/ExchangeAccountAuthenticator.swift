@@ -74,6 +74,7 @@ class ExchangeAccountAuthenticator: ExchangeAccountAuthenticatorAPI {
         client.linkToExistingExchangeUser(linkID: linkID)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 
     private func percentEscapeString(_ stringToEscape: String) -> String {

@@ -2,6 +2,7 @@
 
 import BitcoinCashKit
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 
@@ -42,10 +43,10 @@ final class BitcoinCashActivityDetailsInteractor {
         let transaction = detailsService
             .details(for: identifier)
         let note = note(for: identifier)
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
         let price = price(at: createdAt)
             .optional()
-            .catchErrorJustReturn(nil)
+            .catchAndReturn(nil)
 
         return Observable
             .combineLatest(
@@ -60,7 +61,8 @@ final class BitcoinCashActivityDetailsInteractor {
 
     private func price(at date: Date) -> Single<PriceQuoteAtTime> {
         fiatCurrencySettings
-            .fiatCurrency
+            .displayCurrency
+            .asSingle()
             .flatMap(weak: self) { (self, fiatCurrency) in
                 self.price(at: date, in: fiatCurrency)
             }

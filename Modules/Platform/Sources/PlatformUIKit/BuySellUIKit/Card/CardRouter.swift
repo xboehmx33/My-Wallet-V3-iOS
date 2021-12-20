@@ -103,7 +103,9 @@ public final class CardRouter: RIBs.Router<CardRouterInteractor> {
     }
 
     private func showAuthorizationScreen(for data: PartnerAuthorizationData) {
-        let viewController = builder.cardAuthorization(for: data)
+        guard let viewController = builder.cardAuthorization(for: data) else {
+            return
+        }
         navigationRouter.present(viewController: viewController)
     }
 

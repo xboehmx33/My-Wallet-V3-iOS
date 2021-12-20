@@ -2,7 +2,6 @@
 
 import Combine
 import FeatureAuthenticationDomain
-import RxSwift
 import WalletPayloadKit
 
 final class LanguageRepository: LanguageRepositoryAPI {
@@ -22,29 +21,16 @@ final class LanguageRepository: LanguageRepositoryAPI {
         self.nativeWalletEnabled = nativeWalletEnabled
     }
 
-    func setPublisher(language: String) -> AnyPublisher<Void, Never> {
+    func set(language: String) -> AnyPublisher<Void, Never> {
         nativeWalletEnabled()
             .flatMap { [walletRepository, walletRepo] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.setPublisher(language: language)
+                    return walletRepository.set(language: language)
                 }
                 return walletRepo.set(keyPath: \.properties.language, value: language)
                     .mapToVoid()
                     .mapError()
             }
             .eraseToAnyPublisher()
-    }
-
-    func set(language: String) -> Completable {
-        nativeWalletEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.set(language: language)
-                }
-                return walletRepo.set(keyPath: \.properties.language, value: language)
-                    .asCompletable()
-            }
-            .asCompletable()
     }
 }

@@ -34,20 +34,10 @@ public enum Onboarding {
         public var passwordScreen: PasswordRequired.State?
         public var welcomeState: WelcomeState?
         public var displayAlert: Alert?
-        public var showLegacyCreateWalletScreen: Bool = false
         public var deeplinkContent: URIContent?
         public var walletCreationContext: WalletCreationContext?
         public var walletRecoveryContext: WalletRecoveryContext?
         public var nabuInfoForResetAccount: WalletInfo.NabuInfo?
-
-        /// Helper method to toggle any visible legacy screen if needed
-        /// ugly, yeah, I know, but we need to check which current screen is presented
-        /// and dismiss that in the `OnboardingHostingController`
-        mutating func hideLegacyScreenIfNeeded() {
-            if showLegacyCreateWalletScreen {
-                showLegacyCreateWalletScreen = false
-            }
-        }
 
         public init(
             pinState: PinCore.State? = .init(),
@@ -55,7 +45,6 @@ public enum Onboarding {
             passwordScreen: PasswordRequired.State? = nil,
             welcomeState: WelcomeState? = nil,
             displayAlert: Alert? = nil,
-            showLegacyCreateWalletScreen: Bool = false,
             deeplinkContent: URIContent? = nil,
             walletCreationContext: WalletCreationContext? = nil
         ) {
@@ -64,7 +53,6 @@ public enum Onboarding {
             self.passwordScreen = passwordScreen
             self.welcomeState = welcomeState
             self.displayAlert = displayAlert
-            self.showLegacyCreateWalletScreen = showLegacyCreateWalletScreen
             self.deeplinkContent = deeplinkContent
             self.walletCreationContext = walletCreationContext
         }
@@ -136,24 +124,26 @@ let onBoardingReducer = Reducer<Onboarding.State, Onboarding.Action, Onboarding.
         case .pin:
             return .none
         case .createAccountScreenClosed:
-            state.showLegacyCreateWalletScreen = false
             state.walletCreationContext = nil
             return .none
-        case .welcomeScreen(.presentScreenFlow(.welcomeScreen)):
+
+        case .welcomeScreen(.route(nil)):
             // don't clear the state if the state is .new when dismissing the modal by setting the screen flow back to welcome screen
             if state.walletCreationContext == .existing || state.walletCreationContext == .recovery {
                 state.walletCreationContext = nil
             }
             return .none
-        case .welcomeScreen(.presentScreenFlow(.createWalletScreen)):
-            state.showLegacyCreateWalletScreen = true
+
+        case .welcomeScreen(.navigate(to: .createWallet)),
+             .welcomeScreen(.enter(into: .createWallet)):
             state.walletCreationContext = .new
             return .none
-        case .welcomeScreen(.presentScreenFlow(.emailLoginScreen)):
+
+        case .welcomeScreen(.enter(into: .emailLogin)):
             state.walletCreationContext = .existing
             return .none
 
-        case .welcomeScreen(.presentScreenFlow(.restoreWalletScreen)):
+        case .welcomeScreen(.enter(into: .restoreWallet)):
             state.walletCreationContext = .recovery
             return .none
         case .welcomeScreen:

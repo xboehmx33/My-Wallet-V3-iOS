@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 struct PaymentAccountGBP: PaymentAccountDescribing, Equatable {
     var fields: [PaymentAccountProperty.Field] {
         [

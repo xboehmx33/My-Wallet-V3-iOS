@@ -43,8 +43,7 @@ extension DependencyContainer {
 
         factory {
             WalletLogic(
-                holder: DIKit.resolve(),
-                creator: createWallet(from:)
+                holder: DIKit.resolve()
             )
         }
 

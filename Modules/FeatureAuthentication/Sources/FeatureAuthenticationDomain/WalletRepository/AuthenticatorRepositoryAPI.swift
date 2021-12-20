@@ -1,23 +1,13 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
-import RxSwift
 import WalletPayloadKit
 
-public protocol AuthenticatorRepositoryCombineAPI: AnyObject {
+public protocol AuthenticatorRepositoryAPI: AnyObject {
 
     /// Streams the authenticator type
-    var authenticatorTypePublisher: AnyPublisher<WalletAuthenticatorType, Never> { get }
+    var authenticatorType: AnyPublisher<WalletAuthenticatorType, Never> { get }
 
     /// Sets the authenticator type
-    func setPublisher(authenticatorType: WalletAuthenticatorType) -> AnyPublisher<Void, Never>
-}
-
-public protocol AuthenticatorRepositoryAPI: AuthenticatorRepositoryCombineAPI {
-
-    /// Streams the authenticator type
-    var authenticatorType: Single<WalletAuthenticatorType> { get }
-
-    /// Sets the authenticator type
-    func set(authenticatorType: WalletAuthenticatorType) -> Completable
+    func set(authenticatorType: WalletAuthenticatorType) -> AnyPublisher<Void, Never>
 }

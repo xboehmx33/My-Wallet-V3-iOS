@@ -5,6 +5,7 @@ import BitcoinKit
 import DIKit
 import FeatureTransactionDomain
 import JavaScriptCore
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit

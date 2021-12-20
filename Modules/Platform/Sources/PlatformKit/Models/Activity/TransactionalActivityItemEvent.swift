@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// An `Event` has a `Status` indicating
 /// whether it is complete or not, a `type`,
 /// and an amount associated with the `Event`.

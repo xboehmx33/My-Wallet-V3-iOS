@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ComposableArchitecture
+import ComposableArchitectureExtensions
 import SwiftUI
 
 enum AccountPickerAction {
@@ -12,10 +13,16 @@ enum AccountPickerAction {
     case updateRows(_ rows: [AccountPickerRow])
     case failedToUpdateRows(Error)
 
-    case updateHeader(_ header: Header)
+    case updateHeader(_ header: HeaderStyle)
     case failedToUpdateHeader(Error)
 
     case search(String?)
+
+    case prefetching(PrefetchingAction)
+
+    case updateSingleAccounts([AnyHashable: AccountPickerRow.SingleAccount.Balances])
+
+    case updateAccountGroups([AnyHashable: AccountPickerRow.AccountGroup.Balances])
 }
 
 enum LoadedRowsAction {
@@ -26,7 +33,7 @@ enum LoadedRowsAction {
 enum LoadingRowsAction {}
 
 enum SuccessRowsAction {
-    case accountPickerRow(id: AccountPickerRow.ID, action: AccountPickerRowAction)
+    case accountPickerRowDidTap(AccountPickerRow.ID)
 }
 
 enum FailureRowsAction {}

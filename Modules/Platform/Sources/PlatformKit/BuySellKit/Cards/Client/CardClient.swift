@@ -5,7 +5,7 @@ import DIKit
 import NabuNetworkError
 import NetworkKit
 
-typealias CardClientAPI = CardListClientAPI &
+public typealias CardClientAPI = CardListClientAPI &
     CardChargeClientAPI &
     CardDeletionClientAPI &
     CardActivationClientAPI &
@@ -45,10 +45,14 @@ final class CardClient: CardClientAPI {
 
     /// Streams a list of available cards
     /// - Returns: A Single with `CardPayload` array
-    var cardList: AnyPublisher<[CardPayload], NabuNetworkError> {
+    func getCardList(enableProviders: Bool) -> AnyPublisher<[CardPayload], NabuNetworkError> {
         let path = Path.card
+        let parameters = [
+            URLQueryItem(name: "cardProvider", value: "true")
+        ]
         let request = requestBuilder.get(
             path: path,
+            parameters: enableProviders ? parameters : nil,
             authenticated: true
         )!
         return networkAdapter.perform(request: request)
@@ -92,18 +96,21 @@ final class CardClient: CardClientAPI {
     func add(
         for currency: String,
         email: String,
-        billingAddress: CardPayload.BillingAddress
+        billingAddress: CardPayload.BillingAddress,
+        paymentMethodTokens: [String: String]
     ) -> AnyPublisher<CardPayload, NabuNetworkError> {
         struct RequestPayload: Encodable {
             let currency: String
             let email: String
             let address: CardPayload.BillingAddress
+            let paymentMethodTokens: [String: String]
         }
 
         let payload = RequestPayload(
             currency: currency,
             email: email,
-            address: billingAddress
+            address: billingAddress,
+            paymentMethodTokens: paymentMethodTokens
         )
 
         let path = Path.card
@@ -134,15 +141,18 @@ final class CardClient: CardClientAPI {
                 let customerUrl: String
             }
 
-            private let everypay: EveryPay?
+            let everypay: EveryPay?
+            let redirectURL: String
+            let useOnlyAlreadyValidatedCardRef = false
 
-            init(everypay: EveryPay) {
-                self.everypay = everypay
+            init(redirectURL: String) {
+                everypay = .init(customerUrl: redirectURL)
+                self.redirectURL = redirectURL
             }
         }
 
         let path = Path.activateCard(with: id)
-        let payload = Attributes(everypay: .init(customerUrl: url))
+        let payload = Attributes(redirectURL: url)
 
         let request = requestBuilder.post(
             path: path,

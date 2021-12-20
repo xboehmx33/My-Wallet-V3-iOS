@@ -2,11 +2,21 @@
 
 public struct CardPayload {
 
+    public enum Partner: String {
+        case everypay = "EVERYPAY"
+        case cardProvider = "CARDPROVIDER"
+        case unknown
+
+        var isKnown: Bool {
+            self != .unknown
+        }
+    }
+
     /// The id of the card
     let identifier: String
 
-    /// The partner of the card (e.g: EVERYPAY)
-    let partner: Partner
+    /// The partner of the card
+    let partner: CardPayload.Partner
 
     /// The billing address
     let address: BillingAddress!
@@ -22,6 +32,24 @@ public struct CardPayload {
 
     /// The addition date (e.g: `2020-04-07T23:23:26.761Z`)
     let additionDate: String
+
+    public init(
+        identifier: String,
+        partner: String,
+        address: BillingAddress!,
+        currency: String,
+        state: State,
+        card: CardDetails!,
+        additionDate: String
+    ) {
+        self.identifier = identifier
+        self.partner = Partner(rawValue: partner) ?? .unknown
+        self.address = address
+        self.currency = currency
+        self.state = state
+        self.card = card
+        self.additionDate = additionDate
+    }
 }
 
 // MARK: - Decodable
@@ -42,8 +70,8 @@ extension CardPayload: Decodable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         identifier = try values.decode(String.self, forKey: .identifier)
 
-        let partner = try values.decode(String.self, forKey: .partner)
-        self.partner = Partner(partner: partner)
+        let partnerString = try values.decode(String.self, forKey: .partner)
+        partner = Partner(rawValue: partnerString) ?? .unknown
 
         address = try values.decodeIfPresent(BillingAddress.self, forKey: .address)
         currency = try values.decode(String.self, forKey: .currency)
@@ -80,10 +108,16 @@ extension CardPayload {
     }
 
     /// The partner for the card
-    public enum Partner: String, Decodable {
+    public enum Acquirer: String, Codable {
 
         /// EveryPay partner
         case everyPay = "EVERYPAY"
+
+        /// Stripe partner
+        case stripe = "STRIPE"
+
+        /// Checkout.com partner
+        case checkout = "CHECKOUTDOTCOM"
 
         /// Any other
         case unknown
@@ -97,8 +131,8 @@ extension CardPayload {
             }
         }
 
-        init(partner: String) {
-            self = Partner(rawValue: partner) ?? .unknown
+        public init(acquirer: String) {
+            self = Acquirer(rawValue: acquirer) ?? .unknown
         }
     }
 

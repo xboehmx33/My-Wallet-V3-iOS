@@ -32,7 +32,9 @@ public struct PrimaryDoubleButton: View {
     private let leadingButton: ButtonData
     private let trailingButton: ButtonData
 
-    private let colorCombination = PrimaryButton.colorCombination
+    private let colorCombination = primaryButtonColorCombination
+
+    @Environment(\.isEnabled) private var isEnabled
 
     public init(
         leadingTitle: String,
@@ -60,6 +62,7 @@ public struct PrimaryDoubleButton: View {
                 .buttonStyle(
                     PillButtonStyle(
                         isLoading: leadingButton.isLoading,
+                        isEnabled: isEnabled,
                         isRounded: false,
                         colorCombination: colorCombination
                     )
@@ -71,6 +74,7 @@ public struct PrimaryDoubleButton: View {
                 .buttonStyle(
                     PillButtonStyle(
                         isLoading: trailingButton.isLoading,
+                        isEnabled: isEnabled,
                         isRounded: false,
                         colorCombination: colorCombination
                     )

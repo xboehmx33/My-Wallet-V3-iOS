@@ -51,6 +51,7 @@ class KYCCountrySelectionInteractor {
                 )
                 .asObservable()
                 .ignoreElements()
+                .asCompletable()
             }
             .subscribe()
     }

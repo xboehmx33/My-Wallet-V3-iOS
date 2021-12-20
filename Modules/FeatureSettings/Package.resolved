@@ -66,11 +66,11 @@
       },
       {
         "package": "RIBs",
-        "repositoryURL": "https://github.com/paulo-bc/RIBs.git",
+        "repositoryURL": "https://github.com/uber/RIBs.git",
         "state": {
           "branch": null,
           "revision": "6cad1e953d9b60ab177a963dd63715806ed0d192",
-          "version": "0.10.2"
+          "version": "0.12.1"
         }
       },
       {
@@ -88,7 +88,7 @@
         "state": {
           "branch": null,
           "revision": "cec68169a048a079f461ba203fe85636548d7a89",
-          "version": "5.1.3"
+          "version": "6.2.0"
         }
       },
       {
@@ -159,8 +159,8 @@
         "repositoryURL": "https://github.com/oliveratkinson-bc/wallet-core.git",
         "state": {
           "branch": null,
-          "revision": "985832e0a0746608ded3cc3984066f455d28c30f",
-          "version": "2.6.31"
+          "revision": "b9810df6aeddf2360fea0165e055afeec77ea579",
+          "version": "2.6.34"
         }
       },
       {

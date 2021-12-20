@@ -2,6 +2,7 @@
 
 import CombineSchedulers
 import DIKit
+import MoneyKit
 import PlatformKit
 
 public struct TourEnvironment {

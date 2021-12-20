@@ -1,19 +1,14 @@
 import SwiftUI
 
 public struct NavigationLinkProviderView: View {
-    #if os(iOS)
-    let listStyle = InsetGroupedListStyle()
-    #else
-    let listStyle = InsetListStyle()
-    #endif
-
     let data: NavigationLinkProviderList
 
     public var body: some View {
         List {
             NavigationLinkProvider.sections(for: data)
         }
-        .listStyle(listStyle)
+        .listStyle(PlainListStyle())
+        .background(Color.semantic.background.ignoresSafeArea())
     }
 }
 

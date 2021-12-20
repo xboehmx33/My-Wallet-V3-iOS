@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxRelay
@@ -54,11 +55,10 @@ public final class AssetLineChartInteractor: AssetLineChartInteracting {
 
     private func loadHistoricalPrices(within window: PriceWindow) {
         fiatCurrencyService
-            .fiatCurrencyObservable
+            .displayCurrencyPublisher
             .flatMap { [priceService, cryptoCurrency] fiatCurrency in
                 priceService
                     .priceSeries(of: cryptoCurrency, in: fiatCurrency, within: window)
-                    .asObservable()
             }
             .map { [cryptoCurrency] priceSeries in
                 AssetLineChart.Value.Interaction(
@@ -68,6 +68,7 @@ public final class AssetLineChartInteractor: AssetLineChartInteracting {
                 )
             }
             .map(AssetLineChart.State.Interaction.loaded)
+            .asObservable()
             .startWith(.loading)
             .catchErrorJustReturn(.loading)
             .bindAndCatch(to: stateRelay)

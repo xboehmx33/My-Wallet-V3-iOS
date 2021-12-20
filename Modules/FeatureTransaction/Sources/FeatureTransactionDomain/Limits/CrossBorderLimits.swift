@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 
 /// Represents transaction limits specific to a user for how much they can move in and out of Blockchain.com's custodial services.

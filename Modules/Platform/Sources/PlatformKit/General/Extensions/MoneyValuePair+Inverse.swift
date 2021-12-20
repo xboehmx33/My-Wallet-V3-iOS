@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 extension MoneyValuePair {
 
     /// Returns the inversed money value pair.

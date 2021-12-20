@@ -2,13 +2,11 @@
 
 import Combine
 import FeatureAuthenticationDomain
-import RxSwift
 import WalletPayloadKit
 
 final class SessionTokenRepository: SessionTokenRepositoryAPI {
-    let sessionToken: Single<String?>
 
-    let sessionTokenPublisher: AnyPublisher<String?, Never>
+    let sessionToken: AnyPublisher<String?, Never>
 
     // This is set to the older WalletRepository API, soon to be removed
     private let walletRepository: WalletRepositoryAPI
@@ -25,21 +23,9 @@ final class SessionTokenRepository: SessionTokenRepositoryAPI {
         self.nativeWalletEnabled = nativeWalletEnabled
 
         sessionToken = nativeWalletEnabled()
-            .asObservable()
-            .take(1)
-            .asSingle()
-            .flatMap { isEnabled -> Single<String?> in
-                guard isEnabled else {
-                    return walletRepository.sessionToken
-                }
-                let keyOrNil = walletRepo.credentials.sessionToken.isEmpty ? nil : walletRepo.credentials.sessionToken
-                return .just(keyOrNil)
-            }
-
-        sessionTokenPublisher = nativeWalletEnabled()
             .flatMap { isEnabled -> AnyPublisher<String?, Never> in
                 guard isEnabled else {
-                    return walletRepository.sessionTokenPublisher
+                    return walletRepository.sessionToken
                 }
                 return walletRepo.map(\.credentials.sessionToken)
                     .map { key in key.isEmpty ? nil : key }
@@ -48,24 +34,11 @@ final class SessionTokenRepository: SessionTokenRepositoryAPI {
             .eraseToAnyPublisher()
     }
 
-    func set(sessionToken: String) -> Completable {
-        nativeWalletEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.set(sessionToken: sessionToken)
-                }
-                return walletRepo.set(keyPath: \.credentials.sessionToken, value: sessionToken)
-                    .asCompletable()
-            }
-            .asCompletable()
-    }
-
-    func setPublisher(sessionToken: String) -> AnyPublisher<Void, Never> {
+    func set(sessionToken: String) -> AnyPublisher<Void, Never> {
         nativeWalletEnabled()
             .flatMap { [walletRepo, walletRepository] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.setPublisher(sessionToken: sessionToken)
+                    return walletRepository.set(sessionToken: sessionToken)
                 }
                 return walletRepo.set(keyPath: \.credentials.sessionToken, value: sessionToken)
                     .mapToVoid()
@@ -74,24 +47,11 @@ final class SessionTokenRepository: SessionTokenRepositoryAPI {
             .eraseToAnyPublisher()
     }
 
-    func cleanSessionToken() -> Completable {
-        nativeWalletFlagEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.cleanSessionToken()
-                }
-                return walletRepo.set(keyPath: \.credentials.sessionToken, value: "")
-                    .asCompletable()
-            }
-            .asCompletable()
-    }
-
-    func cleanSessionTokenPublisher() -> AnyPublisher<Void, Never> {
+    func cleanSessionToken() -> AnyPublisher<Void, Never> {
         nativeWalletFlagEnabled()
             .flatMap { [walletRepository, walletRepo] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.cleanSessionTokenPublisher()
+                    return walletRepository.cleanSessionToken()
                 }
                 return walletRepo.set(keyPath: \.credentials.sessionToken, value: "")
                     .mapToVoid()

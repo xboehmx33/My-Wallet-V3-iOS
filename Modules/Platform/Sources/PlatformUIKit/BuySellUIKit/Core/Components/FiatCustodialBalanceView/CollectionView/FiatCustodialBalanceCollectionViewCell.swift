@@ -52,7 +52,7 @@ final class FiatCustodialBalanceCollectionViewCell: UICollectionViewCell {
         layoutIfNeeded()
         let size = contentView.systemLayoutSizeFitting(layoutAttributes.size)
         var newFrame = layoutAttributes.frame
-        newFrame.size.width = CGFloat(ceilf(Float(size.width)))
+        newFrame.size.width = CGFloat(ceilf(Float(size.width + 8)))
         newFrame.size.height = CGFloat(ceilf(Float(size.height)))
         layoutAttributes.frame = newFrame
         return layoutAttributes

@@ -64,7 +64,7 @@ struct IconButton_Previews: PreviewProvider {
         }
 
         @ViewBuilder private var navigationItems: some View {
-            IconButton(icon: .qRCode) {
+            IconButton(icon: .qrCode) {
                 toggle.toggle()
             }
         }

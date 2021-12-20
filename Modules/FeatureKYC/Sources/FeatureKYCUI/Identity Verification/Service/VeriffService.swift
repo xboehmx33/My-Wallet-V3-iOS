@@ -27,5 +27,6 @@ final class VeriffService {
         client.submitToVeriffForVerification(applicantId: applicantId)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 }

@@ -6,7 +6,7 @@ import SwiftUI
 
 extension Color {
 
-    public static let semantic: Semantic.Type = Semantic.self
+    public static let semantic: WalletSemantic.Type = WalletSemantic.self
 
     /// Colors from the Figma Component Library.
     ///
@@ -20,7 +20,7 @@ extension Color {
     /// # Figma
     ///
     ///  [Colors](https://www.figma.com/file/nlSbdUyIxB64qgypxJkm74/03---iOS-%7C-Shared?node-id=352%3A8610)
-    public enum Semantic {
+    public enum WalletSemantic {
 
         public static let title = Color(
             light: .palette.grey900,
@@ -89,6 +89,9 @@ extension Color {
         public static let orangeBG: Color = .palette.orange100
 
         public static let redBG: Color = .palette.red100
+
+        public static let gold: Color = .palette.gold
+        public static let silver: Color = .palette.silver
     }
 }
 
@@ -159,9 +162,11 @@ extension Color {
         static let green400: Color = Asset.green400.color()
         static let green600: Color = Asset.green600.color()
         // red
+        static let red000: Color = Asset.red000.color()
         static let red100: Color = Asset.red100.color()
         static let red400: Color = Asset.red400.color()
         static let red600: Color = Asset.red600.color()
+        static let red900: Color = Asset.red900.color()
         // orange
         static let orange100: Color = Asset.orange100.color()
         static let orange400: Color = Asset.orange400.color()
@@ -216,9 +221,11 @@ extension Color {
         case green400
         case green600
         // red
+        case red000
         case red100
         case red400
         case red600
+        case red900
         // orange
         case orange100
         case orange400

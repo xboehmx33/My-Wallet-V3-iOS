@@ -39,11 +39,6 @@ let package = Package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             from: "0.18.0"
         ),
-        .package(
-            name: "RxSwift",
-            url: "https://github.com/ReactiveX/RxSwift.git",
-            from: "5.1.3"
-        ),
         .package(path: "../Analytics"),
         .package(path: "../ComposableArchitectureExtensions"),
         .package(path: "../HDWallet"),
@@ -86,7 +81,6 @@ let package = Package(
                 .product(name: "ComposableNavigation", package: "ComposableArchitectureExtensions"),
                 .product(name: "AnalyticsKit", package: "Analytics"),
                 .product(name: "Localization", package: "Localization"),
-                .product(name: "RxSwift", package: "RxSwift"),
                 .product(name: "ToolKit", package: "Tool"),
                 .product(name: "UIComponents", package: "UIComponents")
             ]
@@ -103,7 +97,7 @@ let package = Package(
             dependencies: [
                 .target(name: "FeatureAuthenticationData"),
                 .target(name: "FeatureAuthenticationMock"),
-                .product(name: "RxBlocking", package: "RxSwift")
+                .product(name: "TestKit", package: "Test")
             ]
         ),
         .testTarget(

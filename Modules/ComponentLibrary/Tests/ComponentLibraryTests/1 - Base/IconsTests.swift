@@ -33,4 +33,10 @@ final class IconsTests: XCTestCase {
 
         assertSnapshot(matching: view, as: .image)
     }
+
+    func testCircle() {
+        let view = Icon.walletSwap.circle().frame(width: 32, height: 32)
+
+        assertSnapshot(matching: view, as: .image)
+    }
 }

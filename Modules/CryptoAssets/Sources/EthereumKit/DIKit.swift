@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import ToolKit
 
@@ -33,6 +34,8 @@ extension DependencyContainer {
 
         factory { EthereumTransactionSendingService() as EthereumTransactionSendingServiceAPI }
 
+        factory { EthereumTransactionSigningService() as EthereumTransactionSigningServiceAPI }
+
         factory { EthereumFeeService() as EthereumFeeServiceAPI }
 
         factory { EthereumAccountService() as EthereumAccountServiceAPI }
@@ -41,11 +44,7 @@ extension DependencyContainer {
 
         factory { AnyKeyPairProvider<EthereumKeyPair>.ethereum() }
 
-        factory { EthereumTransactionBuilder() as EthereumTransactionBuilderAPI }
-
         factory { EthereumSigner() as EthereumSignerAPI }
-
-        factory { EthereumTransactionEncoder() as EthereumTransactionEncoderAPI }
 
         factory { EthereumTransactionDispatcher() as EthereumTransactionDispatcherAPI }
 
@@ -54,6 +53,12 @@ extension DependencyContainer {
         }
 
         factory { WalletConnectEngineFactory() as WalletConnectEngineFactoryAPI }
+
+        factory { RPCClient() as LatestBlockClientAPI }
+
+        factory { RPCClient() as EstimateGasClientAPI }
+
+        factory { GasEstimateService() as GasEstimateServiceAPI }
     }
 }
 

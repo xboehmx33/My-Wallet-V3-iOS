@@ -3,6 +3,7 @@
 import AnalyticsKit
 import ComposableArchitecture
 import FeatureAuthenticationDomain
+import ToolKit
 
 public enum ImportWalletAction: Equatable {
     case importWalletButtonTapped
@@ -21,11 +22,10 @@ struct ImportWalletState: Equatable {
 }
 
 struct ImportWalletEnvironment {
+    let mainQueue: AnySchedulerOf<DispatchQueue>
+    let passwordValidator: PasswordValidatorAPI
+    let externalAppOpener: ExternalAppOpener
     let analyticsRecorder: AnalyticsEventRecorderAPI
-
-    init(analyticsRecorder: AnalyticsEventRecorderAPI) {
-        self.analyticsRecorder = analyticsRecorder
-    }
 }
 
 let importWalletReducer = Reducer.combine(
@@ -36,6 +36,9 @@ let importWalletReducer = Reducer.combine(
             action: /ImportWalletAction.createAccount,
             environment: {
                 CreateAccountEnvironment(
+                    mainQueue: $0.mainQueue,
+                    passwordValidator: $0.passwordValidator,
+                    externalAppOpener: $0.externalAppOpener,
                     analyticsRecorder: $0.analyticsRecorder
                 )
             }
@@ -49,7 +52,9 @@ let importWalletReducer = Reducer.combine(
         case .setCreateAccountScreenVisible(let isVisible):
             state.isCreateAccountScreenVisible = isVisible
             if isVisible {
-                state.createAccountState = .init()
+                state.createAccountState = .init(
+                    context: .importWallet
+                )
             }
             return .none
         case .importWalletButtonTapped:

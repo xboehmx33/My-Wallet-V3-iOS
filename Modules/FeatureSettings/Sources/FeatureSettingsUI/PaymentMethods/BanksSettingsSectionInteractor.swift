@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureSettingsDomain
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -14,6 +15,7 @@ final class BanksSettingsSectionInteractor {
     var state: Observable<State> {
         _ = setup
         return stateRelay
+            .observeOn(MainScheduler.instance)
             .asObservable()
     }
 

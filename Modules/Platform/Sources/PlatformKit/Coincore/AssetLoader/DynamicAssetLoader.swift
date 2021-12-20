@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Foundation
+import MoneyKit
 import ToolKit
 
 /// An AssetLoader that loads some CryptoAssets straight away, and lazy load others.

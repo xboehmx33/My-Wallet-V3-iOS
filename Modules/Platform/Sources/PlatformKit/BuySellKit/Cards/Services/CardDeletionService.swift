@@ -35,6 +35,7 @@ final class CardDeletionService: PaymentMethodDeletionServiceAPI {
             .deleteCard(by: data.id)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
             .andThen(cardListService.fetchCards())
             .do(onSuccess: { [weak self] _ in
                 self?.paymentMethodTypesService.clearPreferredPaymentIfNeeded(by: data.id)

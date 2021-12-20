@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -62,7 +63,8 @@ final class FiatWithdrawalTransactionEngine: TransactionEngine {
                 paymentMethodType: target.paymentType
             ),
             walletCurrencyService
-                .fiatCurrency
+                .displayCurrency
+                .asSingle()
         )
         .map { [sourceAsset] values -> PendingTransaction in
             let (actionableBalance, feeAndLimit, fiatCurrency) = values
@@ -115,14 +117,11 @@ final class FiatWithdrawalTransactionEngine: TransactionEngine {
                     .createWithdrawOrder(id: address, amount: pendingTransaction.amount)
                     .asObservable()
                     .ignoreElements()
+                    .asCompletable()
             }
             .flatMapSingle {
                 .just(TransactionResult.unHashed(amount: pendingTransaction.amount))
             }
-    }
-
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        .empty()
     }
 
     func doUpdateFeeLevel(

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -16,7 +17,7 @@ public final class AccountBalanceViewInteractor: AssetBalanceViewInteracting {
     public var state: Observable<InteractionState> {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 refreshRelay.asObservable()
             )
             .map(\.0)

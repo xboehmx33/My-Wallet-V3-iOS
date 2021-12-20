@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureKYCDomain
+import MoneyKit
 import PlatformKit
 import class PlatformUIKit.AnnouncementRecorder
 import RxRelay

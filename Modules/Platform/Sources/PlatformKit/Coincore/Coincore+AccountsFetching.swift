@@ -1,7 +1,9 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import RxSwift
+import RxToolKit
 import ToolKit
 
 extension PrimitiveSequenceType where Trait == SingleTrait, Element == [BlockchainAccount] {
@@ -142,12 +144,15 @@ extension Publisher where Output == [SingleAccount], Failure == Error {
     }
 
     public func flatMapFilter(
-        action: AssetAction,
+        action: AssetAction? = nil,
         failSequence: Bool = false,
         onError: ((SingleAccount, Failure) -> Void)? = nil
     ) -> AnyPublisher<[SingleAccount], Failure> {
         flatMap { accounts -> AnyPublisher<[SingleAccount], Failure> in
-            accounts.map { account in
+            guard let action = action else {
+                return .just(accounts)
+            }
+            return accounts.map { account in
                 // Check if account can perform action
                 account.can(perform: action)
                     // If account can perform, return itself, else return nil
@@ -178,7 +183,7 @@ extension Publisher where Output == [SingleAccount], Failure == Error {
 extension Publisher where Output == AccountGroup, Failure == Error {
 
     public func flatMapFilter(
-        action: AssetAction,
+        action: AssetAction? = nil,
         failSequence: Bool = false,
         onError: ((SingleAccount, Failure) -> Void)? = nil
     ) -> AnyPublisher<[SingleAccount], Failure> {
@@ -191,7 +196,7 @@ extension Publisher where Output == AccountGroup, Failure == Error {
     }
 
     fileprivate func mapToCryptoAccounts(
-        supporting action: AssetAction
+        supporting action: AssetAction?
     ) -> AnyPublisher<[CryptoAccount], Failure> {
         flatMapFilter(action: action)
             .map { accounts in
@@ -227,7 +232,7 @@ extension CoincoreAPI {
 
     public func cryptoAccounts(
         for cryptoCurrency: CryptoCurrency,
-        supporting action: AssetAction,
+        supporting action: AssetAction? = nil,
         filter: AssetFilter = .all
     ) -> AnyPublisher<[CryptoAccount], Error> {
         let asset = self[cryptoCurrency]

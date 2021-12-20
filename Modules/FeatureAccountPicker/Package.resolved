@@ -47,39 +47,12 @@
         }
       },
       {
-        "package": "Gifu",
-        "repositoryURL": "https://github.com/kaishin/Gifu",
-        "state": {
-          "branch": null,
-          "revision": "51f2eab32903e336f590c013267cfa4d7f8b06c4",
-          "version": "3.3.1"
-        }
-      },
-      {
-        "package": "Lottie",
-        "repositoryURL": "https://github.com/airbnb/lottie-ios.git",
-        "state": {
-          "branch": null,
-          "revision": "79a0b70547f7c40ea54c67487f935fa2f2eaaadc",
-          "version": "3.2.3"
-        }
-      },
-      {
         "package": "Nuke",
         "repositoryURL": "https://github.com/kean/Nuke.git",
         "state": {
           "branch": null,
           "revision": "472a03c15f39592007d94f25abe554350bc8aa2b",
           "version": "10.5.1"
-        }
-      },
-      {
-        "package": "NukeUI",
-        "repositoryURL": "https://github.com/kean/NukeUI.git",
-        "state": {
-          "branch": null,
-          "revision": "0130ce2c1d140a426ced903a9abd68b4b8bf9790",
-          "version": "0.6.8"
         }
       },
       {
@@ -93,11 +66,11 @@
       },
       {
         "package": "RIBs",
-        "repositoryURL": "https://github.com/paulo-bc/RIBs.git",
+        "repositoryURL": "https://github.com/uber/RIBs.git",
         "state": {
           "branch": null,
           "revision": "6cad1e953d9b60ab177a963dd63715806ed0d192",
-          "version": "0.10.2"
+          "version": "0.12.1"
         }
       },
       {
@@ -115,7 +88,16 @@
         "state": {
           "branch": null,
           "revision": "cec68169a048a079f461ba203fe85636548d7a89",
-          "version": "5.1.3"
+          "version": "6.2.0"
+        }
+      },
+      {
+        "package": "swift-algorithms",
+        "repositoryURL": "https://github.com/apple/swift-algorithms.git",
+        "state": {
+          "branch": null,
+          "revision": "2327673b0e9c7e90e6b1826376526ec3627210e4",
+          "version": "0.2.1"
         }
       },
       {
@@ -141,8 +123,8 @@
         "repositoryURL": "https://github.com/pointfreeco/swift-composable-architecture",
         "state": {
           "branch": null,
-          "revision": "68664c144e0d49d2fff1f45081f1bb57203b88fd",
-          "version": "0.25.1"
+          "revision": "599a2398adaaa7a4e3f5420cde7728c39e33677e",
+          "version": "0.28.1"
         }
       },
       {
@@ -164,6 +146,15 @@
         }
       },
       {
+        "package": "swift-numerics",
+        "repositoryURL": "https://github.com/apple/swift-numerics",
+        "state": {
+          "branch": null,
+          "revision": "6583ac70c326c3ee080c1d42d9ca3361dca816cd",
+          "version": "0.1.0"
+        }
+      },
+      {
         "package": "SnapshotTesting",
         "repositoryURL": "https://github.com/pointfreeco/swift-snapshot-testing",
         "state": {
@@ -177,8 +168,8 @@
         "repositoryURL": "https://github.com/oliveratkinson-bc/wallet-core.git",
         "state": {
           "branch": null,
-          "revision": "985832e0a0746608ded3cc3984066f455d28c30f",
-          "version": "2.6.31"
+          "revision": "b9810df6aeddf2360fea0165e055afeec77ea579",
+          "version": "2.6.34"
         }
       },
       {

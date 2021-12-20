@@ -2,6 +2,7 @@
 
 import FeatureTransactionDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -41,6 +42,7 @@ enum TransactionAction: MviAction {
     case validateSourceAccount // e.g. Give an opportunity to link a payment method
     case prepareTransaction // When continue button is tapped on enter amount screen
     case executeTransaction
+    case authorizedOpenBanking
     case performSecurityChecksForTransaction(TransactionResult)
     case securityChecksCompleted
     case updateTransactionPending
@@ -48,11 +50,12 @@ enum TransactionAction: MviAction {
     case fetchFiatRates
     case fetchTargetRates
     case fetchUserKYCInfo
-    case userKYCInfoFetched(KYC.UserTiers)
+    case userKYCInfoFetched(TransactionState.KYCStatus?)
     case updateFeeLevelAndAmount(FeeLevel, MoneyValue?)
     case sourceDestinationPair(MoneyValuePair)
     case transactionFiatRatePairs(TransactionMoneyValuePairs)
     case validateTransaction
+    case validateTransactionAfterKYC
     case createOrder
     case orderCreated(TransactionOrder?)
     case orderCancelled
@@ -197,8 +200,8 @@ extension TransactionAction {
         case .fetchUserKYCInfo:
             return oldState
 
-        case .userKYCInfoFetched(let tiers):
-            return oldState.update(keyPath: \.userKYCTiers, value: tiers)
+        case .userKYCInfoFetched(let kycStatus):
+            return oldState.update(keyPath: \.userKYCStatus, value: kycStatus)
 
         case .sourceDestinationPair(let pair):
             var newState = oldState
@@ -294,6 +297,8 @@ extension TransactionAction {
 
         case .performKYCChecks:
             return oldState.stateForMovingForward(to: .kycChecks)
+                // disable next until kyc checks are done
+                .update(keyPath: \.nextEnabled, value: false)
 
         case .validateSourceAccount:
             return oldState.stateForMovingForward(to: .validateSource)
@@ -322,10 +327,23 @@ extension TransactionAction {
             newState.nextEnabled = false
             if (oldState.source as? LinkedBankAccount)?.partner == .yapily {
                 newState.step = .authorizeOpenBanking
+            } else if let paymentMethod = oldState.source as? PaymentMethodAccount {
+                switch paymentMethod.paymentMethodType {
+                case .linkedBank(let data) where data.partner == .yapily:
+                    newState.step = .authorizeOpenBanking
+                default:
+                    newState.step = .inProgress
+                }
             } else {
                 newState.step = .inProgress
             }
             newState.executionStatus = .inProgress
+            return newState.withUpdatedBackstack(oldState: oldState)
+
+        case .authorizedOpenBanking:
+            var newState = oldState
+            newState.nextEnabled = false
+            newState.executionStatus = .pending
             return newState.withUpdatedBackstack(oldState: oldState)
 
         case .performSecurityChecksForTransaction(let transactionResult):
@@ -364,7 +382,8 @@ extension TransactionAction {
             return oldState
                 .stateForMovingForward(to: .errorRecoveryInfo)
 
-        case .validateTransaction:
+        case .validateTransaction,
+             .validateTransactionAfterKYC:
             return oldState
 
         case .resetFlow:
@@ -527,7 +546,9 @@ extension TransactionValidationState {
             return .transactionInFlight
         case .pendingOrdersLimitReached:
             return .pendingOrdersLimitReached
-        case .noSourcesAvailable:
+        case .noSourcesAvailable,
+             .incorrectSourceCurrency,
+             .incorrectDestinationCurrency:
             return .unknownError
         }
     }

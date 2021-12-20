@@ -8,6 +8,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 
 public protocol BlockchainNameResolutionServiceAPI {

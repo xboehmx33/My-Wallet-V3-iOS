@@ -7,7 +7,7 @@ import UIKit
 
 protocol SignFlowRouting: Routing {
     func start(
-        sourceAccount: CryptoAccount,
+        sourceAccount: BlockchainAccount,
         destination: TransactionTarget,
         presenter: UIViewController
     )
@@ -20,7 +20,7 @@ final class SignFlowRouter: RIBs.Router<SignFlowInteractor>, SignFlowRouting {
     }
 
     func start(
-        sourceAccount: CryptoAccount,
+        sourceAccount: BlockchainAccount,
         destination: TransactionTarget,
         presenter: UIViewController
     ) {

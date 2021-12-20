@@ -1,6 +1,8 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 // swiftlint:disable type_name
 
+import SwiftUI
+
 extension CustomStringConvertible {
     public typealias My = Self
 }
@@ -22,5 +24,9 @@ extension Decodable {
 }
 
 extension Encodable {
+    public typealias My = Self
+}
+
+extension View {
     public typealias My = Self
 }

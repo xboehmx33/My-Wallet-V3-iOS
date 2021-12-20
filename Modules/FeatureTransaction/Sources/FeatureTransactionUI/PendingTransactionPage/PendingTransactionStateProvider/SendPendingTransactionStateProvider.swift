@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
@@ -32,20 +33,25 @@ final class SendPendingTransactionStateProvider: PendingTransactionStateProvidin
     // MARK: - Private Functions
 
     private func success(state: TransactionState) -> PendingTransactionPageState {
-        let amount = state.amount
-        let asset = amount.currency
-        return .init(
-            title: String(
+        let sent = state.amount
+        let title = sent.isZero || state.destination is RawStaticTransactionTarget
+            ? String(
                 format: LocalizationIds.Success.title,
-                amount.displayString
-            ),
+                sent.displayCode
+            )
+            : String(
+                format: LocalizationIds.Success.title,
+                sent.displayString
+            )
+        return .init(
+            title: title,
             subtitle: String(
                 format: LocalizationIds.Success.description,
-                asset.name
+                sent.currency.name
             ),
             compositeViewType: .composite(
                 .init(
-                    baseViewType: .image(asset.logoResource),
+                    baseViewType: .image(sent.currency.logoResource),
                     sideViewAttributes: .init(
                         type: .image(PendingStateViewModel.Image.success.imageResource),
                         position: .radiusDistanceFromCenter
@@ -60,17 +66,16 @@ final class SendPendingTransactionStateProvider: PendingTransactionStateProvidin
 
     private func pending(state: TransactionState) -> PendingTransactionPageState {
         let sent = state.amount
-        var title = String(
-            format: LocalizationIds.Pending.title,
-            sent.displayString
-        )
-        let zeroSent: MoneyValue = .zero(currency: sent.currency)
-        if sent == zeroSent {
-            title = String(
+        let title = sent.isZero || state.destination is RawStaticTransactionTarget
+            ? String(
                 format: LocalizationIds.Pending.title,
                 sent.displayCode
             )
-        }
+            : String(
+                format: LocalizationIds.Pending.title,
+                sent.displayString
+            )
+
         return .init(
             title: title,
             subtitle: LocalizationIds.Pending.description,

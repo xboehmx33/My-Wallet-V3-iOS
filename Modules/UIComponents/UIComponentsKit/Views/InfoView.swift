@@ -1,6 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import SwiftUI
 
 public struct InfoView: View {
@@ -111,10 +115,12 @@ public struct InfoView: View {
             )
             .overlay(
                 ZStack {
-                    Circle()
-                        .foregroundColor(.white)
-                        .scaleEffect(1.3)
-                    overlayView
+                    if model.overlay != nil {
+                        Circle()
+                            .foregroundColor(.white)
+                            .scaleEffect(1.3)
+                        overlayView
+                    }
                 }
                 .frame(
                     width: computed.overlay.width,

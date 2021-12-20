@@ -75,6 +75,7 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
                     mobileAuthSyncService: $0.mobileAuthSyncService,
                     resetPasswordService: $0.resetPasswordService,
                     accountRecoveryService: $0.accountRecoveryService,
+                    userService: $0.userService,
                     deviceVerificationService: $0.deviceVerificationService,
                     featureFlagsService: $0.featureFlagsService,
                     appFeatureConfigurator: $0.appFeatureConfigurator,
@@ -93,6 +94,7 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
                     onboardingSettings: $0.onboardingSettings,
                     mainQueue: $0.mainQueue,
                     appStoreOpener: $0.appStoreOpener,
+                    walletService: $0.walletService,
                     buildVersionProvider: $0.buildVersionProvider
                 )
             }
@@ -100,6 +102,7 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>.combine(
     appReducerCore
 )
 
+// swiftlint:disable closure_body_length
 let appReducerCore = Reducer<AppState, AppAction, AppEnvironment> { state, action, environment in
     switch action {
     case .appDelegate(.didFinishLaunching):
@@ -199,3 +202,5 @@ let appReducerCore = Reducer<AppState, AppAction, AppEnvironment> { state, actio
         return .none
     }
 }
+
+// swiftlint:enable closure_body_length

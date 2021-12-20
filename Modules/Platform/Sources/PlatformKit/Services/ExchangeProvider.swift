@@ -2,6 +2,7 @@
 
 import DIKit
 import Foundation
+import MoneyKit
 import ToolKit
 
 /// A provider for exchange rates as per supported crypto.

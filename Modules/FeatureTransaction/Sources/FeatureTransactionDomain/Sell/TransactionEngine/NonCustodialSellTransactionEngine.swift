@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -88,7 +89,7 @@ final class NonCustodialSellTransactionEngine: SellTransactionEngine {
                 self.startOnChainEngine(pricedQuote: pricedQuote)
                     .andThen(
                         Single.zip(
-                            self.walletCurrencyService.fiatCurrency,
+                            self.walletCurrencyService.displayCurrency.asSingle(),
                             self.onChainEngine.initializeTransaction()
                         )
                     )
@@ -142,7 +143,8 @@ final class NonCustodialSellTransactionEngine: SellTransactionEngine {
                                     .updateOrder(identifier: sellOrder.identifier, success: false)
                                     .asObservable()
                                     .ignoreElements()
-                                    .catchError { _ in .empty() }
+                                    .asCompletable()
+                                    .catch { _ in .empty() }
                                     .andThen(.error(error))
                             }
                             .flatMap(weak: self) { (self, result) -> Single<TransactionResult> in
@@ -150,7 +152,8 @@ final class NonCustodialSellTransactionEngine: SellTransactionEngine {
                                     .updateOrder(identifier: sellOrder.identifier, success: true)
                                     .asObservable()
                                     .ignoreElements()
-                                    .catchError { _ in .empty() }
+                                    .asCompletable()
+                                    .catch { _ in .empty() }
                                     .andThen(.just(result))
                             }
                     }
@@ -184,34 +187,48 @@ final class NonCustodialSellTransactionEngine: SellTransactionEngine {
     }
 
     func doBuildConfirmations(pendingTransaction: PendingTransaction) -> Single<PendingTransaction> {
-        quotesEngine.getRate(direction: orderDirection, pair: pair)
+        quotesEngine
+            .getRate(direction: orderDirection, pair: pair)
             .take(1)
             .asSingle()
-            .map { [targetAsset] pricedQuote -> (PendingTransaction, PricedQuote) in
+            .map { [targetAsset, sourceAccount, target] pricedQuote -> (PendingTransaction, PricedQuote) in
                 let resultValue = FiatValue(amount: pricedQuote.price, currency: targetAsset).moneyValue
                 let baseValue = MoneyValue.one(currency: pendingTransaction.amount.currency)
                 let sellDestinationValue: MoneyValue = pendingTransaction.amount.convert(using: resultValue)
                 let sellFiatFeeValue: MoneyValue = pendingTransaction.feeAmount.convert(using: resultValue)
-                let sellTotalCryptoValue = (try? pendingTransaction.amount + pendingTransaction.feeAmount)!
-                let sellTotalFiatValue = (try? sellDestinationValue + sellFiatFeeValue)!
 
-                let confirmations: [TransactionConfirmation] = [
-                    .sellSourceValue(.init(cryptoValue: pendingTransaction.amount.cryptoValue!)),
-                    .sellDestinationValue(.init(fiatValue: sellDestinationValue.fiatValue!)),
-                    .sellExchangeRateValue(.init(baseValue: baseValue, resultValue: resultValue)),
-                    .source(.init(value: self.sourceAccount.label)),
-                    .destination(.init(value: self.target.label)),
+                var confirmations = [TransactionConfirmation]()
+
+                if let pendingTransactionAmount = pendingTransaction.amount.cryptoValue {
+                    confirmations.append(.sellSourceValue(.init(cryptoValue: pendingTransactionAmount)))
+                }
+                if let sellDestinationFiatValue = sellDestinationValue.fiatValue {
+                    confirmations.append(.sellDestinationValue(.init(fiatValue: sellDestinationFiatValue)))
+                }
+                confirmations.append(.sellExchangeRateValue(.init(baseValue: baseValue, resultValue: resultValue)))
+                if let sourceAccountLabel = sourceAccount?.label {
+                    confirmations.append(.source(.init(value: sourceAccountLabel)))
+                }
+                confirmations += [
+                    .destination(.init(value: target.label)),
                     .networkFee(.init(
                         primaryCurrencyFee: pendingTransaction.feeAmount,
                         secondaryCurrencyFee: sellFiatFeeValue,
                         feeType: .withdrawalFee
-                    )),
-                    .totalCost(.init(
-                        primaryCurrencyFee: sellTotalCryptoValue,
-                        secondaryCurrencyFee: sellTotalFiatValue
                     ))
                 ]
-
+                if let sellTotalFiatValue = (try? sellDestinationValue + sellFiatFeeValue),
+                   let sellTotalCryptoValue = (try? pendingTransaction.amount + pendingTransaction.feeAmount)
+                {
+                    confirmations.append(
+                        .totalCost(
+                            .init(
+                                primaryCurrencyFee: sellTotalCryptoValue,
+                                secondaryCurrencyFee: sellTotalFiatValue
+                            )
+                        )
+                    )
+                }
                 let updatedTransaction = pendingTransaction.update(confirmations: confirmations)
                 return (updatedTransaction, pricedQuote)
             }
@@ -219,9 +236,5 @@ final class NonCustodialSellTransactionEngine: SellTransactionEngine {
                 let (pendingTransaction, pricedQuote) = tuple
                 return self.updateLimits(pendingTransaction: pendingTransaction, pricedQuote: pricedQuote)
             }
-    }
-
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        target.onTxCompleted(transactionResult)
     }
 }

@@ -51,12 +51,15 @@ public final class CardAuthorizationScreenViewController: BaseScreenViewControll
         super.viewWillAppear(animated)
         presenter.viewWillAppear()
         switch presenter.authorizationState {
-        case .required(let urls):
-            exitUrl = urls.exitLink
+        case .required(let params):
+            guard let url = params.paymentLink else {
+                return
+            }
+            exitUrl = params.exitLink
             view.addSubview(webView)
             webView.fillSuperview()
             webView.navigationDelegate = self
-            webView.load(URLRequest(url: urls.paymentLink))
+            webView.load(URLRequest(url: url))
         case .none, .confirmed:
             break
         }
@@ -66,9 +69,12 @@ public final class CardAuthorizationScreenViewController: BaseScreenViewControll
         super.viewDidAppear(animated)
         switch presenter.authorizationState {
         case .none, .confirmed:
-            presenter.redirect()
-        case .required:
-            break
+            close()
+        case .required(let params):
+            guard params.paymentLink == nil else {
+                return
+            }
+            close()
         }
     }
 
@@ -80,6 +86,12 @@ public final class CardAuthorizationScreenViewController: BaseScreenViewControll
     private func setupNavigationBar() {
         set(barStyle: .darkContent())
         titleViewStyle = .text(value: presenter.title)
+    }
+
+    private func close() {
+        dismiss(animated: true) { [presenter] in
+            presenter.redirect()
+        }
     }
 }
 
@@ -93,7 +105,7 @@ extension CardAuthorizationScreenViewController: WKNavigationDelegate {
         decisionHandler: @escaping (WKNavigationActionPolicy) -> Swift.Void
     ) {
         if navigationAction.request.url?.host == exitUrl.host {
-            presenter.redirect()
+            close()
         }
         decisionHandler(.allow)
     }

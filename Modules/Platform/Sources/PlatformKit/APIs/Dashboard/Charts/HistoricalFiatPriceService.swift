@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxRelay
 import RxSwift
 import ToolKit
@@ -49,7 +50,7 @@ public final class HistoricalFiatPriceService: HistoricalFiatPriceServiceAPI {
     private lazy var setup: Void = {
         let historicalPricesInWindow = Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 fetchTriggerRelay.startWith(.day(.oneHour))
             )
             .throttle(.milliseconds(100), scheduler: scheduler)
@@ -60,8 +61,8 @@ public final class HistoricalFiatPriceService: HistoricalFiatPriceServiceAPI {
                     .asObservable()
                 return Observable.zip(prices, Observable.just(window))
             }
-            .subscribeOn(scheduler)
-            .observeOn(scheduler)
+            .subscribe(on: scheduler)
+            .observe(on: scheduler)
 
         Observable
             .combineLatest(pairExchangeService.fiatPrice(at: .now), historicalPricesInWindow)
@@ -71,7 +72,7 @@ public final class HistoricalFiatPriceService: HistoricalFiatPriceServiceAPI {
             }
             .map(CalculationState.value)
             .startWith(.calculating)
-            .catchErrorJustReturn(.calculating)
+            .catchAndReturn(.calculating)
             .bindAndCatch(to: calculationStateRelay)
             .disposed(by: disposeBag)
     }()

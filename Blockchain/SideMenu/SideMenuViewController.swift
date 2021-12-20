@@ -105,7 +105,6 @@ class SideMenuViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        presenter.loadSideMenu()
         setSideMenuGestures()
         addShadow()
     }

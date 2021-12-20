@@ -9,6 +9,8 @@ struct PrimaryButtonExamplesView: View {
         VStack(spacing: Spacing.padding1) {
             PrimaryButton(title: "Enabled", action: { print("foo") })
 
+            PrimaryButton(title: "With Icon", leadingView: { Icon.placeholder }, action: {})
+
             PrimaryButton(title: "Disabled", action: {})
                 .disabled(true)
 

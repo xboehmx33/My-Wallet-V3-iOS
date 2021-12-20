@@ -3,6 +3,7 @@
 import BigInt
 import DIKit
 import EthereumKit
+import MoneyKit
 import PlatformKit
 
 public struct ERC20ContractGasActivityModel {

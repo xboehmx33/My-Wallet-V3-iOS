@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxSwift
 import RxToolKit
 import ToolKit
@@ -26,6 +27,8 @@ public protocol LinkedBanksServiceAPI {
     /// Deletes a linked bank by its id
     /// - Parameter id: A `String` representing the bank id.
     func deleteBank(by id: String) -> Completable
+
+    func invalidate()
 }
 
 final class LinkedBanksService: LinkedBanksServiceAPI {
@@ -69,7 +72,8 @@ final class LinkedBanksService: LinkedBanksServiceAPI {
                 .asSingle()
         }
 
-        bankLinkageStartup = fiatCurrencyService.fiatCurrency
+        bankLinkageStartup = fiatCurrencyService.displayCurrency
+            .asSingle()
             .flatMap { currency -> Single<(CreateBankLinkageResponse, FiatCurrency)> in
                 client.createBankLinkage(for: currency)
                     .map { ($0, currency) }
@@ -93,6 +97,10 @@ final class LinkedBanksService: LinkedBanksServiceAPI {
     }
 
     func deleteBank(by id: String) -> Completable {
-        client.deleteLinkedBank(for: id).asObservable().ignoreElements()
+        client.deleteLinkedBank(for: id).asObservable().ignoreElements().asCompletable()
+    }
+
+    func invalidate() {
+        cachedValue.invalidate()
     }
 }

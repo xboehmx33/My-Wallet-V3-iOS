@@ -4,6 +4,7 @@ import AnalyticsKit
 import Combine
 import DIKit
 import Localization
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxRelay
@@ -239,10 +240,10 @@ final class BuyCryptoScreenPresenter: EnterAmountScreenPresenter {
         with completion: @escaping (CheckoutData) -> Void
     ) {
         interactor.createOrder(from: candidateOrderDetails)
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: completion,
-                onError: { [weak self] error in
+                onFailure: { [weak self] error in
                     self?.handle(error)
                 }
             )
@@ -255,7 +256,7 @@ final class BuyCryptoScreenPresenter: EnterAmountScreenPresenter {
         }
         return Observable
             .combineLatest(
-                interactor.fiatCurrencyService.fiatCurrencyObservable,
+                interactor.fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 Observable.just(cryptoCurrency)
             )
             .flatMap(weak: self) { (self, currencies) -> Observable<(FiatValue, CryptoCurrency)> in

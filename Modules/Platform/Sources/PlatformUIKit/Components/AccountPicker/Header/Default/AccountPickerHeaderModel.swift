@@ -34,7 +34,8 @@ public struct AccountPickerHeaderModel: Equatable {
         .init(
             text: subtitle,
             font: .main(.medium, 14),
-            color: .descriptionText
+            color: .descriptionText,
+            lineBreakMode: .byWordWrapping
         )
     }
 

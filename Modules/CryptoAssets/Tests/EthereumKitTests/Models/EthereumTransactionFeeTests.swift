@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 @testable import EthereumKit
+import MoneyKit
 import PlatformKit
 import XCTest
 
@@ -10,7 +11,6 @@ class EthereumTransactionFeeTests: XCTestCase {
 
     override func setUp() {
         sut = EthereumTransactionFee(
-            limits: TransactionFeeLimits(min: 1, max: 3),
             regular: 5,
             priority: 7,
             gasLimit: 11,

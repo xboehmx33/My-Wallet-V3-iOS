@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -46,7 +47,7 @@ final class TradingToTradingSwapTransactionEngine: SwapTransactionEngine {
         Single
             .zip(
                 quotesEngine.getRate(direction: orderDirection, pair: pair).take(1).asSingle(),
-                walletCurrencyService.fiatCurrency,
+                walletCurrencyService.displayCurrency.asSingle(),
                 sourceAccount.actionableBalance
             )
             .flatMap(weak: self) { (self, payload) -> Single<PendingTransaction> in

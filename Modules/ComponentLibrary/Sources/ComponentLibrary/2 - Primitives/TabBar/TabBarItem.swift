@@ -19,7 +19,7 @@ public enum TabBarItem {
     case tab(identifier: AnyHashable, icon: Icon, title: String)
 
     /// A selectable button that switches between +/x
-    case fab(identifier: AnyHashable, isActive: Binding<Bool>)
+    case fab(identifier: AnyHashable, isActive: Binding<Bool>, isPulsing: Bool)
 }
 
 /// Identifiable for use in SwiftUI `ForEach`
@@ -29,7 +29,7 @@ extension TabBarItem: Identifiable {
         switch self {
         case .tab(let identifier, _, _):
             return identifier
-        case .fab(let identifier, _):
+        case .fab(let identifier, _, _):
             return identifier
         }
     }
@@ -41,7 +41,7 @@ extension TabBarItem: Equatable {
         switch (lhs, rhs) {
         case (.tab(let lhsIdentifier, let lhsIcon, let lhsTitle), .tab(let rhsIdentifier, let rhsIcon, let rhsTitle)):
             return lhsIdentifier == rhsIdentifier && lhsIcon == rhsIcon && lhsTitle == rhsTitle
-        case (.fab(let lhsIdentifier, _), .fab(let rhsIdentifier, _)):
+        case (.fab(let lhsIdentifier, _, _), .fab(let rhsIdentifier, _, _)):
             return lhsIdentifier == rhsIdentifier
         default:
             return false

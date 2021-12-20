@@ -1,7 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import EthereumKit
-import PlatformKit
+import MoneyKit
 
 extension AssetModel {
     var contractAddress: EthereumAddress? {

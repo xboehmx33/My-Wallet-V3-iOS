@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Foundation
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -20,7 +21,7 @@ public final class AssetPriceViewDailyInteractor: AssetPriceViewInteracting {
     private lazy var setup: Void = {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 refreshRelay.startWith(())
             )
             .map(\.0)
@@ -28,7 +29,7 @@ public final class AssetPriceViewDailyInteractor: AssetPriceViewInteracting {
                 self.fetch(fiatCurrency: fiatCurrency).asObservable()
             }
             .map(DashboardAsset.State.AssetPrice.Interaction.loaded)
-            .catchErrorJustReturn(.loading)
+            .catchAndReturn(.loading)
             .bindAndCatch(to: stateRelay)
             .disposed(by: disposeBag)
     }()

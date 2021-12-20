@@ -96,4 +96,16 @@ class StringTests: XCTestCase {
             XCTAssertEqual(pair.testcase.withoutHex, pair.result)
         }
     }
+
+    func testIbanFormatting() throws {
+        let iban = "EE707777000013197360"
+        let formatted = iban.separatedWithSeparator(" ", stride: 4)
+        XCTAssertEqual("EE70 7777 0000 1319 7360", formatted)
+    }
+
+    func testEmptyIban() throws {
+        let iban = ""
+        let formatted = iban.separatedWithSeparator(" ", stride: 4)
+        XCTAssertEqual("", formatted)
+    }
 }

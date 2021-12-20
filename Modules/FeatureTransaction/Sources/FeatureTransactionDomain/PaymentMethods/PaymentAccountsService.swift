@@ -2,8 +2,10 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import NetworkError
 import PlatformKit
+import RxToolKit
 import ToolKit
 
 public protocol PaymentAccountsServiceAPI {
@@ -37,16 +39,13 @@ final class PaymentAccountsService: PaymentAccountsServiceAPI {
     ) -> AnyPublisher<[PaymentMethodAccount], NetworkError> {
         // STEP 1: Fetch the user's preferred currency. We'll need that to fetch payment methods with correct limits.
         fiatCurrencyService
-            .fiatCurrency
-            .asPublisher()
-            // fiatCurrency should never fail, but better be safe than sorry
-            .replaceError(with: amount.fiatValue?.currency ?? .locale)
+            .tradingCurrency
             .setFailureType(to: NetworkError.self)
-            .flatMap { defaultFiatCurrency in
+            .flatMap { tradingCurrency in
                 // STEP 2: Fetch the payment methods using the fiat currency we got from the the user
                 self.fetchPaymentMethodAccounts(
                     for: cryptoCurrency,
-                    fiatCurrency: defaultFiatCurrency,
+                    fiatCurrency: tradingCurrency,
                     amount: amount
                 )
             }

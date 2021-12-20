@@ -1,10 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import RxSwift
 
 public enum TransactionResult {
     case signed(rawTx: String)
-    case hashed(txHash: String, amount: MoneyValue, order: OrderDetails? = nil)
+    case hashed(txHash: String, amount: MoneyValue?, order: OrderDetails? = nil)
     case unHashed(amount: MoneyValue)
 }
 
@@ -33,3 +34,18 @@ extension CryptoTarget {
         asset.currencyType
     }
 }
+
+/// A TransactionTarget that disallows changing its details (e.g. amount, target)
+///
+/// Currently used when dealing with BitPay, or WalletConnect transactions.
+public protocol StaticTransactionTarget: TransactionTarget {}
+
+/// A TransactionTarget that wraps an opaque transaction object.
+/// This means we can't read each individual detail (e.g. amount, target).
+///
+/// Currently used when dealing with one WalletConnect method but it may be used elsewhere when the wallet receives a
+/// transaction already signed/encoded and must just push it to the network.
+public protocol RawStaticTransactionTarget: StaticTransactionTarget {}
+
+/// A Wallet Connect Transaction Target.
+public protocol WalletConnectTarget: StaticTransactionTarget {}

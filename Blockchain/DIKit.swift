@@ -24,6 +24,7 @@ import FeatureSettingsDomain
 import FeatureSettingsUI
 import FeatureTransactionDomain
 import FeatureTransactionUI
+import FeatureWalletConnectData
 import NetworkKit
 import PlatformKit
 import PlatformUIKit
@@ -239,11 +240,6 @@ extension DependencyContainer {
             return bridge.resolveSettingsStarter() as SettingsStarterAPI
         }
 
-        factory { () -> TabControllerManagerProvider in
-            let bridge: LoggedInDependencyBridgeAPI = DIKit.resolve()
-            return bridge.resolveTabControllerProvider() as TabControllerManagerProvider
-        }
-
         factory { () -> DrawerRouting in
             let bridge: LoggedInDependencyBridgeAPI = DIKit.resolve()
             return bridge.resolveDrawerRouting() as DrawerRouting
@@ -261,6 +257,11 @@ extension DependencyContainer {
         factory { () -> QRCodeScannerRouting in
             let bridge: LoggedInDependencyBridgeAPI = DIKit.resolve()
             return bridge.resolveQRCodeScannerRouting() as QRCodeScannerRouting
+        }
+
+        factory { () -> ExternalActionsProviderAPI in
+            let bridge: LoggedInDependencyBridgeAPI = DIKit.resolve()
+            return bridge.resolveExternalActionsProvider() as ExternalActionsProviderAPI
         }
 
         factory { () -> QRCodeScannerLinkerAPI in
@@ -298,6 +299,11 @@ extension DependencyContainer {
         factory { () -> WalletRecoveryVerifing in
             let walletManager: WalletManager = DIKit.resolve()
             return walletManager.wallet as WalletRecoveryVerifing
+        }
+
+        factory { () -> WalletConnectMetadataAPI in
+            let walletManager: WalletManager = DIKit.resolve()
+            return walletManager.wallet.walletConnect as WalletConnectMetadataAPI
         }
 
         // MARK: - BlockchainSettings.App
@@ -376,7 +382,7 @@ extension DependencyContainer {
             return completeSettingsService
         }
 
-        factory { () -> FiatCurrencyPublisherAPI in
+        factory { () -> SupportedFiatCurrenciesServiceAPI in
             let completeSettingsService: CompleteSettingsServiceAPI = DIKit.resolve()
             return completeSettingsService
         }
@@ -445,17 +451,8 @@ extension DependencyContainer {
 
         // MARK: KYC Module
 
-        factory { () -> FeatureKYCUI.Routing in
-            let emailVerificationService: FeatureKYCDomain.EmailVerificationServiceAPI = DIKit.resolve()
-            let externalAppOpener: ExternalAppOpener = DIKit.resolve()
-            return FeatureKYCUI.Router(
-                analyticsRecorder: DIKit.resolve(),
-                loadingViewPresenter: DIKit.resolve(),
-                legacyRouter: DIKit.resolve(),
-                kycService: DIKit.resolve(),
-                emailVerificationService: emailVerificationService,
-                openMailApp: externalAppOpener.openMailApp
-            )
+        factory { () -> FeatureSettingsUI.KYCRouterAPI in
+            KYCAdapter()
         }
 
         factory { () -> FeatureKYCDomain.EmailVerificationAPI in
@@ -507,12 +504,9 @@ extension DependencyContainer {
         }
 
         factory { () -> GuidServiceAPI in
-            let manager: WalletManager = DIKit.resolve()
-            return GuidService(
-                sessionTokenRepository: manager.repository,
-                client: DIKit.resolve(),
-                walletRepo: DIKit.resolve(),
-                nativeWalletFlagEnabled: { nativeWalletFlagEnabled() }
+            GuidService(
+                sessionTokenRepository: DIKit.resolve(),
+                client: DIKit.resolve()
             )
         }
 
@@ -523,12 +517,10 @@ extension DependencyContainer {
         }
 
         factory { () -> SMSServiceAPI in
-            let manager: WalletManager = DIKit.resolve()
-            return SMSService(
+            SMSService(
                 client: DIKit.resolve(),
-                repository: manager.repository,
-                walletRepo: DIKit.resolve(),
-                nativeWalletFlagEnabled: { nativeWalletFlagEnabled() }
+                credentialsRepository: DIKit.resolve(),
+                sessionTokenRepository: DIKit.resolve()
             )
         }
 
@@ -553,13 +545,10 @@ extension DependencyContainer {
         }
 
         factory { () -> LoginServiceAPI in
-            let manager: WalletManager = DIKit.resolve()
-            return LoginService(
+            LoginService(
                 payloadService: DIKit.resolve(),
                 twoFAPayloadService: DIKit.resolve(),
-                repository: manager.repository,
-                walletRepo: DIKit.resolve(),
-                nativeWalletFlagEnabled: { nativeWalletFlagEnabled() }
+                repository: DIKit.resolve()
             )
         }
 
@@ -604,12 +593,8 @@ extension DependencyContainer {
         // MARK: Account Picker
 
         factory { () -> AccountPickerViewControllable in
-            let internalFeatureFlagService: InternalFeatureFlagServiceAPI = DIKit.resolve()
-
-            if internalFeatureFlagService.isEnabled(.newAccountPicker) {
-                return FeatureAccountPickerControllableAdapter() as AccountPickerViewControllable
-            }
-            return AccountPickerViewController() as AccountPickerViewControllable
+            let controller = LoadableAccountPickerControllable()
+            return controller as AccountPickerViewControllable
         }
 
         // MARK: Open Banking
@@ -619,17 +604,9 @@ extension DependencyContainer {
             let adapter: NetworkKit.NetworkAdapterAPI = DIKit.resolve(tag: DIKitContext.retail)
             let client = OpenBankingClient(
                 requestBuilder: builder,
-                network: adapter
+                network: adapter.network
             )
             return OpenBanking(banking: client)
         }
-
-        factory { () -> FeatureOpenBankingUI.FiatCurrencyFormatter in
-            FiatCurrencyFormatter()
-        }
-
-        factory { OpenBankingViewController.self as StartOpenBanking.Type }
-
-        factory { AccountLinkingFlowPresenter() as AccountLinkingFlowPresenterAPI }
     }
 }

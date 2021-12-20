@@ -62,7 +62,9 @@ final class EnterAmountPageBuilder: EnterAmountPageBuildable {
                 fatalError("Expected a crypto as a source account.")
             }
             amountViewInteracting = AmountTranslationInteractor(
-                fiatCurrencyService: fiatCurrencyService,
+                fiatCurrencyClosure: { [fiatCurrencyService] in
+                    fiatCurrencyService.displayCurrency.asObservable()
+                },
                 cryptoCurrencyService: DefaultCryptoCurrencyService(currencyType: sourceAccount.currencyType),
                 priceProvider: AmountTranslationPriceProvider(transactionModel: transactionModel),
                 defaultCryptoCurrency: crypto,
@@ -96,7 +98,9 @@ final class EnterAmountPageBuilder: EnterAmountPageBuildable {
                 fatalError("Expected a crypto as a destination account.")
             }
             amountViewInteracting = AmountTranslationInteractor(
-                fiatCurrencyService: fiatCurrencyService,
+                fiatCurrencyClosure: { [fiatCurrencyService] in
+                    fiatCurrencyService.tradingCurrency.asObservable()
+                },
                 cryptoCurrencyService: EnterAmountCryptoCurrencyProvider(transactionModel: transactionModel),
                 priceProvider: AmountTranslationPriceProvider(transactionModel: transactionModel),
                 defaultCryptoCurrency: cryptoAccount.asset,

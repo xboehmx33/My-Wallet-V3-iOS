@@ -59,6 +59,7 @@ final class KYCVerifyIdentityController: KYCBaseViewController, ProgressableView
     private var presenter: KYCVerifyIdentityPresenter!
     private let loadingViewPresenter: LoadingViewPresenting = resolve()
     let analyticsRecorder: AnalyticsEventRecorderAPI = resolve()
+    private let identityVerificationAnalyticsService: IdentityVerificationAnalyticsServiceAPI = resolve()
 
     private var countrySupportedTrigger: ActionableTrigger!
 
@@ -243,6 +244,20 @@ extension KYCVerifyIdentityController: LoadingView {
 
 extension KYCVerifyIdentityController: VeriffController {
 
+    func sessionDidEndWithResult(_ result: VeriffSdk.Result) {
+        switch result.status {
+        case .error(let error):
+            trackInternalVeriffError(.init(veriffError: error))
+            onVeriffError(message: error.localizedErrorMessage)
+        case .done:
+            onVeriffSubmissionCompleted()
+        case .canceled:
+            onVeriffCancelled()
+        @unknown default:
+            onVeriffCancelled()
+        }
+    }
+
     func onVeriffSubmissionCompleted() {
         analyticsRecorder.record(event: AnalyticsEvents.KYC.kycVeriffInfoSubmitted)
         loadingViewPresenter.show(with: LocalizationConstants.KYC.submittingInformation)
@@ -263,6 +278,27 @@ extension KYCVerifyIdentityController: VeriffController {
 
     func onVeriffError(message: String) {
         showErrorMessage(message)
+    }
+
+    func trackInternalVeriffError(_ error: InternalVeriffError) {
+        switch error {
+        case .localError:
+            identityVerificationAnalyticsService.recordLocalError()
+        case .serverError:
+            identityVerificationAnalyticsService.recordServerError()
+        case .networkError:
+            identityVerificationAnalyticsService.recordNetworkError()
+        case .uploadError:
+            identityVerificationAnalyticsService.recordUploadError()
+        case .videoFailed:
+            identityVerificationAnalyticsService.recordVideoFailure()
+        case .unknown:
+            identityVerificationAnalyticsService.recordUnknownError()
+        case .cameraUnavailable,
+             .microphoneUnavailable,
+             .deprecatedSDKVersion:
+            break
+        }
     }
 
     func onVeriffCancelled() {

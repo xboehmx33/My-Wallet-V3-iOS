@@ -1,10 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Foundation
-
+@testable import MoneyKit
 @testable import PlatformKit
 import XCTest
 
+@testable import MoneyKitMock
 @testable import PlatformKitMock
 @testable import ToolKitMock
 

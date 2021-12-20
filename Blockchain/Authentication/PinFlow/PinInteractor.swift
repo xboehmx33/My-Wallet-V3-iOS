@@ -54,8 +54,7 @@ final class PinInteractor: PinInteracting {
     ) {
         loginService = PinLoginService(
             settings: appSettings,
-            service: DIKit.resolve(),
-            walletRepository: walletRepository
+            service: DIKit.resolve()
         )
         self.credentialsProvider = credentialsProvider
         self.pinClient = pinClient

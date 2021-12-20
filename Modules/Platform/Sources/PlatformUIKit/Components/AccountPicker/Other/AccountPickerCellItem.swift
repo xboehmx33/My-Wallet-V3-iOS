@@ -51,6 +51,14 @@ public struct AccountPickerCellItem: IdentifiableType {
     public let account: BlockchainAccount?
     public let presenter: Presenter
 
+    public var isButton: Bool {
+        if case .button = presenter {
+            return true
+        } else {
+            return false
+        }
+    }
+
     init(interactor: Interactor, assetAction: AssetAction) {
         switch interactor {
         case .emptyState:

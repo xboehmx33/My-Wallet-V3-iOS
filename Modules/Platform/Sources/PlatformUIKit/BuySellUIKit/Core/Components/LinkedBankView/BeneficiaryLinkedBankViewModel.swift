@@ -1,5 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
+import ComponentLibrary
+#endif
 import Localization
 import PlatformKit
 import RxCocoa
@@ -40,13 +45,13 @@ public final class BeneficiaryLinkedBankViewModel: LinkedBankViewModelAPI {
         self.data = data
 
         badgeImageViewModel = .template(
-            image: .local(name: "icon-bank", bundle: .platformUIKit),
+            image: .local(name: Icon.bank.name, bundle: .componentLibrary),
             templateColor: .secondary,
             backgroundColor: .lightBlueBackground,
             cornerRadius: .round,
             accessibilityIdSuffix: data.identifier
         )
-        badgeImageViewModel.marginOffsetRelay.accept(6)
+        badgeImageViewModel.marginOffsetRelay.accept(4)
 
         nameLabelContent = LabelContent(
             text: data.name,

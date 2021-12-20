@@ -2,6 +2,7 @@
 
 import Combine
 import Foundation
+import MoneyKit
 
 protocol AssetLoader {
     func initAndPreload() -> AnyPublisher<Void, Never>

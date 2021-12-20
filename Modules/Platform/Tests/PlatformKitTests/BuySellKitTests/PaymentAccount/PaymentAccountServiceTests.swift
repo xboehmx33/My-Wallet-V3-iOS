@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 @testable import PlatformKit
 import RxRelay
 import RxSwift

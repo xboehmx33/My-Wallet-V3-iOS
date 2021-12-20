@@ -13,12 +13,6 @@ extension ReceiveAddress {
     }
 }
 
-/// A TransactionTarget that disallows changing its details (e.g. amount, target)
-public protocol StaticTransactionTarget: TransactionTarget {}
-
-/// A Wallet Connect Transaction Target.
-public protocol WalletConnectTarget: StaticTransactionTarget {}
-
 public protocol CryptoReceiveAddress: ReceiveAddress, CryptoTarget {}
 
 public protocol CryptoAssetQRMetadataProviding {

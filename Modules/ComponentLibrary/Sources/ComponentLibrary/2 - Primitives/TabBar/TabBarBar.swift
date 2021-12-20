@@ -49,11 +49,17 @@ struct TabBarBar: View {
                     .anchorPreference(key: AnchorFramesPreferenceKey.self, value: .bounds) {
                         [identifier: $0]
                     }
-                case .fab(identifier: _, isActive: let isActive):
+                case .fab(identifier: _, isActive: let isActive, isPulsing: let isPulsing):
                     FloatingActionButton(
                         isOn: isActive
                     )
                     .frame(maxWidth: .infinity)
+                    .background(
+                        Circle()
+                            .fill(Color.semantic.background)
+                            .padding(8)
+                    )
+                    .pulse(enabled: isPulsing, inset: 8)
                 }
             }
         }
@@ -134,7 +140,8 @@ struct TabBarBar_Previews: PreviewProvider {
                     ),
                     .fab(
                         identifier: "floatingActionButtonIdentifier",
-                        isActive: $fabIsActive
+                        isActive: $fabIsActive,
+                        isPulsing: true
                     ),
                     .tab(
                         identifier: "rewards",

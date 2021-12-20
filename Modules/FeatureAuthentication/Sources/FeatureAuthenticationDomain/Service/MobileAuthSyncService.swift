@@ -26,8 +26,8 @@ final class MobileAuthSyncService: MobileAuthSyncServiceAPI {
         isMobileSetup: Bool
     ) -> AnyPublisher<Void, MobileAuthSyncServiceError> {
         Publishers.Zip(
-            credentialsRepository.guidPublisher,
-            credentialsRepository.sharedKeyPublisher
+            credentialsRepository.guid,
+            credentialsRepository.sharedKey
         )
         .flatMap { [mobileAuthSyncRepository] guidOrNil, sharedKeyOrNil -> AnyPublisher<Void, MobileAuthSyncServiceError> in
             guard let guid = guidOrNil else {
@@ -46,8 +46,8 @@ final class MobileAuthSyncService: MobileAuthSyncServiceAPI {
         hasCloudBackup: Bool
     ) -> AnyPublisher<Void, MobileAuthSyncServiceError> {
         Publishers.Zip(
-            credentialsRepository.guidPublisher,
-            credentialsRepository.sharedKeyPublisher
+            credentialsRepository.guid,
+            credentialsRepository.sharedKey
         )
         .flatMap { [mobileAuthSyncRepository] guidOrNil, sharedKeyOrNil -> AnyPublisher<Void, MobileAuthSyncServiceError> in
             guard let guid = guidOrNil else {

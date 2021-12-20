@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import FeatureActivityDomain
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay
@@ -18,7 +19,8 @@ final class ActivityScreenInteractor {
     var fiatCurrency: Observable<FiatCurrency> {
         serviceContainer
             .fiatCurrency
-            .fiatCurrencyObservable
+            .displayCurrencyPublisher
+            .asObservable()
     }
 
     var selectedData: Observable<BlockchainAccount> {
@@ -54,12 +56,6 @@ final class ActivityScreenInteractor {
                     return false
                 }
             }
-    }
-
-    var isUnifiedQRCodeScannerEnabled: Bool {
-        serviceContainer
-            .internalFeatureFlagService
-            .isEnabled(.unifiedQRCodeScanner)
     }
 
     // MARK: - Private Properties
@@ -108,6 +104,8 @@ extension ActivityScreenInteractor.State {
                 switch item {
                 case .buySell(let item):
                     return item.status != .pendingConfirmation && !item.paymentProcessorErrorOccurred
+                case .interest(let item):
+                    return item.type != .unknown
                 default:
                     return true
                 }

@@ -3,6 +3,7 @@
 import AnalyticsKit
 import DIKit
 import Foundation
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxSwift
@@ -30,10 +31,10 @@ final class BankWireLinker: BankWireLinkerAPI {
     func present(from presenter: UIViewController, completion: @escaping () -> Void) {
         disposeBag = DisposeBag() // avoid memory leak when binding completion
         fundsTransferDetailsViewController(completion: completion)
-            .subscribeOn(MainScheduler.instance)
+            .subscribe(on: MainScheduler.instance)
             .subscribe { viewController in
                 presenter.present(viewController, animated: true)
-            } onError: { error in
+            } onFailure: { error in
                 Logger.shared.error(error)
             }
             .disposed(by: disposeBag)
@@ -43,7 +44,8 @@ final class BankWireLinker: BankWireLinkerAPI {
     /// The screen matches the wallet's currency
     /// - Returns: `Single<UIViewController>`
     private func fundsTransferDetailsViewController(completion: @escaping () -> Void) -> Single<UIViewController> {
-        fiatCurrencyService.fiatCurrency
+        fiatCurrencyService.displayCurrency
+            .asSingle()
             .map(weak: self) { (self, fiatCurrency) in
                 self.fundsTransferDetailsViewController(
                     for: fiatCurrency,

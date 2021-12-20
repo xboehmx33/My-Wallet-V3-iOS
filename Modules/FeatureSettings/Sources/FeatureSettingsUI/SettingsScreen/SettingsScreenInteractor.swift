@@ -7,7 +7,7 @@ import PlatformUIKit
 import RxSwift
 import ToolKit
 
-final class SettingsScreenInteractor {
+public final class SettingsScreenInteractor {
 
     // MARK: - Interactors
 
@@ -42,7 +42,7 @@ final class SettingsScreenInteractor {
 
     private let disposeBag = DisposeBag()
 
-    init(
+    public init(
         balanceSharingService: BalanceSharingSettingsServiceAPI = resolve(),
         credentialsStore: CredentialsStoreAPI = resolve(),
         featureConfigurator: FeatureConfiguring = resolve(),

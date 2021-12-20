@@ -2,6 +2,7 @@
 
 import AnalyticsKit
 import DIKit
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RIBs
@@ -9,7 +10,7 @@ import RxCocoa
 import RxSwift
 import ToolKit
 
-public protocol WithdrawRootRouting: AnyObject {
+public protocol WithdrawRootRouting: Routing {
     /// Routes to the wire details flow.
     /// Does not execute dismissal of top most screen (Payment Method Selector)
     func startWithWireInstructions(currency: FiatCurrency)
@@ -108,7 +109,7 @@ final class WithdrawRootInteractor: Interactor,
             paymentMethodTypes,
             .just(sourceAccount.fiatCurrency)
         )
-        .observeOn(MainScheduler.asyncInstance)
+        .observe(on: MainScheduler.asyncInstance)
         .subscribe(onSuccess: { [weak self] values in
             guard let self = self else { return }
             let (linkedBanks, paymentMethodTypes, fiatCurrency) = values
@@ -137,7 +138,7 @@ final class WithdrawRootInteractor: Interactor,
         linkedBanksFactory
             .linkedBanks
             .compactMap(\.first)
-            .observeOn(MainScheduler.asyncInstance)
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(onSuccess: { [weak self] linkedBankAccount in
                 guard let self = self else { return }
                 self.router?.routeToWithdraw(
@@ -162,8 +163,9 @@ final class WithdrawRootInteractor: Interactor,
 
     func routeToWireTransfer() {
         fiatCurrencyService
-            .fiatCurrency
-            .observeOn(MainScheduler.asyncInstance)
+            .displayCurrency
+            .asSingle()
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(onSuccess: { [weak self] fiatCurrency in
                 self?.router?.routeToWireInstructions(currency: fiatCurrency)
             })

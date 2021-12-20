@@ -33,13 +33,9 @@ public class CachedValue<Value> {
         performFetchAndUpdateCache()
     }
 
-    /// Invalidates the cache
-    public var invalidate: Completable {
+    public func invalidate() {
         _ = setup
-        return Completable.create { [weak self] _ -> Disposable in
-            self?.refreshControl.actionRelay.accept(.flush)
-            return Disposables.create()
-        }
+        refreshControl.actionRelay.accept(.flush)
     }
 
     /// Sets the fetch method. Must be called before any subscription.

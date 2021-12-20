@@ -28,18 +28,6 @@ final class QRCodeScannerViewController: UIViewController, UINavigationControlle
 
     private let viewModel: QRCodeScannerViewModelProtocol
     private let presentationType: QRCodePresentationType
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.main(.medium, 16)
-        label.textColor = .white
-        return label
-    }()
-
-    private let closeButton: UIButton = {
-        let button = UIButton()
-        button.setImage(UIImage(named: "close"), for: .normal)
-        return button
-    }()
 
     init(
         presentationType: QRCodePresentationType = .modal(dismissWithAnimation: true),
@@ -61,7 +49,7 @@ final class QRCodeScannerViewController: UIViewController, UINavigationControlle
                 )
             }
         case .child:
-            titleLabel.isHidden = true
+            break
         }
 
         self.viewModel.scanningStarted = { [weak self] in
@@ -95,25 +83,17 @@ final class QRCodeScannerViewController: UIViewController, UINavigationControlle
         view.addSubview(scannerView)
         scannerView.layoutToSuperview(.leading, .trailing, .top, .bottom)
 
-        view.addSubview(titleLabel)
-        view.addSubview(closeButton)
-
-        closeButton.addTarget(self, action: #selector(closeButtonClicked), for: .touchUpInside)
-
         switch presentationType {
         case .modal:
-            titleLabel.isHidden = false
-            titleLabel.text = viewModel.headerText
             title = viewModel.headerText
-            titleLabel.layout(to: .centerY, of: closeButton)
-            titleLabel.layoutToSuperview(.centerX)
-            closeButton.isHidden = false
-            closeButton.layout(size: .edge(44))
-            closeButton.layoutToSuperview(.trailing, offset: -12)
-            closeButton.layoutToSuperview(.top, offset: 12)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                image: UIImage(named: "close"),
+                style: .plain,
+                target: self,
+                action: #selector(closeButtonClicked)
+            )
         case .child:
-            closeButton.isHidden = true
-            titleLabel.isHidden = true
+            break
         }
     }
 

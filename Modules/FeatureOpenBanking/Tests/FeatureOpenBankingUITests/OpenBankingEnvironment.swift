@@ -23,7 +23,8 @@ extension OpenBankingEnvironment {
                 showTransferDetails: showTransferDetails,
                 dismiss: dismiss,
                 openURL: OpenURL(yield: openURL),
-                fiatCurrencyFormatter: NoFormatFiatCurrencyFormatter(),
+                fiatCurrencyFormatter: NoFormatCurrencyFormatter(),
+                cryptoCurrencyFormatter: NoFormatCurrencyFormatter(),
                 currency: "GBP"
             ),
             network

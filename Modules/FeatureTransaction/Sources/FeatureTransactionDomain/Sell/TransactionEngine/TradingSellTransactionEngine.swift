@@ -2,6 +2,7 @@
 
 import BigInt
 import DIKit
+import MoneyKit
 import NetworkKit
 import PlatformKit
 import RxSwift
@@ -37,7 +38,7 @@ final class TradingSellTransactionEngine: SellTransactionEngine {
 
     // MARK: - Transaction Engine
 
-    var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    var askForRefreshConfirmation: AskForRefreshConfirmation!
 
     var sourceAccount: BlockchainAccount!
     var transactionTarget: TransactionTarget!
@@ -58,7 +59,7 @@ final class TradingSellTransactionEngine: SellTransactionEngine {
         Single
             .zip(
                 quotesEngine.getRate(direction: orderDirection, pair: pair).take(1).asSingle(),
-                walletCurrencyService.fiatCurrency,
+                walletCurrencyService.displayCurrency.asSingle(),
                 sourceAccount.actionableBalance
             )
             .flatMap(weak: self) { (self, payload) -> Single<PendingTransaction> in
@@ -130,14 +131,18 @@ final class TradingSellTransactionEngine: SellTransactionEngine {
                 let baseValue = MoneyValue.one(currency: sellSourceValue.currency)
                 let sellDestinationValue: MoneyValue = sellSourceValue.convert(using: resultValue)
 
-                let confirmations: [TransactionConfirmation] = [
-                    .sellSourceValue(.init(cryptoValue: sellSourceValue.cryptoValue!)),
-                    .sellDestinationValue(.init(fiatValue: sellDestinationValue.fiatValue!)),
+                var confirmations = [TransactionConfirmation]()
+                if let sellSourceCryptoValue = sellSourceValue.cryptoValue {
+                    confirmations.append(.sellSourceValue(.init(cryptoValue: sellSourceCryptoValue)))
+                }
+                if let sellDestinationFiatValue = sellDestinationValue.fiatValue {
+                    confirmations.append(.sellDestinationValue(.init(fiatValue: sellDestinationFiatValue)))
+                }
+                confirmations += [
                     .sellExchangeRateValue(.init(baseValue: baseValue, resultValue: resultValue)),
                     .source(.init(value: self.sourceAccount.label)),
                     .destination(.init(value: self.target.label))
                 ]
-
                 let updatedTransaction = pendingTransaction.update(confirmations: confirmations)
                 return (updatedTransaction, pricedQuote)
             }
@@ -145,9 +150,5 @@ final class TradingSellTransactionEngine: SellTransactionEngine {
                 let (pendingTransaction, pricedQuote) = tuple
                 return self.updateLimits(pendingTransaction: pendingTransaction, pricedQuote: pricedQuote)
             }
-    }
-
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        target.onTxCompleted(transactionResult)
     }
 }

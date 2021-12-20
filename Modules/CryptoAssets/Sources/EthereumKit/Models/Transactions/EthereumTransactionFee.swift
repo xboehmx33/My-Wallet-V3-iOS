@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import BigInt
+import MoneyKit
 import PlatformKit
 
 public struct EthereumTransactionFee {
@@ -11,22 +12,18 @@ public struct EthereumTransactionFee {
     }
 
     static let `default` = EthereumTransactionFee(
-        limits: EthereumTransactionFee.defaultLimits,
-        regular: 5,
-        priority: 11,
+        regular: 90,
+        priority: 110,
         gasLimit: 21000,
-        gasLimitContract: 65000
+        gasLimitContract: 75000
     )
-    static let defaultLimits = TransactionFeeLimits(min: 1, max: 1000)
 
-    let limits: TransactionFeeLimits
     let regular: CryptoValue
     let priority: CryptoValue
     let gasLimit: Int
-    public let gasLimitContract: Int
+    let gasLimitContract: Int
 
-    init(limits: TransactionFeeLimits, regular: Int, priority: Int, gasLimit: Int, gasLimitContract: Int) {
-        self.limits = limits
+    init(regular: Int, priority: Int, gasLimit: Int, gasLimitContract: Int) {
         self.regular = CryptoValue.ether(gwei: BigInt(regular))
         self.priority = CryptoValue.ether(gwei: BigInt(priority))
         self.gasLimit = gasLimit
@@ -53,7 +50,7 @@ public struct EthereumTransactionFee {
 extension CryptoValue {
 
     static func ether(gwei: BigInt) -> CryptoValue {
-        let wei = gwei * BigInt(1000000000)
+        let wei = gwei * BigInt(1e9)
         return CryptoValue(amount: wei, currency: .coin(.ethereum))
     }
 }

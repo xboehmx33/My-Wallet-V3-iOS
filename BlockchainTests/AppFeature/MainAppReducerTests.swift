@@ -15,6 +15,7 @@ import XCTest
 
 @testable import Blockchain
 @testable import ComposableNavigation
+@testable import FeatureAppDomain
 @testable import FeatureAppUI
 @testable import FeatureAuthenticationMock
 @testable import FeatureAuthenticationUI
@@ -49,6 +50,8 @@ final class MainAppReducerTests: XCTestCase {
     var mockFiatCurrencySettingsService: FiatCurrencySettingsServiceMock!
     var mockAppStoreOpener: MockAppStoreOpener!
     var mockERC20CryptoAssetService: ERC20CryptoAssetServiceMock!
+
+    var mockWalletService: WalletService!
 
     var testStore: TestStore<
         CoreAppState,
@@ -96,6 +99,11 @@ final class MainAppReducerTests: XCTestCase {
         mockAppStoreOpener = MockAppStoreOpener()
         mockERC20CryptoAssetService = ERC20CryptoAssetServiceMock()
 
+        mockWalletService = WalletService(
+            fetch: { _ in .empty() },
+            refetch: { _, _ in .empty() }
+        )
+
         testStore = TestStore(
             initialState: CoreAppState(),
             reducer: mainAppReducer,
@@ -107,6 +115,7 @@ final class MainAppReducerTests: XCTestCase {
                 mobileAuthSyncService: mockMobileAuthSyncService,
                 resetPasswordService: mockResetPasswordService,
                 accountRecoveryService: mockAccountRecoveryService,
+                userService: MockNabuUserService(),
                 deviceVerificationService: mockDeviceVerificationService,
                 featureFlagsService: mockFeatureFlagsService,
                 appFeatureConfigurator: mockFeatureConfigurator,
@@ -125,6 +134,7 @@ final class MainAppReducerTests: XCTestCase {
                 onboardingSettings: onboardingSettings,
                 mainQueue: mockMainQueue.eraseToAnyScheduler(),
                 appStoreOpener: mockAppStoreOpener,
+                walletService: mockWalletService,
                 buildVersionProvider: { "" }
             )
         )
@@ -153,7 +163,7 @@ final class MainAppReducerTests: XCTestCase {
         mockDeepLinkRouter = nil
         mockFeatureFlagsService = nil
         mockFiatCurrencySettingsService = nil
-
+        mockWalletService = nil
         testStore = nil
 
         try super.tearDownWithError()
@@ -256,8 +266,8 @@ final class MainAppReducerTests: XCTestCase {
         testStore.receive(.onboarding(.welcomeScreen(.setManualPairingEnabled))) { state in
             state.onboarding?.welcomeState?.manualPairingEnabled = true
         }
-        testStore.send(.onboarding(.welcomeScreen(.presentScreenFlow(.manualLoginScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .manualLoginScreen
+        testStore.send(.onboarding(.welcomeScreen(.enter(into: .manualLogin)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .manualLogin, action: .enterInto())
             state.onboarding?.welcomeState?.manualCredentialsState = .init()
         }
         testStore.send(
@@ -303,9 +313,9 @@ final class MainAppReducerTests: XCTestCase {
         XCTAssertNil(mockSettingsApp.sharedKey)
 
         testStore.receive(.onboarding(.informSecondPasswordDetected))
-        testStore.receive(.onboarding(.welcomeScreen(.informSecondPasswordDetected))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .welcomeScreen
-            state.onboarding?.welcomeState?.modals = .secondPasswordNoticeScreen
+        testStore.receive(.onboarding(.welcomeScreen(.informSecondPasswordDetected)))
+        testStore.receive(.onboarding(.welcomeScreen(.enter(into: .secondPassword)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .secondPassword, action: .enterInto())
             state.onboarding?.welcomeState?.secondPasswordNoticeState = .init()
         }
     }
@@ -437,27 +447,40 @@ final class MainAppReducerTests: XCTestCase {
 
         testStore.receive(.onboarding(.welcomeScreen(.start)))
 
-        testStore.send(.onboarding(.welcomeScreen(.presentScreenFlow(.createWalletScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .createWalletScreen
+        testStore.send(.onboarding(.welcomeScreen(.enter(into: .createWallet)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .createWallet, action: .enterInto())
+            state.onboarding?.welcomeState?.createWalletState = .init(context: .createWallet)
             state.onboarding?.walletCreationContext = .new
-            state.onboarding?.showLegacyCreateWalletScreen = true
         }
-
-        testStore.receive(.authenticate)
+        testStore.send(.onboarding(.welcomeScreen(.requestedToCreateWallet("", "a-password"))))
+        testStore.receive(.createWallet(email: "", newPassword: "a-password"))
+        testStore.receive(.create)
 
         let guid = String(repeating: "a", count: 36)
         let sharedKey = String(repeating: "b", count: 36)
         // we need to assign this here as the WalletManager+Rx gets the password hash the legacy password
         mockWalletManager.legacyRepository.legacyPassword = "a-password"
-        mockWallet.load(withGuid: guid, sharedKey: sharedKey, password: "a-password")
+        mockWallet.newAccount("a-password", email: "")
+        mockMainQueue.advance()
 
+        let walletCreation = WalletCreation(
+            guid: guid,
+            sharedKey: sharedKey,
+            password: "a-password"
+        )
+        testStore.receive(.authenticate)
+        testStore.receive(.setInitialResidentialAddress(country: "US", state: "AK"))
+        testStore.receive(.created(.success(walletCreation)))
+
+        mockWallet.load(withGuid: guid, sharedKey: sharedKey, password: "a-password")
         mockMainQueue.advance()
 
         let walletDecryption = WalletDecryption(
             guid: guid,
             sharedKey: sharedKey,
-            passwordPartHash: "a-password".passwordPartHash
+            passwordPartHash: nil
         )
+        testStore.receive(.authenticate)
         testStore.receive(.didDecryptWallet(walletDecryption))
         testStore.receive(
             .resetVerificationStatusIfNeeded(
@@ -465,12 +488,10 @@ final class MainAppReducerTests: XCTestCase {
                 sharedKey: walletDecryption.sharedKey
             )
         )
-        testStore.receive(.authenticated(.success(true))) { state in
-            state.onboarding?.showLegacyCreateWalletScreen = false
-            state.onboarding?.welcomeState?.screenFlow = .createWalletScreen
-        }
-        testStore.receive(.onboarding(.welcomeScreen(.presentScreenFlow(.welcomeScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .welcomeScreen
+        testStore.receive(.authenticated(.success(true)))
+        testStore.receive(.onboarding(.welcomeScreen(.dismiss()))) { state in
+            state.onboarding?.welcomeState?.route = nil
+            state.onboarding?.welcomeState?.createWalletState = nil
         }
         testStore.receive(.setupPin) { state in
             state.onboarding?.pinState = .init()
@@ -495,9 +516,9 @@ final class MainAppReducerTests: XCTestCase {
         }
         testStore.receive(.onboarding(.welcomeScreen(.start)))
 
-        testStore.send(.onboarding(.welcomeScreen(.presentScreenFlow(.restoreWalletScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .restoreWalletScreen
-            state.onboarding?.welcomeState?.restoreWalletState = .init()
+        testStore.send(.onboarding(.welcomeScreen(.enter(into: .restoreWallet)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .restoreWallet, action: .enterInto())
+            state.onboarding?.welcomeState?.restoreWalletState = .init(context: .restoreWallet)
             state.onboarding?.walletCreationContext = .recovery
         }
 
@@ -574,8 +595,8 @@ final class MainAppReducerTests: XCTestCase {
         }
         testStore.receive(.onboarding(.welcomeScreen(.start)))
 
-        testStore.send(.onboarding(.welcomeScreen(.presentScreenFlow(.emailLoginScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .emailLoginScreen
+        testStore.send(.onboarding(.welcomeScreen(.enter(into: .emailLogin)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .emailLogin, action: .enterInto())
             state.onboarding?.welcomeState?.emailLoginState = .init()
             state.onboarding?.walletCreationContext = .existing
         }
@@ -614,7 +635,7 @@ final class MainAppReducerTests: XCTestCase {
                 .emailLoginState?
                 .verifyDeviceState?
                 .credentialsState?
-                .seedPhraseState = .init()
+                .seedPhraseState = .init(context: .troubleLoggingIn)
         }
 
         let nabuInfo = WalletInfo.NabuInfo(userId: "", recoveryToken: "")
@@ -694,12 +715,12 @@ final class MainAppReducerTests: XCTestCase {
             )
         )
         testStore.receive(.authenticated(.success(true))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .emailLoginScreen
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .emailLogin, action: .enterInto())
         }
-        testStore.receive(.onboarding(.welcomeScreen(.presentScreenFlow(.welcomeScreen)))) { state in
+        testStore.receive(.onboarding(.welcomeScreen(.dismiss()))) { state in
+            state.onboarding?.welcomeState?.route = nil
             state.onboarding?.welcomeState?.emailLoginState = nil
             state.onboarding?.walletCreationContext = nil
-            state.onboarding?.welcomeState?.screenFlow = .welcomeScreen
         }
         testStore.receive(.setupPin) { state in
             state.onboarding?.pinState = .init()
@@ -724,9 +745,9 @@ final class MainAppReducerTests: XCTestCase {
         }
         testStore.receive(.onboarding(.welcomeScreen(.start)))
 
-        testStore.send(.onboarding(.welcomeScreen(.presentScreenFlow(.restoreWalletScreen)))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .restoreWalletScreen
-            state.onboarding?.welcomeState?.restoreWalletState = .init()
+        testStore.send(.onboarding(.welcomeScreen(.enter(into: .restoreWallet)))) { state in
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .restoreWallet, action: .enterInto())
+            state.onboarding?.welcomeState?.restoreWalletState = .init(context: .restoreWallet)
             state.onboarding?.walletCreationContext = .recovery
         }
 
@@ -777,12 +798,12 @@ final class MainAppReducerTests: XCTestCase {
         testStore.receive(.didDecryptWallet(walletDecryption))
         testStore.receive(.resetVerificationStatusIfNeeded(guid: guid, sharedKey: sharedKey))
         testStore.receive(.authenticated(.success(true))) { state in
-            state.onboarding?.welcomeState?.screenFlow = .restoreWalletScreen
+            state.onboarding?.welcomeState?.route = RouteIntent(route: .restoreWallet, action: .enterInto())
         }
-        testStore.receive(.onboarding(.welcomeScreen(.presentScreenFlow(.welcomeScreen)))) { state in
+        testStore.receive(.onboarding(.welcomeScreen(.dismiss()))) { state in
+            state.onboarding?.welcomeState?.route = nil
             state.onboarding?.welcomeState?.restoreWalletState = nil
             state.onboarding?.walletCreationContext = nil
-            state.onboarding?.welcomeState?.screenFlow = .welcomeScreen
         }
         testStore.receive(.setupPin) { state in
             state.onboarding?.pinState = .init()
@@ -1030,7 +1051,6 @@ final class MainAppReducerTests: XCTestCase {
     }
 
     func test_session_mismatch_deeplink_show_show_authorization() {
-        mockFeatureFlagsService.enable(.local(.pollingForEmailLogin)).subscribe().store(in: &cancellables)
         mockFeatureFlagsService.enable(.remote(.pollingForEmailLogin))
             .subscribe().store(in: &cancellables)
         mockDeviceVerificationService.expectedSessionMismatch = true

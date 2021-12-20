@@ -2,7 +2,6 @@
 
 import Combine
 import FeatureAuthenticationDomain
-import RxSwift
 import WalletPayloadKit
 
 final class SyncPubKeysRepository: SyncPubKeysRepositoryAPI {
@@ -21,25 +20,11 @@ final class SyncPubKeysRepository: SyncPubKeysRepositoryAPI {
         self.nativeWalletEnabled = nativeWalletEnabled
     }
 
-    func set(syncPubKeys: Bool) -> Completable {
-        nativeWalletEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.set(syncPubKeys: syncPubKeys)
-                }
-                return walletRepo
-                    .set(keyPath: \.properties.syncPubKeys, value: syncPubKeys)
-                    .asCompletable()
-            }
-            .asCompletable()
-    }
-
-    func setPublisher(syncPubKeys: Bool) -> AnyPublisher<Void, Never> {
+    func set(syncPubKeys: Bool) -> AnyPublisher<Void, Never> {
         nativeWalletEnabled()
             .flatMap { [walletRepository, walletRepo] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.setPublisher(syncPubKeys: syncPubKeys)
+                    return walletRepository.set(syncPubKeys: syncPubKeys)
                 }
                 return walletRepo
                     .set(keyPath: \.properties.syncPubKeys, value: syncPubKeys)

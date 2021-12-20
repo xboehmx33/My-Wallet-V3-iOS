@@ -46,8 +46,8 @@ public protocol SegmentedViewScreenPresenting: AnyObject {
 
     // MARK: - Segmented View Selection
 
-    var itemIndexSelected: Observable<Int?> { get }
-    var itemIndexSelectedRelay: BehaviorRelay<Int?> { get }
+    var itemIndexSelected: Observable<(index: Int, animated: Bool)> { get }
+    var itemIndexSelectedRelay: BehaviorRelay<(index: Int, animated: Bool)> { get }
 }
 
 extension SegmentedViewScreenPresenting {
@@ -59,13 +59,13 @@ extension SegmentedViewScreenPresenting {
                 SegmentedViewModel.Item(
                     content: .title(title),
                     action: { [weak self] in
-                        self?.itemIndexSelectedRelay.accept(index)
+                        self?.itemIndexSelectedRelay.accept((index: index, animated: true))
                     }
                 )
             }
     }
 
-    public var itemIndexSelected: Observable<Int?> {
+    public var itemIndexSelected: Observable<(index: Int, animated: Bool)> {
         itemIndexSelectedRelay
             .asObservable()
     }

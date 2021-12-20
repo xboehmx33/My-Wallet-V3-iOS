@@ -9,9 +9,7 @@ import UIComponentsKit
 
 public final class OpenBankingViewController: UIHostingController<OpenBankingView> {
 
-    public var eventPublisher: AnyPublisher<Result<Void, OpenBanking.Error>, Never> {
-        rootView.environment.eventPublisher.eraseToAnyPublisher()
-    }
+    public var eventPublisher: AnyPublisher<Result<Void, OpenBanking.Error>, Never>
 
     public convenience init(
         order: OpenBanking.Order,
@@ -48,7 +46,13 @@ public final class OpenBankingViewController: UIHostingController<OpenBankingVie
     }
 
     required init(_ state: OpenBankingState, environment: OpenBankingEnvironment) {
-        super.init(rootView: OpenBankingView(state: state, environment: environment))
+        eventPublisher = environment.eventPublisher.eraseToAnyPublisher()
+        let store = Store<OpenBankingState, OpenBankingAction>(
+            initialState: state,
+            reducer: openBankingReducer,
+            environment: environment
+        )
+        super.init(rootView: OpenBankingView(store: store))
     }
 
     @objc dynamic required init?(coder aDecoder: NSCoder) {

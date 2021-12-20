@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "CommonCrypto",
     platforms: [
-        .iOS(.v14)
+        .iOS(.v14), .macOS(.v11)
     ],
     products: [
         .library(name: "CommonCryptoKit", targets: ["CommonCryptoKit"])
@@ -14,12 +14,12 @@ let package = Package(
         .package(
             name: "CryptoSwift",
             url: "https://github.com/krzyzanowskim/CryptoSwift.git",
-            from: "1.4.1"
+            from: "1.4.2"
         ),
         .package(
             name: "WalletCore",
             url: "https://github.com/oliveratkinson-bc/wallet-core.git",
-            from: "2.6.31"
+            from: "2.6.34"
         ),
         .package(path: "../Test")
     ],

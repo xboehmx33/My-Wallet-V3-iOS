@@ -9,4 +9,8 @@ class EthereumAccountDetailsServiceAPIMock: EthereumAccountDetailsServiceAPI {
     func accountDetails() -> Single<EthereumAssetAccountDetails> {
         underlyingAccountDetails
     }
+
+    func invalidateEthereumAccountDetails() {
+        // no-op
+    }
 }

@@ -196,7 +196,13 @@ extension PinRouter {
         let useCase = PinScreenUseCase.create(firstPin: pin)
         let backwardRouting: PinRouting.RoutingType.Backward = { [weak self] in
             self?.recorder.record("backwardRouting block called")
-            self?.navigationController.popViewController(animated: true)
+            // check whether navigation controller is nil or not
+            // this is added because of a crash caused by navigationController being nil for some reason
+            guard let navController = self?.navigationController else {
+                self?.recorder.record("PinRouter navigationController found nil, failing gracefully.")
+                return
+            }
+            navController.popViewController(animated: true)
         }
         let forwardRouting: PinRouting.RoutingType.Forward = { [weak self] _ in
             self?.recorder.record("forwardRouting block called")

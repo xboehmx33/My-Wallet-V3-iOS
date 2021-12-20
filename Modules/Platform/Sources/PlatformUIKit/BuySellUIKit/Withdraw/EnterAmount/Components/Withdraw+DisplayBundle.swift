@@ -2,6 +2,7 @@
 
 import AnalyticsKit
 import Localization
+import MoneyKit
 import PlatformKit
 import ToolKit
 

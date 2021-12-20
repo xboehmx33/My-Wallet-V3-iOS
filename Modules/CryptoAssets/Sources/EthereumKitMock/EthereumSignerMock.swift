@@ -10,14 +10,14 @@ class EthereumSignerMock: EthereumSignerAPI {
     var lastTransactionForSignature: EthereumTransactionCandidateCosted?
     var lastKeyPair: EthereumKeyPair?
 
-    typealias SignTransactionResult = Result<EthereumTransactionCandidateSigned, EthereumSignerError>
+    typealias SignTransactionResult = Result<EthereumTransactionEncoded, EthereumSignerError>
 
     var signTransactionResult: SignTransactionResult = .failure(.incorrectChainId)
 
     func sign(
         transaction: EthereumTransactionCandidateCosted,
         keyPair: EthereumKeyPair
-    ) -> Result<EthereumTransactionCandidateSigned, EthereumSignerError> {
+    ) -> Result<EthereumTransactionEncoded, EthereumSignerError> {
         lastTransactionForSignature = transaction
         lastKeyPair = keyPair
         return signTransactionResult

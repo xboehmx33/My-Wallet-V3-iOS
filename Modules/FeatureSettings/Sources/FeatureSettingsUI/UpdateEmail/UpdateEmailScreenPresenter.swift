@@ -3,6 +3,7 @@
 import AnalyticsKit
 import ComposableArchitectureExtensions
 import DIKit
+import FeatureKYCUI
 import Localization
 import PlatformKit
 import PlatformUIKit

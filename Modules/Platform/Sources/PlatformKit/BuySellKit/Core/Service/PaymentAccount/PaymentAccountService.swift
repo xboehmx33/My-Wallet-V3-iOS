@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import RxSwift
 
 public protocol PaymentAccountServiceAPI: AnyObject {
@@ -25,7 +26,8 @@ final class PaymentAccountService: PaymentAccountServiceAPI {
     /// Using a currency service, get the currency currency and check if the user has a
     /// payment account for the currenctly set fiat currency
     var paymentAccount: Single<PaymentAccountDescribing> {
-        fiatCurrencyService.fiatCurrency
+        fiatCurrencyService.displayCurrency
+            .asSingle()
             .flatMap(weak: self) { (self, currency) in
                 self.paymentAccount(for: currency)
             }

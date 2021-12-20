@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 /// The `Interactor` state of an `AmountViewable` view.
 /// At the time of this writing this includes a `SingleAmountView`

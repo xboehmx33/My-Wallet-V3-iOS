@@ -4,6 +4,7 @@ import AnalyticsKit
 import Combine
 import DIKit
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay

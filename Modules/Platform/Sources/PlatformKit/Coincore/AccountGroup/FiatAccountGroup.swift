@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Localization
+import MoneyKit
 import RxSwift
 
 /// An `AccountGroup` containing only fiat accounts.
@@ -36,6 +37,10 @@ public class FiatAccountGroup: AccountGroup {
 
     public var balance: Single<MoneyValue> {
         .error(AccountGroupError.noBalance)
+    }
+
+    public func invalidateAccountBalance() {
+        accounts.forEach { $0.invalidateAccountBalance() }
     }
 
     public init(accounts: [SingleAccount]) {

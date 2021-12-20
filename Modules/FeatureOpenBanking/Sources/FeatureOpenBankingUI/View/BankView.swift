@@ -63,29 +63,31 @@ public let bankReducer = Reducer<BankState, BankAction, OpenBankingEnvironment> 
     switch action {
     case .retry:
         return .merge(
-            .fireAndForget {
-                environment.openBanking.reset()
-            },
             .cancel(id: ID.Request()),
             .cancel(id: ID.LaunchBank()),
             Effect(value: .request)
         )
     case .request:
         state.ui = .communicating(to: state.bankName)
-        return environment.openBanking.start(state.data)
-            .compactMap { state in
-                switch state {
-                case .waitingForConsent:
-                    return .waitingForConsent
-                case .success(let output):
-                    return .finalise(output)
-                case .failure(let error):
-                    return BankAction.failure(error)
+        return .merge(
+            .fireAndForget {
+                environment.openBanking.reset()
+            },
+            environment.openBanking.start(state.data)
+                .compactMap { state in
+                    switch state {
+                    case .waitingForConsent:
+                        return .waitingForConsent
+                    case .success(let output):
+                        return .finalise(output)
+                    case .failure(let error):
+                        return BankAction.failure(error)
+                    }
                 }
-            }
-            .receive(on: environment.scheduler)
-            .eraseToEffect()
-            .cancellable(id: ID.Request())
+                .receive(on: environment.scheduler)
+                .eraseToEffect()
+                .cancellable(id: ID.Request())
+        )
 
     case .waitingForConsent:
         return environment.openBanking.authorisationURLPublisher
@@ -96,19 +98,23 @@ public let bankReducer = Reducer<BankState, BankAction, OpenBankingEnvironment> 
 
     case .launchAuthorisation(let url):
         state.ui = .waiting(for: state.bankName)
-        return .fireAndForget { environment.openURL.open(url) }
+        return .merge(
+            .fireAndForget { environment.openURL.open(url) },
+            .cancel(id: ID.LaunchBank())
+        )
 
     case .finalise(let output):
         switch output {
         case .linked:
             state.ui = .linked(institution: state.bankName)
         case .deposited(let payment):
-            state.ui = .payment(success: payment, in: environment)
-        case .confirmed:
-            return Effect(value: .finished)
+            state.ui = .deposit(success: payment, in: environment)
+        case .confirmed(let order) where order.state == .finished:
+            state.ui = .buy(finished: order, in: environment)
+        case .confirmed(let order):
+            state.ui = .buy(pending: order, in: environment)
         }
         return .merge(
-            .cancel(id: ID.LaunchBank()),
             .cancel(id: ID.ConsentError()),
             .cancel(id: ID.Request())
         )
@@ -118,17 +124,13 @@ public let bankReducer = Reducer<BankState, BankAction, OpenBankingEnvironment> 
 
     case .finished, .cancel:
         return .merge(
-            .cancel(id: ID.LaunchBank()),
             .cancel(id: ID.ConsentError()),
             .cancel(id: ID.Request())
         )
 
     case .failure(let error):
         state.ui = .error(error)
-        return .merge(
-            .cancel(id: ID.ConsentError()),
-            .cancel(id: ID.LaunchBank())
-        )
+        return .cancel(id: ID.ConsentError())
     }
 }
 

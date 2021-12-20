@@ -2,7 +2,6 @@
 
 import Combine
 import NetworkError
-import RxSwift
 
 /// Potential errors that may arise during 2FA initialization
 public enum TwoFAWalletServiceError: Error, Equatable {

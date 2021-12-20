@@ -119,7 +119,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The GUID was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 guid: "guid"
             )
             .sink(receiveCompletion: { completion in
@@ -136,7 +136,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The Shared Key was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 sharedKey: "shared-key"
             )
             .sink(receiveCompletion: { completion in
@@ -235,7 +235,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The GUID was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 guid: "guid"
             )
             .sink(receiveCompletion: { completion in
@@ -251,7 +251,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The Shared Key was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 sharedKey: "shared-key"
             )
             .sink(receiveCompletion: { completion in
@@ -385,7 +385,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The GUID was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 guid: "guid"
             )
             .sink(receiveCompletion: { completion in
@@ -401,7 +401,7 @@ class NabuAuthenticationExecutorTests: XCTestCase {
             description: "The Shared Key was set successfully"
         )
         walletRepository
-            .setPublisher(
+            .set(
                 sharedKey: "shared-key"
             )
             .sink(receiveCompletion: { completion in

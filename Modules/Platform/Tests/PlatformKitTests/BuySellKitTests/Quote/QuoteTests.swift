@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import BigInt
+import MoneyKit
 @testable import PlatformKit
 import XCTest
 
@@ -10,7 +11,7 @@ final class SimpleBuyQuoteTests: XCTestCase {
         let sut = try createTestCases(locales: [.US, .Canada, .GreatBritain, .France, .Japan, .Lithuania])
         for this in sut {
             XCTAssertNotNil(this.quote)
-            XCTAssertFalse(this.quote.estimatedCryptoAmount.isZero, "\(this.locale) has zero estimatedAmount")
+            XCTAssertFalse(this.quote.estimatedDestinationAmount.isZero, "\(this.locale) has zero estimatedAmount")
             XCTAssertEqual(this.quote.fee.displayMajorValue, 12.5, "\(this.locale) fee major value should be 12.5")
         }
     }
@@ -30,15 +31,28 @@ extension SimpleBuyQuoteTests {
 
     private func createTestCase(locale: Locale) throws -> QuoteTestCase {
         let response = QuoteResponse(
-            time: "2020-03-26T11:04:35.144Z",
-            rate: "1000000",
-            rateWithoutFee: "995000",
-            fee: "5000"
+            quoteId: "00000000-0000-0000-0000-000000000000",
+            quoteMarginPercent: 0.5,
+            quoteCreatedAt: "2021-12-31T01:00:02.030000000Z",
+            quoteExpiresAt: "2021-12-31T01:00:04.030000000Z",
+            price: "2300",
+            networkFee: nil,
+            staticFee: nil,
+            feeDetails: .init(
+                feeWithoutPromo: "1250",
+                fee: "1250",
+                feeFlags: []
+            ),
+            settlementDetails: .init(
+                availability: .instant
+            ),
+            sampleDepositAddress: nil
         )
         let twoThousandFiveHundred = FiatValue.create(minor: "250000", currency: .GBP)!
         let quote = try Quote(
-            to: .coin(.bitcoin),
-            amount: twoThousandFiveHundred,
+            sourceCurrency: FiatCurrency.GBP,
+            destinationCurrency: CryptoCurrency.coin(.bitcoin),
+            value: MoneyValue(fiatValue: twoThousandFiveHundred),
             response: response
         )
         return QuoteTestCase(locale: locale, response: response, quote: quote)

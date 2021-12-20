@@ -8,6 +8,7 @@ final class MockKYCTiersService: PlatformKit.KYCTiersServiceAPI {
 
     struct RecordedInvocations {
         var fetchTiers: [Void] = []
+        var fetchOverview: [Void] = []
         var simplifiedDueDiligenceEligibility: [KYC.Tier] = []
         var checkSimplifiedDueDiligenceEligibility: [KYC.Tier] = []
         var checkSimplifiedDueDiligenceVerification: [KYC.Tier] = []
@@ -18,17 +19,11 @@ final class MockKYCTiersService: PlatformKit.KYCTiersServiceAPI {
         var simplifiedDueDiligenceEligibility: AnyPublisher<SimplifiedDueDiligenceResponse, Never> = .empty()
         var checkSimplifiedDueDiligenceEligibility: AnyPublisher<Bool, Never> = .empty()
         var checkSimplifiedDueDiligenceVerification: AnyPublisher<Bool, Never> = .empty()
+        var fetchOverview: AnyPublisher<KYCLimitsOverview, KYCTierServiceError> = .empty()
     }
 
     private(set) var recordedInvocations = RecordedInvocations()
     var stubbedResponses = StubbedResponses()
-
-    var isKYCVerified: AnyPublisher<Bool, Never> {
-        fetchTiers()
-            .map(\.isTier2Approved)
-            .replaceError(with: false)
-            .eraseToAnyPublisher()
-    }
 
     var tiers: AnyPublisher<KYC.UserTiers, KYCTierServiceError> {
         fetchTiers()
@@ -60,5 +55,10 @@ final class MockKYCTiersService: PlatformKit.KYCTiersServiceAPI {
 
     func checkSimplifiedDueDiligenceVerification(pollUntilComplete: Bool) -> AnyPublisher<Bool, Never> {
         checkSimplifiedDueDiligenceVerification(for: .tier0, pollUntilComplete: pollUntilComplete)
+    }
+
+    func fetchOverview() -> AnyPublisher<KYCLimitsOverview, KYCTierServiceError> {
+        recordedInvocations.fetchOverview.append(())
+        return stubbedResponses.fetchOverview
     }
 }

@@ -4,8 +4,8 @@ import BigInt
 import Foundation
 
 public struct EthereumTransactionCandidate: Equatable {
-    enum TransferType: Equatable {
-        case transfer
+    public enum TransferType: Equatable {
+        case transfer(data: Data? = nil)
         case erc20Transfer(contract: EthereumAddress)
     }
 
@@ -13,7 +13,6 @@ public struct EthereumTransactionCandidate: Equatable {
     let gasPrice: BigUInt
     let gasLimit: BigUInt
     let value: BigUInt
-    let data: Data?
     let transferType: TransferType
 
     init(
@@ -21,14 +20,12 @@ public struct EthereumTransactionCandidate: Equatable {
         gasPrice: BigUInt,
         gasLimit: BigUInt,
         value: BigUInt,
-        data: Data?,
         transferType: TransferType
     ) {
         self.to = to
         self.gasPrice = gasPrice
         self.gasLimit = gasLimit
         self.value = value
-        self.data = data
         self.transferType = transferType
     }
 }

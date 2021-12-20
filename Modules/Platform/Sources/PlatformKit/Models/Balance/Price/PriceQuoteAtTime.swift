@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// A quoted price in fiat, for one currency, at a specific timestamp.
 public struct PriceQuoteAtTime: Equatable {
 

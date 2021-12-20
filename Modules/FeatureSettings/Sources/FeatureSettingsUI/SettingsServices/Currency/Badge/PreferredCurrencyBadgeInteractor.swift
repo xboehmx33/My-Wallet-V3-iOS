@@ -1,5 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay
@@ -15,8 +16,9 @@ final class PreferredCurrencyBadgeInteractor: DefaultBadgeAssetInteractor {
     ) {
         super.init()
         let settingsFiatCurrency = settingsService.valueObservable
-            .map(\.currency)
-        let fiatCurrency = fiatCurrencyService.fiatCurrencyObservable
+            .map(\.displayCurrency)
+        let fiatCurrency = fiatCurrencyService.displayCurrencyPublisher
+            .asObservable()
 
         Observable
             .combineLatest(settingsFiatCurrency, fiatCurrency) { (remoteFiatCurrency: $0, localFiatCurrency: $1) }

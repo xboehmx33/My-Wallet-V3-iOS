@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Localization
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -194,5 +195,10 @@ public final class CryptoInterestAccount: CryptoAccount, InterestAccount {
             }
             .recordErrors(on: errorRecorder)
             .catchErrorJustReturn(false)
+    }
+
+    public func invalidateAccountBalance() {
+        balanceService
+            .invalidateInterestAccountBalances()
     }
 }

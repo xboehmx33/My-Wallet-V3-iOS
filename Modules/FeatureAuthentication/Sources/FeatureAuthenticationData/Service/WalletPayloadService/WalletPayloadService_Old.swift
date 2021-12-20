@@ -34,8 +34,8 @@ public final class WalletPayloadServiceOld: WalletPayloadServiceAPI {
 
     public func requestUsingSessionToken() -> AnyPublisher<WalletAuthenticatorType, WalletPayloadServiceError> {
         let request = request(guid:sessionToken:)
-        return repository.guidPublisher
-            .zip(repository.sessionTokenPublisher)
+        return repository.guid
+            .zip(repository.sessionToken)
             .flatMap { credentials -> AnyPublisher<(guid: String, sessionToken: String), WalletPayloadServiceError> in
                 guard let guid = credentials.0 else {
                     return .failure(.missingCredentials(.guid))
@@ -53,8 +53,8 @@ public final class WalletPayloadServiceOld: WalletPayloadServiceAPI {
 
     public func requestUsingSharedKey() -> AnyPublisher<Void, WalletPayloadServiceError> {
         let request = request(guid:sharedKey:)
-        return repository.guidPublisher
-            .zip(repository.sharedKeyPublisher)
+        return repository.guid
+            .zip(repository.sharedKey)
             .flatMap { credentials -> AnyPublisher<(guid: String, sharedKey: String), WalletPayloadServiceError> in
                 guard let guid = credentials.0 else {
                     return .failure(.missingCredentials(.guid))
@@ -116,19 +116,19 @@ public final class WalletPayloadServiceOld: WalletPayloadServiceAPI {
     func cacheWalletData(
         from clientResponse: WalletPayloadClient.ClientResponse
     ) -> AnyPublisher<WalletPayloadClient.ClientResponse, WalletPayloadServiceError> {
-        repository.setPublisher(guid: clientResponse.guid)
-            .zip(repository.setPublisher(language: clientResponse.language))
-            .zip(repository.setPublisher(syncPubKeys: clientResponse.shouldSyncPubkeys))
+        repository.set(guid: clientResponse.guid)
+            .zip(repository.set(language: clientResponse.language))
+            .zip(repository.set(syncPubKeys: clientResponse.shouldSyncPubkeys))
             .flatMap { [repository] _ -> AnyPublisher<Void, WalletPayloadServiceError> in
                 guard let type = WalletAuthenticatorType(rawValue: clientResponse.authType) else {
                     return .failure(.unsupported2FAType)
                 }
-                return repository.setPublisher(authenticatorType: type)
+                return repository.set(authenticatorType: type)
                     .mapError()
             }
             .flatMap { [repository] _ -> AnyPublisher<Void, WalletPayloadServiceError> in
                 if let rawPayload = clientResponse.payload?.stringRepresentation, !rawPayload.isEmpty {
-                    return repository.setPublisher(payload: rawPayload)
+                    return repository.set(payload: rawPayload)
                         .mapError()
                 }
                 return .just(())

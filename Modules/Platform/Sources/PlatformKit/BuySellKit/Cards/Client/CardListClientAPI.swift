@@ -5,5 +5,6 @@ import NabuNetworkError
 
 public protocol CardListClientAPI: AnyObject {
 
-    var cardList: AnyPublisher<[CardPayload], NabuNetworkError> { get }
+    /// if enableProviders, will return cards tokenized with Stripe and Checkout.com
+    func getCardList(enableProviders: Bool) -> AnyPublisher<[CardPayload], NabuNetworkError>
 }

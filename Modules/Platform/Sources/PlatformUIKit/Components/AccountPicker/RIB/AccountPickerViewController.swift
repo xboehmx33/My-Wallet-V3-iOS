@@ -163,12 +163,17 @@ public final class AccountPickerViewController: BaseScreenViewController, Accoun
         stateWait
             .map(\.navigationModel)
             .drive(weak: self) { (self, model) in
-                self.titleViewStyle = model.titleViewStyle
-                self.set(
-                    barStyle: model.barStyle,
-                    leadingButtonStyle: model.leadingButton,
-                    trailingButtonStyle: model.trailingButton
-                )
+                if let model = model {
+                    self.navigationController?.setNavigationBarHidden(false, animated: false)
+                    self.titleViewStyle = model.titleViewStyle
+                    self.set(
+                        barStyle: model.barStyle,
+                        leadingButtonStyle: model.leadingButton,
+                        trailingButtonStyle: model.trailingButton
+                    )
+                } else {
+                    self.navigationController?.setNavigationBarHidden(true, animated: false)
+                }
             }
             .disposed(by: disposeBag)
 

@@ -6,7 +6,7 @@ include_symbols true
 output_directory "output"
 scheme "Blockchain"
 skip_profile_detection true
-workspace "Blockchain.xcworkspace"
+project "Blockchain.xcodeproj"
 
 for_lane :alpha do
     scheme "Blockchain (Alpha)"

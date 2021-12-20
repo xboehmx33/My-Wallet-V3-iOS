@@ -5,7 +5,11 @@ import Foundation
 private class BundleFinder {}
 
 extension Bundle {
+    #if canImport(SharedComponentLibrary)
+    public static let componentLibrary = Bundle.find("Blockchain_SharedComponentLibrary.bundle", in: BundleFinder.self)
+    #else
     public static let componentLibrary = Bundle.find("ComponentLibrary_ComponentLibrary.bundle", in: BundleFinder.self)
+    #endif
 }
 
 // The following is copied from `ToolKit` to avoid adding an extra external dependency into the Exchange app

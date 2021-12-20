@@ -4,7 +4,6 @@ import Combine
 import CombineSchedulers
 import FeatureOpenBankingDomain
 import Foundation
-import NetworkKit
 import Session
 import ToolKit
 
@@ -24,11 +23,11 @@ public class OpenBankingClient {
     private var bag: Set<AnyCancellable> = []
 
     let requestBuilder: RequestBuilder
-    let network: NetworkAdapterAPI
+    let network: Network
 
     public convenience init(
         requestBuilder: RequestBuilder,
-        network: NetworkAdapterAPI,
+        network: Network,
         scheduler: DispatchQueue = .main
     ) {
         self.init(
@@ -41,7 +40,7 @@ public class OpenBankingClient {
 
     init(
         requestBuilder: RequestBuilder,
-        network: NetworkAdapterAPI,
+        network: Network,
         scheduler: AnySchedulerOf<DispatchQueue>,
         state: State
     ) {
@@ -77,7 +76,7 @@ public class OpenBankingClient {
                     "oneTimeToken": oneTimeToken
                 ].json(),
                 authenticated: true
-            )!
+            )
             network.perform(request: request)
                 .mapError(OpenBanking.Error.init)
                 .result()
@@ -114,7 +113,7 @@ public class OpenBankingClient {
                     "currency": currency
                 ].json(),
                 authenticated: true
-            )!
+            )
 
             return network.perform(request: request, responseType: OpenBanking.BankAccount.self)
                 .handleEvents(receiveOutput: { [state] account in
@@ -135,7 +134,7 @@ public class OpenBankingClient {
         let request = requestBuilder.get(
             path: ["payments", "banktransfer"],
             authenticated: true
-        )!
+        )
 
         return network.perform(request: request, responseType: [OpenBanking.BankAccount].self)
             .mapError(OpenBanking.Error.init)
@@ -156,7 +155,7 @@ public class OpenBankingClient {
                 ]
             ].json(options: .sortedKeys),
             authenticated: true
-        )!
+        )
 
         return network.perform(request: request, responseType: OpenBanking.Order.self)
             .mapError(OpenBanking.Error.init)
@@ -184,7 +183,7 @@ extension OpenBanking.BankAccount {
                 ]
             ].json(),
             authenticated: true
-        )!
+        )
 
         return banking.network.perform(request: request, responseType: OpenBanking.BankAccount.self)
             .handleEvents(receiveOutput: { [banking] account in
@@ -203,7 +202,7 @@ extension OpenBanking.BankAccount {
         let request = banking.requestBuilder.get(
             path: ["payments", "banktransfer", id.value],
             authenticated: true
-        )!
+        )
 
         return banking.network.perform(request: request, responseType: OpenBanking.BankAccount.self)
             .handleEvents(receiveOutput: { [banking] account in
@@ -245,7 +244,7 @@ extension OpenBanking.BankAccount {
         let request = banking.requestBuilder.delete(
             path: ["payments", "banktransfer", id.value],
             authenticated: true
-        )!
+        )
 
         return banking.network.perform(request: request, responseType: OpenBanking.BankAccount.self)
             .handleEvents(receiveOutput: { [banking] _ in
@@ -273,7 +272,7 @@ extension OpenBanking.BankAccount {
                     ]
                 ].json(options: .sortedKeys),
                 authenticated: true
-            )!
+            )
 
             return banking.network.perform(request: request, responseType: OpenBanking.Payment.self)
                 .handleEvents(receiveOutput: { [banking] payment in
@@ -295,7 +294,7 @@ extension OpenBanking.Payment {
         let request = banking.requestBuilder.get(
             path: ["payments", "payment", id.value],
             authenticated: true
-        )!
+        )
 
         return banking.network.perform(request: request, responseType: OpenBanking.Payment.Details.self)
             .handleEvents(receiveOutput: { [banking] details in
@@ -331,7 +330,7 @@ extension OpenBanking.Order {
         let request = banking.requestBuilder.get(
             path: ["simple-buy", "trades", id.value],
             authenticated: true
-        )!
+        )
 
         return banking.network.perform(request: request, responseType: OpenBanking.Order.self)
             .handleEvents(receiveOutput: { [banking] order in

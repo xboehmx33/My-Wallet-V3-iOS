@@ -75,6 +75,17 @@ public final class QRCodeScannerViewControllerBuilder {
             viewModel: viewModel
         )
 
-        return scannerViewController
+        switch presentationType {
+        case .modal:
+            let nav = UINavigationController(rootViewController: scannerViewController)
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithTransparentBackground()
+            appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+            nav.navigationBar.standardAppearance = appearance
+            nav.navigationBar.isTranslucent = true
+            return nav
+        case .child:
+            return scannerViewController
+        }
     }
 }

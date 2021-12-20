@@ -28,3 +28,18 @@ extension KYC {
         }
     }
 }
+
+extension KYC.Tier {
+
+    public var isZero: Bool {
+        self == .tier0
+    }
+
+    public var isSiver: Bool {
+        self == .tier1
+    }
+
+    public var isGold: Bool {
+        self == .tier2
+    }
+}

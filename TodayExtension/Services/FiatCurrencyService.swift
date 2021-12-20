@@ -1,24 +1,16 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import PlatformKit
-import RxSwift
 
 final class FiatCurrencyService: FiatCurrencyServiceAPI {
 
-    var legacyCurrency: FiatCurrency? {
-        localeCurrency
-    }
-
-    var fiatCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
-        fatalError("unimplemented")
-    }
-
-    var fiatCurrencyObservable: Observable<FiatCurrency> {
+    var displayCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
         .just(localeCurrency)
     }
 
-    var fiatCurrency: Single<FiatCurrency> {
+    var tradingCurrencyPublisher: AnyPublisher<FiatCurrency, Never> {
         .just(localeCurrency)
     }
 

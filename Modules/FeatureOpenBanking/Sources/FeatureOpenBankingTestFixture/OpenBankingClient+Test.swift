@@ -58,7 +58,7 @@ extension OpenBankingClient {
                 ),
                 network: NetworkAdapter(
                     communicator: communicator
-                ),
+                ).network,
                 scheduler: scheduler.eraseToAnyScheduler(),
                 state: .init([.currency: "GBP"])
             ),

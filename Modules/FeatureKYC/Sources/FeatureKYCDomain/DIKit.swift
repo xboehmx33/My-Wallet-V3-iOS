@@ -10,6 +10,8 @@ extension DependencyContainer {
 
         single { KYCSettings() as KYCSettingsAPI }
 
+        factory { IdentityVerificationAnalyticsService() as IdentityVerificationAnalyticsServiceAPI }
+
         factory { KYCStatusChecker() as KYCStatusChecking }
 
         factory { EmailVerificationService(apiClient: DIKit.resolve()) as EmailVerificationServiceAPI }

@@ -3,6 +3,7 @@
 import Foundation
 
 // swiftlint:disable file_length
+// swiftlint:disable line_length
 
 extension LocalizationConstants {
     public enum Transaction {
@@ -109,6 +110,8 @@ extension LocalizationConstants {
                 public enum LimitView {}
             }
         }
+
+        public enum TradingCurrency {}
 
         public enum Error {}
     }
@@ -324,7 +327,6 @@ extension LocalizationConstants.Transaction.Withdraw {
         comment: "Available to Withdraw"
     )
 
-    // swiftlint:disable line_length
     public static let confirmationDisclaimer = NSLocalizedString(
         "Your final amount might change due to market activity. For your security, buy orders with a bank account are subject up to a 14 day holding period. You can Swap or Sell during this time. We will notify you once the funds are fully available.",
         comment: "Your final amount might change due to market activity. For your security, buy orders with a bank account are subject up to a 14 day holding period. You can Swap or Sell during this time. We will notify you once the funds are fully available."
@@ -402,7 +404,7 @@ extension LocalizationConstants.Transaction.Send {
 
 extension LocalizationConstants.Transaction.TargetSource.Card {
     public static let internalSendOnly = NSLocalizedString("Internal Send Only", comment: "Internal Send Only")
-    // swiftlint:disable line_length
+
     public static let description = NSLocalizedString(
         "At this time you can only transfer %@ from your %@ Trading Account to your %@ Private Key Wallets. Once %@ is in your Private Key Wallet you can transfer to external addresses.",
         comment: "At this time you can only transfer %@ from your %@ Trading Account to your %@ Private Key Wallets. Once %@ is in your Private Key Wallet you can transfer to external addresses."
@@ -723,7 +725,7 @@ extension LocalizationConstants.Transaction.Send.Completion.Failure {
 
 extension LocalizationConstants.Transaction.Sign {
     public static let dappRequestWarning = NSLocalizedString(
-        "This dapp is requesting an action, which could take money from your wallet. Make sure you trust this site.",
+        "%@ is requesting an action, which could take money from your wallet. Make sure you trust this site.",
         comment: "Dapp request warning."
     )
 }
@@ -1014,6 +1016,10 @@ extension LocalizationConstants.Transaction.Confirmation {
         "%@ Price",
         comment: "%@ Price"
     )
+    public static let purchase = NSLocalizedString(
+        "Purchase",
+        comment: "Total - Blockchain.com Fee"
+    )
     public static let total = NSLocalizedString(
         "Total",
         comment: "Total"
@@ -1029,6 +1035,10 @@ extension LocalizationConstants.Transaction.Confirmation {
     public static let transactionFee = NSLocalizedString(
         "Transaction Fee",
         comment: "Network Fee"
+    )
+    public static let blockchainFee = NSLocalizedString(
+        "Blockchain.com Fee",
+        comment: "Blockchain.com Fee"
     )
     public static let networkFee = NSLocalizedString(
         "%@ Network Fee",
@@ -1056,7 +1066,11 @@ extension LocalizationConstants.Transaction.Confirmation {
     )
     public static let signatureRequest = NSLocalizedString(
         "Signature Request",
-        comment: "Confirm"
+        comment: "Signature Request title"
+    )
+    public static let sendRequest = NSLocalizedString(
+        "Send",
+        comment: "Send Request title"
     )
     public static let cancel = NSLocalizedString(
         "Cancel",
@@ -1083,6 +1097,10 @@ extension LocalizationConstants.Transaction.Confirmation {
     public static let message = NSLocalizedString(
         "Message from %@",
         comment: "Message from %@"
+    )
+    public static let rawTransaction = NSLocalizedString(
+        "Raw transaction from %@",
+        comment: "Raw transaction from %@"
     )
     public static let network = NSLocalizedString(
         "Network",
@@ -1579,4 +1597,26 @@ extension LocalizationConstants.Transaction.Error {
 
 extension LocalizationConstants.Transaction {
     public static let ok = NSLocalizedString("OK", comment: "OK")
+}
+
+extension LocalizationConstants.Transaction.TradingCurrency {
+
+    public static let screenTitle = NSLocalizedString(
+        "Select a Trading Currency.",
+        comment: "Trading Currency Selection Screen: Title"
+    )
+
+    private static let screenSubtitleFormat = NSLocalizedString(
+        "Right now, %@ is not supported for buying crypto. You can add a bank account or card from the list of available currencies below.",
+        comment: "Trading Currency Selection Screen: Subtitle"
+    )
+
+    public static func screenSubtitle(displayCurrency: String) -> String {
+        String.localizedStringWithFormat(screenSubtitleFormat, displayCurrency)
+    }
+
+    public static let disclaimer = NSLocalizedString(
+        "Additional bank fees may apply. Your bank may add fee and Exchange Rates to each transaction.",
+        comment: "Trading Currency Selection Screen: Disclaimer"
+    )
 }

@@ -3,6 +3,7 @@
 import AnalyticsKit
 import DIKit
 import FeatureTransactionUI
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay

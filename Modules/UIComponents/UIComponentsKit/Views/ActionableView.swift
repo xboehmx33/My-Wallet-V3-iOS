@@ -1,5 +1,10 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
+import ComponentLibrary
+#endif
 import SwiftUI
 
 /// A simple template for any `View` that features some content followed by a number of buttons at the end.
@@ -112,7 +117,7 @@ extension ActionableView where Content == AnyView {
 
 extension ActionableView where Content == TupleView<(Spacer, InfoView, Spacer)> {
 
-    public init(_ model: InfoView.Model, buttons: [ButtonState], in bundle: Bundle = .main) {
+    public init(_ model: InfoView.Model, buttons: [ButtonState] = [], in bundle: Bundle = .main) {
         self.init(buttons: buttons) {
             Spacer()
             InfoView(model, in: bundle)

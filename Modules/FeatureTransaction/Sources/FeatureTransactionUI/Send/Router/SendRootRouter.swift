@@ -39,7 +39,10 @@ final class SendRootRouter: ViewableRouter<SendRootInteractable, SendRootViewCon
     // MARK: - SwapRootRouting
 
     func routeToSendLanding() {
-        let internalFeatureFlagService: InternalFeatureFlagServiceAPI = DIKit.resolve()
+        routeToSendLanding(navigationBarHidden: false)
+    }
+
+    func routeToSendLanding(navigationBarHidden: Bool) {
         let header = AccountPickerHeaderModel(
             imageContent: .init(
                 imageResource: ImageAsset.iconSend.imageResource,
@@ -49,12 +52,17 @@ final class SendRootRouter: ViewableRouter<SendRootInteractable, SendRootViewCon
             subtitle: LocalizedSend.Header.chooseWalletToSend,
             title: LocalizedSend.Header.sendCryptoNow
         )
-        let navigationModel = ScreenNavigationModel(
-            leadingButton: .drawer,
-            trailingButton: internalFeatureFlagService.isEnabled(.unifiedQRCodeScanner) ? .qrCode : .none,
-            titleViewStyle: .text(value: LocalizedSend.Text.send),
-            barStyle: .lightContent()
-        )
+        let navigationModel: ScreenNavigationModel?
+        if !navigationBarHidden {
+            navigationModel = ScreenNavigationModel(
+                leadingButton: .drawer,
+                trailingButton: .qrCode,
+                titleViewStyle: .text(value: LocalizedSend.Text.send),
+                barStyle: .lightContent()
+            )
+        } else {
+            navigationModel = nil
+        }
         let builder = AccountPickerBuilder(
             singleAccountsOnly: true,
             action: .send
@@ -79,7 +87,7 @@ final class SendRootRouter: ViewableRouter<SendRootInteractable, SendRootViewCon
         )
     }
 
-    func routeToSend(sourceAccount: CryptoAccount) {
+    func routeToSend(sourceAccount: BlockchainAccount) {
         let builder = TransactionFlowBuilder()
         transactionRouter = builder.build(
             withListener: interactor,
@@ -94,7 +102,7 @@ final class SendRootRouter: ViewableRouter<SendRootInteractable, SendRootViewCon
         }
     }
 
-    func routeToSend(sourceAccount: CryptoAccount, destination: TransactionTarget) {
+    func routeToSend(sourceAccount: BlockchainAccount, destination: TransactionTarget) {
         let builder = TransactionFlowBuilder()
         transactionRouter = builder.build(
             withListener: interactor,

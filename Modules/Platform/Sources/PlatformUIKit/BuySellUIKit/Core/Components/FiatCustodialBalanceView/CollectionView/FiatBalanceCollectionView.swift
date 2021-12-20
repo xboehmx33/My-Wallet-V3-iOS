@@ -41,7 +41,6 @@ final class FiatBalanceCollectionView: UICollectionView {
         flow.minimumInteritemSpacing = 0
         flow.minimumLineSpacing = 0
         flow.scrollDirection = .horizontal
-        flow.sectionInset = .zero
         return flow
     }()
 
@@ -57,6 +56,7 @@ final class FiatBalanceCollectionView: UICollectionView {
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
         contentInsetAdjustmentBehavior = .never
+        contentInset = .init(top: 0, left: 12, bottom: 0, right: 12)
         register(FiatCustodialBalanceCollectionViewCell.self)
     }
 

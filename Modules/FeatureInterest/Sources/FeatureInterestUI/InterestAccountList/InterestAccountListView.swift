@@ -4,6 +4,7 @@ import ComposableArchitecture
 import ComposableNavigation
 import FeatureInterestDomain
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import SwiftUI
@@ -27,7 +28,7 @@ struct InterestAccountListView: View {
         WithViewStore(store) { viewStore in
             VStack {
                 if viewStore.isLoading {
-                    LoadingStateView(title: viewStore.loadingTitle)
+                    LoadingStateView(title: "")
                         .onAppear {
                             if let cryptoCurrency = viewStore.buyCryptoCurrency {
                                 delegate?.didTapBuyCrypto(cryptoCurrency)

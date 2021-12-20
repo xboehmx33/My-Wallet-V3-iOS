@@ -248,9 +248,30 @@ extension Typography: ViewModifier {
         case .default, .serif, .overlineKerning:
             return Font.custom(fontName.rawValue, size: size, relativeTo: style.ui)
         case .monospacedSlashedZero:
-            guard let descriptor = UIFont(name: fontName.rawValue, size: size)?.fontDescriptor else {
+            if let uiFont = uiFont {
+                return Font(uiFont as CTFont)
+            } else {
                 return Font.system(size: size, weight: .medium, design: design.ui)
             }
+        }
+        #else
+        return Font.custom(fontName.rawValue, size: size, relativeTo: style.ui)
+        #endif
+    }
+
+    #if canImport(UIKit)
+    var uiFont: UIFont? {
+        loadCustomFonts()
+        let size = size.in(CGRect.screen)
+
+        guard let descriptor = UIFont(name: fontName.rawValue, size: size)?.fontDescriptor else {
+            return nil
+        }
+
+        switch design {
+        case .default, .serif, .overlineKerning:
+            return UIFont(descriptor: descriptor, size: size)
+        case .monospacedSlashedZero:
             let settings: [[UIFontDescriptor.FeatureKey: Int]] = [
                 [
                     .featureIdentifier: kNumberSpacingType,
@@ -266,12 +287,10 @@ extension Typography: ViewModifier {
                     .featureSettings: settings
                 ]
             )
-            return Font(UIFont(descriptor: monospaced, size: size) as CTFont)
+            return UIFont(descriptor: monospaced, size: size)
         }
-        #else
-        return Font.custom(fontName.rawValue, size: size, relativeTo: style.ui)
-        #endif
     }
+    #endif
 
     public func body(content: Content) -> some View {
         content.font(font)

@@ -6,14 +6,20 @@ import Localization
 import SwiftUI
 import UIComponentsKit
 
-public struct AccountPickerView: View {
+public struct AccountPickerView<
+    BadgeView: View,
+    IconView: View,
+    MultiBadgeView: View,
+    WithdrawalLocksView: View
+>: View {
 
     // MARK: - Internal properties
 
     let store: Store<AccountPickerState, AccountPickerAction>
-    let badgeView: (AnyHashable) -> AnyView
-    let iconView: (AnyHashable) -> AnyView
-    let multiBadgeView: (AnyHashable) -> (AnyView)
+    @ViewBuilder let badgeView: (AnyHashable) -> BadgeView
+    @ViewBuilder let iconView: (AnyHashable) -> IconView
+    @ViewBuilder let multiBadgeView: (AnyHashable) -> MultiBadgeView
+    @ViewBuilder let withdrawalLocksView: () -> WithdrawalLocksView
 
     // MARK: - Private properties
 
@@ -23,27 +29,30 @@ public struct AccountPickerView: View {
 
     init(
         store: Store<AccountPickerState, AccountPickerAction>,
-        badgeView: @escaping (AnyHashable) -> AnyView,
-        iconView: @escaping (AnyHashable) -> AnyView,
-        multiBadgeView: @escaping (AnyHashable) -> (AnyView)
+        @ViewBuilder badgeView: @escaping (AnyHashable) -> BadgeView,
+        @ViewBuilder iconView: @escaping (AnyHashable) -> IconView,
+        @ViewBuilder multiBadgeView: @escaping (AnyHashable) -> MultiBadgeView,
+        @ViewBuilder withdrawalLocksView: @escaping () -> WithdrawalLocksView
     ) {
         self.store = store
         self.badgeView = badgeView
         self.iconView = iconView
         self.multiBadgeView = multiBadgeView
+        self.withdrawalLocksView = withdrawalLocksView
     }
 
     public init(
         environment: AccountPickerEnvironment,
-        badgeView: @escaping (AnyHashable) -> AnyView,
-        iconView: @escaping (AnyHashable) -> AnyView,
-        multiBadgeView: @escaping (AnyHashable) -> (AnyView)
+        @ViewBuilder badgeView: @escaping (AnyHashable) -> BadgeView,
+        @ViewBuilder iconView: @escaping (AnyHashable) -> IconView,
+        @ViewBuilder multiBadgeView: @escaping (AnyHashable) -> MultiBadgeView,
+        @ViewBuilder withdrawalLocksView: @escaping () -> WithdrawalLocksView
     ) {
         self.init(
             store: Store(
                 initialState: AccountPickerState(
                     rows: .loading,
-                    header: .none,
+                    header: .init(headerStyle: .none, searchText: nil),
                     fiatBalances: [:],
                     cryptoBalances: [:],
                     currencyCodes: [:]
@@ -53,81 +62,92 @@ public struct AccountPickerView: View {
             ),
             badgeView: badgeView,
             iconView: iconView,
-            multiBadgeView: multiBadgeView
+            multiBadgeView: multiBadgeView,
+            withdrawalLocksView: withdrawalLocksView
         )
     }
 
     // MARK: - Body
 
     public var body: some View {
-
-        WithViewStore(store) { viewStore in
-
-            StatefulView(
-                store: store.scope(state: \.rows),
-                loadedAction: AccountPickerAction.rowsLoaded,
-                loadingAction: AccountPickerAction.rowsLoading,
-                successAction: LoadedRowsAction.success,
-                failureAction: LoadedRowsAction.failure,
-                loading: { _ in
-                    LoadingStateView(title: LocalizationConstants.loading)
-                },
-                success: { store in
-                    WithViewStore(store) { [globalViewStore = viewStore] viewStore in
-                        if viewStore.state.isEmpty {
-                            EmptyStateView(
-                                title: LocalizationConstants.AccountPicker.noWallets,
-                                subHeading: "",
-                                image: ImageAsset.emptyActivity.image
-                            )
-                        } else {
-                            contentView(
-                                store: store,
-                                viewStore: globalViewStore
-                            )
-                        }
+        StatefulView(
+            store: store.scope(state: \.rows),
+            loadedAction: AccountPickerAction.rowsLoaded,
+            loadingAction: AccountPickerAction.rowsLoading,
+            successAction: LoadedRowsAction.success,
+            failureAction: LoadedRowsAction.failure,
+            loading: { _ in
+                LoadingStateView(title: "")
+            },
+            success: { successStore in
+                WithViewStore(successStore.scope { $0.content.isEmpty }) { viewStore in
+                    if viewStore.state {
+                        EmptyStateView(
+                            title: LocalizationConstants.AccountPicker.noWallets,
+                            subHeading: "",
+                            image: ImageAsset.emptyActivity.image
+                        )
+                    } else {
+                        contentView(successStore: successStore)
                     }
-                },
-                failure: { _ in
-                    ErrorStateView(title: LocalizationConstants.Errors.genericError)
                 }
-            )
-            .onAppear {
-                viewStore.send(.subscribeToUpdates)
+            },
+            failure: { _ in
+                ErrorStateView(title: LocalizationConstants.Errors.genericError)
             }
+        )
+        .onAppear {
+            ViewStore(store).send(.subscribeToUpdates)
         }
     }
 
     @ViewBuilder func contentView(
-        store: Store<IdentifiedArrayOf<AccountPickerRow>, SuccessRowsAction>,
-        viewStore: ViewStore<AccountPickerState, AccountPickerAction>
+        successStore: Store<Rows, SuccessRowsAction>
     ) -> some View {
         VStack(spacing: .zero) {
-            HeaderView(
-                viewModel: viewStore.header,
-                searchText: Binding<String?>(
-                    get: { viewStore.searchText },
-                    set: { viewStore.send(.search($0)) }
-                ),
-                isSearching: $isSearching
-            )
-            List {
-                ForEachStore(
-                    store.scope(
-                        state: { $0 },
-                        action: SuccessRowsAction.accountPickerRow(id:action:)
+            WithViewStore(store.scope { $0.header }) { viewStore in
+                HeaderView(
+                    viewModel: viewStore.headerStyle,
+                    searchText: Binding<String?>(
+                        get: { viewStore.searchText },
+                        set: { viewStore.send(.search($0)) }
                     ),
-                    content: AccountPickerRowView.with(
-                        badgeView: badgeView,
-                        iconView: iconView,
-                        multiBadgeView: multiBadgeView,
-                        fiatBalances: viewStore.fiatBalances,
-                        cryptoBalances: viewStore.cryptoBalances,
-                        currencyCodes: viewStore.currencyCodes
-                    )
+                    isSearching: $isSearching
+                )
+            }
+            List {
+                WithViewStore(
+                    successStore,
+                    removeDuplicates: { $0.identifier == $1.identifier },
+                    content: { viewStore in
+                        ForEach(Array(zip(viewStore.content.indices, viewStore.content)), id: \.1.id) { index, row in
+                            WithViewStore(self.store.scope { $0.balances(for: row.id) }) { balancesStore in
+                                AccountPickerRowView(
+                                    model: row,
+                                    send: viewStore.send,
+                                    badgeView: badgeView,
+                                    iconView: iconView,
+                                    multiBadgeView: multiBadgeView,
+                                    withdrawalLocksView: withdrawalLocksView,
+                                    fiatBalance: balancesStore.fiat,
+                                    cryptoBalance: balancesStore.crypto,
+                                    currencyCode: balancesStore.currencyCode
+                                )
+                                .onAppear {
+                                    ViewStore(store)
+                                        .send(.prefetching(.onAppear(index: index)))
+                                }
+                                .onDisappear {
+                                    ViewStore(store)
+                                        .send(.prefetching(.onDisappear(index: index)))
+                                }
+                            }
+                        }
+                    }
                 )
                 .listRowInsets(EdgeInsets())
             }
+            .environment(\.defaultMinListRowHeight, 0)
             .animation(.easeInOut, value: isSearching)
         }
     }
@@ -162,7 +182,7 @@ struct AccountPickerView_Previews: PreviewProvider {
         bchTradingWalletIdentifier: "0.00004829 BCH"
     ]
 
-    static let accountPickerRowList: IdentifiedArrayOf<AccountPickerRow> = [
+    static let accountPickerRowList: [AccountPickerRow] = [
         .accountGroup(
             AccountPickerRow.AccountGroup(
                 id: allIdentifier,
@@ -213,17 +233,20 @@ struct AccountPickerView_Previews: PreviewProvider {
         )
     ]
 
-    static let header = Header.normal(
-        title: "Send Crypto Now",
-        subtitle: "Choose a Wallet to send cypto from.",
-        image: ImageAsset.iconSend.image,
-        tableTitle: "Select a Wallet",
-        searchable: false
+    static let header = AccountPickerState.HeaderState(
+        headerStyle: .normal(
+            title: "Send Crypto Now",
+            subtitle: "Choose a Wallet to send cypto from.",
+            image: ImageAsset.iconSend.image,
+            tableTitle: "Select a Wallet",
+            searchable: false
+        ),
+        searchText: nil
     )
 
     @ViewBuilder static func view(
-        rows: LoadingState<Result<IdentifiedArrayOf<AccountPickerRow>, AccountPickerError>>
-    ) -> AccountPickerView {
+        rows: LoadingState<Result<Rows, AccountPickerError>>
+    ) -> some View {
         AccountPickerView(
             store: Store(
                 initialState: AccountPickerState(
@@ -240,22 +263,23 @@ struct AccountPickerView_Previews: PreviewProvider {
                     closeButtonTapped: {},
                     search: { _ in },
                     sections: { Just(Array(accountPickerRowList)).eraseToAnyPublisher() },
-                    updateSingleAccount: { _ in nil },
-                    updateAccountGroup: { _ in nil },
-                    header: { Just(header).setFailureType(to: Error.self).eraseToAnyPublisher() }
+                    updateSingleAccounts: { _ in .just([:]) },
+                    updateAccountGroups: { _ in .just([:]) },
+                    header: { Just(header.headerStyle).setFailureType(to: Error.self).eraseToAnyPublisher() }
                 )
             ),
-            badgeView: { _ in AnyView(EmptyView()) },
-            iconView: { _ in AnyView(EmptyView()) },
-            multiBadgeView: { _ in AnyView(EmptyView()) }
+            badgeView: { _ in EmptyView() },
+            iconView: { _ in EmptyView() },
+            multiBadgeView: { _ in EmptyView() },
+            withdrawalLocksView: { EmptyView() }
         )
     }
 
     static var previews: some View {
-        view(rows: .loaded(next: .success(accountPickerRowList)))
+        view(rows: .loaded(next: .success(Rows(content: accountPickerRowList))))
             .previewDisplayName("Success")
 
-        view(rows: .loaded(next: .success([])))
+        view(rows: .loaded(next: .success(Rows(content: []))))
             .previewDisplayName("Empty")
 
         view(rows: .loaded(next: .failure(.testError)))

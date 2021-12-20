@@ -19,6 +19,8 @@ public final class CachedValueNew<Key: Hashable, Value: Equatable, CacheError: E
 
     private let queue = DispatchQueue(label: "com.blockchain.cached-value-new.queue")
 
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Setup
 
     /// Creates a CachedValueNew.
@@ -61,6 +63,13 @@ public final class CachedValueNew<Key: Hashable, Value: Equatable, CacheError: E
                 }
             }
             .eraseToAnyPublisher()
+    }
+
+    public func invalidateCacheWithKey(_ key: Key) {
+        cache
+            .remove(key: key)
+            .subscribe()
+            .store(in: &cancellables)
     }
 
     /// Streams the value associated with the given key, including any subsequent updates, optionally skipping stale values in the local data source.

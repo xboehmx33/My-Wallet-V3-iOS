@@ -5,7 +5,7 @@ import PlatformKit
 import UIKit
 import Veriff
 
-protocol VeriffController: VeriffSdkDelegate {
+protocol VeriffController: UIViewController, VeriffSdkDelegate {
 
     var veriff: VeriffSdk { get }
 
@@ -19,12 +19,15 @@ protocol VeriffController: VeriffSdkDelegate {
 
     func onVeriffSubmissionCompleted()
 
+    func trackInternalVeriffError(_ error: InternalVeriffError)
+
     func onVeriffError(message: String)
 
     func onVeriffCancelled()
 }
 
 extension VeriffController where Self: UIViewController {
+
     internal var veriff: VeriffSdk {
         VeriffSdk.shared
     }
@@ -35,18 +38,39 @@ extension VeriffController where Self: UIViewController {
     }
 }
 
-extension VeriffController {
-    func sessionDidEndWithResult(_ result: VeriffSdk.Result) {
+enum InternalVeriffError: Swift.Error {
+    case cameraUnavailable
+    case microphoneUnavailable
+    case serverError
+    case localError
+    case networkError
+    case uploadError
+    case videoFailed
+    case deprecatedSDKVersion
+    case unknown
 
-        switch result.status {
-        case .error(let error):
-            onVeriffError(message: error.localizedErrorMessage)
-        case .done:
-            onVeriffSubmissionCompleted()
-        case .canceled:
-            onVeriffCancelled()
+    init(veriffError: VeriffSdk.Error) {
+        switch veriffError {
+        case .cameraUnavailable:
+            self = .cameraUnavailable
+        case .microphoneUnavailable:
+            self = .microphoneUnavailable
+        case .serverError:
+            self = .serverError
+        case .localError:
+            self = .localError
+        case .networkError:
+            self = .networkError
+        case .uploadError:
+            self = .uploadError
+        case .videoFailed:
+            self = .videoFailed
+        case .deprecatedSDKVersion:
+            self = .deprecatedSDKVersion
+        case .unknown:
+            self = .unknown
         @unknown default:
-            onVeriffCancelled()
+            self = .unknown
         }
     }
 }

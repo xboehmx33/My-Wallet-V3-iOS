@@ -20,6 +20,7 @@ public struct OpenBankingEnvironment {
     public var cancel: () -> Void
     public var openURL: URLOpener
     public var fiatCurrencyFormatter: FiatCurrencyFormatter
+    public var cryptoCurrencyFormatter: CryptoCurrencyFormatter
 
     public init(
         scheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler(),
@@ -29,6 +30,7 @@ public struct OpenBankingEnvironment {
         cancel: @escaping () -> Void = {},
         openURL: URLOpener = resolve(),
         fiatCurrencyFormatter: FiatCurrencyFormatter = resolve(),
+        cryptoCurrencyFormatter: CryptoCurrencyFormatter = resolve(),
         currency: String
     ) {
         self.scheduler = scheduler
@@ -38,6 +40,7 @@ public struct OpenBankingEnvironment {
         self.cancel = cancel
         self.openURL = openURL
         self.fiatCurrencyFormatter = fiatCurrencyFormatter
+        self.cryptoCurrencyFormatter = cryptoCurrencyFormatter
 
         openBanking.state.set(.currency, to: currency)
     }

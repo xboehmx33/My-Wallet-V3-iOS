@@ -37,7 +37,8 @@ public struct TabBar<Content: View>: View {
     ///             .tabBarItem(
     ///                 .fab(
     ///                     identifier: "floatingActionButton",
-    ///                     isActive: $fabIsActive
+    ///                     isActive: $fabIsActive,
+    ///                     isPulsing: true
     ///                 )
     ///             )
     ///         Text("The Second Tab")
@@ -210,7 +211,8 @@ struct TabBar_Previews: PreviewProvider {
                     .tabBarItem(
                         .fab(
                             identifier: "floatingActionButtonIdentifier",
-                            isActive: $fabIsActive
+                            isActive: $fabIsActive,
+                            isPulsing: true
                         )
                     )
 

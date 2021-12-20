@@ -4,6 +4,7 @@ import Combine
 import ComposableArchitectureExtensions
 import DIKit
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
@@ -11,7 +12,7 @@ import RxRelay
 import RxSwift
 import ToolKit
 
-final class PortfolioScreenPresenter {
+public final class PortfolioScreenPresenter {
 
     // MARK: - Types
 
@@ -134,7 +135,7 @@ final class PortfolioScreenPresenter {
     var screenNavigationModel: ScreenNavigationModel {
         ScreenNavigationModel(
             leadingButton: .drawer,
-            trailingButton: internalFeatureFlagService.isEnabled(.unifiedQRCodeScanner) ? .qrCode : .none,
+            trailingButton: .qrCode,
             titleViewStyle: .text(value: LocalizationConstants.DashboardScreen.title),
             barStyle: .lightContent()
         )
@@ -147,7 +148,6 @@ final class PortfolioScreenPresenter {
     private let disposeBag = DisposeBag()
     private let drawerRouter: DrawerRouting
     private let interactor: PortfolioScreenInteractor
-    private let internalFeatureFlagService: InternalFeatureFlagServiceAPI
     private let reloadRelay: PublishRelay<Void> = .init()
     private let sectionsRelay: BehaviorRelay<[PortfolioViewModel]> = .init(value: [])
     private let coincore: CoincoreAPI
@@ -175,21 +175,19 @@ final class PortfolioScreenPresenter {
 
     // MARK: - Init
 
-    init(
+    public init(
         interactor: PortfolioScreenInteractor = PortfolioScreenInteractor(),
         accountFetcher: BlockchainAccountFetching = resolve(),
         drawerRouter: DrawerRouting = resolve(),
         announcementPresenter: AnnouncementPresenting = resolve(),
         coincore: CoincoreAPI = resolve(),
-        fiatCurrencyService: FiatCurrencyServiceAPI = resolve(),
-        internalFeatureFlagService: InternalFeatureFlagServiceAPI = resolve()
+        fiatCurrencyService: FiatCurrencyServiceAPI = resolve()
     ) {
         self.accountFetcher = accountFetcher
         self.announcementPresenter = announcementPresenter
         self.coincore = coincore
         self.drawerRouter = drawerRouter
         self.interactor = interactor
-        self.internalFeatureFlagService = internalFeatureFlagService
         fiatBalancePresenter = DashboardFiatBalancesPresenter(
             interactor: interactor.fiatBalancesInteractor
         )

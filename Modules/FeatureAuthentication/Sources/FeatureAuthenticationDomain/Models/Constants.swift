@@ -8,6 +8,15 @@ public enum Constants {
     private static let blockchainHost: String = InfoDictionaryHelper.value(for: .blockchainUrl)
     private static let loginHost: String = InfoDictionaryHelper.value(for: .loginUrl)
 
+    // blockchain host with fallback
+    private static var normalizedBlockchainHost: String {
+        let baseURL = blockchainHost
+        guard !baseURL.isEmpty else {
+            return "blockchain.com"
+        }
+        return baseURL
+    }
+
     public enum HostURL {
         public static var resetTwoFA: String {
             "https://\(loginHost)/#/reset-2fa"
@@ -19,11 +28,11 @@ public enum Constants {
         }
 
         public static var terms: String {
-            "https://\(blockchainHost)/terms"
+            "https://\(normalizedBlockchainHost)/legal/terms"
         }
 
         public static var privacyPolicy: String {
-            "https://\(blockchainHost)/privacy"
+            "https://\(normalizedBlockchainHost)/legal/privacy"
         }
     }
 
@@ -39,6 +48,11 @@ public enum Constants {
         }
 
         public enum ResetAccount {
+            public static var walletBackupURL: URL {
+                "https://support.blockchain.com/hc/en-us/articles/209564506-Make-a-Wallet-Backup"
+            }
+
+            // swiftlint:disable:next line_length
             public static let recoveryFailureSupport = "https://support.blockchain.com/hc/en-us/requests/new?ticket_form_id=360003112491"
             public static let learnMore = "https://support.blockchain.com/hc/en-us/articles/4404679303700"
             public static let contactSupport = "https://support.blockchain.com/hc/en-us"

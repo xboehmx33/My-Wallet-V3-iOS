@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -44,7 +45,7 @@ public final class FiatBalanceCollectionViewInteractor {
         tiersService.tiers
             .asSingle()
             .map(\.isTier2Approved)
-            .catchErrorJustReturn(false)
+            .catchAndReturn(false)
             .flatMap(weak: self) { (self, isTier2Approved) in
                 guard isTier2Approved else {
                     return .just([])
@@ -60,7 +61,7 @@ public final class FiatBalanceCollectionViewInteractor {
     private lazy var setup: Void = {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 refreshRelay.asObservable()
             ) { (fiatCurrency: $0, _: $1) }
             .flatMapLatest(weak: self) { (self, data) in

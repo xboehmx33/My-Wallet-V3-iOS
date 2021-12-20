@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 
 extension DependencyContainer {

@@ -32,11 +32,19 @@ public struct PrimarySwitch: View {
     }
 
     public var body: some View {
+        #if canImport(UIKit)
         Toggle(accessibilityLabel, isOn: $isOn)
             .labelsHidden()
             .toggleStyle(
                 PrimarySwitchToggleStyle(onBackgroundColor: variant.onBackgroundColor)
             )
+        #else
+        Toggle(accessibilityLabel, isOn: $isOn)
+            .labelsHidden()
+            .toggleStyle(
+                SwitchToggleStyle(tint: variant.onBackgroundColor)
+            )
+        #endif
     }
 
     /// Color variants for PrimarySwitch
@@ -63,91 +71,99 @@ extension PrimarySwitch.Variant {
 
 // MARK: - Private
 
+#if canImport(UIKit)
 private struct PrimarySwitchToggleStyle: ToggleStyle {
     let onBackgroundColor: Color
 
-    // Layout & Sizing
-    private let size = CGSize(width: 51, height: 32)
-    private let thumbPadding: CGFloat = 2
-    private var edgeOffset: CGFloat {
-        (size.width - (size.height - (thumbPadding * 2))) / 2 - thumbPadding
+    func makeBody(configuration: Configuration) -> some View {
+        UISwitchRepresentable(
+            isOn: configuration.$isOn,
+            onTintColor: onBackgroundColor,
+            thumbTintColor: .semantic.background
+        )
+    }
+}
+
+private struct UISwitchRepresentable: UIViewRepresentable {
+    @Binding private var isOn: Bool
+    private let onTintColor: Color
+    private let thumbTintColor: Color
+
+    init(isOn: Binding<Bool>, onTintColor: Color, thumbTintColor: Color) {
+        _isOn = isOn
+        self.onTintColor = onTintColor
+        self.thumbTintColor = thumbTintColor
     }
 
-    private let offBackgroundColor = Color(
-        light: .semantic.medium,
-        dark: .palette.dark600
-    )
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isOn: $isOn)
+    }
 
-    private let shadow1Color = Color(
-        light: .palette.black.opacity(0.06),
-        dark: .palette.black.opacity(0.12)
-    )
+    func makeUIView(context: Context) -> UISwitch {
+        let view = UISwitch()
+        view.onTintColor = UIColor(onTintColor)
+        view.thumbTintColor = UIColor(thumbTintColor)
+        view.addTarget(context.coordinator, action: #selector(Coordinator.switchDidChange(sender:)), for: .valueChanged)
+        return view
+    }
 
-    private let shadow2Color = Color(
-        light: .palette.black.opacity(0.15),
-        dark: .palette.black.opacity(0.12)
-    )
+    func updateUIView(_ uiView: UISwitch, context: Context) {
+        uiView.setOn(isOn, animated: !context.transaction.disablesAnimations)
+    }
 
-    func makeBody(configuration: Configuration) -> some View {
-        ZStack {
-            Rectangle()
-                .fill(
-                    configuration.isOn ? onBackgroundColor : offBackgroundColor)
+    @objc class Coordinator: NSObject {
+        @Binding var isOn: Bool
 
-            Circle()
-                .fill(
-                    Color(
-                        light: .palette.white,
-                        dark: .palette.dark900
-                    )
-                )
-                .padding(thumbPadding)
-                .shadow(color: shadow1Color, radius: 1, x: 0, y: 3)
-                .shadow(color: shadow2Color, radius: 8, x: 0, y: 3)
-                .offset(x: configuration.isOn ? edgeOffset : -edgeOffset)
+        init(isOn: Binding<Bool>) {
+            _isOn = isOn
         }
-        .clipShape(
-            RoundedRectangle(cornerRadius: Spacing.roundedBorderRadius(for: size.height))
-        )
-        .frame(width: size.width, height: size.height)
-        .animation(.easeOut(duration: 0.17))
-        .onTapGesture {
-            configuration.isOn.toggle()
+
+        @objc func switchDidChange(sender: UISwitch) {
+            isOn = sender.isOn
         }
     }
 }
+#endif
 
 // MARK: - Previews
 
 struct PrimarySwitch_Previews: PreviewProvider {
     static var previews: some View {
-        PreviewController(variant: .blue, isOn: true)
-            .previewLayout(.sizeThatFits)
+        Group { // blue, light
+            PreviewController(variant: .blue, isOn: true)
+                .previewLayout(.sizeThatFits)
 
-        PreviewController(variant: .blue, isOn: true)
-            .previewLayout(.sizeThatFits)
-            .colorScheme(.dark)
+            PreviewController(variant: .blue, isOn: false)
+                .previewLayout(.sizeThatFits)
+        }
 
-        PreviewController(variant: .blue, isOn: false)
-            .previewLayout(.sizeThatFits)
+        Group { // blue, dark
+            PreviewController(variant: .blue, isOn: true)
+                .previewLayout(.sizeThatFits)
+                .colorScheme(.dark)
 
-        PreviewController(variant: .blue, isOn: false)
-            .previewLayout(.sizeThatFits)
-            .colorScheme(.dark)
+            PreviewController(variant: .blue, isOn: false)
+                .previewLayout(.sizeThatFits)
+                .colorScheme(.dark)
+        }
 
-        PreviewController(variant: .green, isOn: true)
-            .previewLayout(.sizeThatFits)
+        Group { // green, light
+            PreviewController(variant: .green, isOn: true)
+                .previewLayout(.sizeThatFits)
 
-        PreviewController(variant: .green, isOn: true)
-            .previewLayout(.sizeThatFits)
-            .colorScheme(.dark)
+            PreviewController(variant: .green, isOn: false)
+                .previewLayout(.sizeThatFits)
+        }
 
-        PreviewController(variant: .green, isOn: false)
-            .previewLayout(.sizeThatFits)
+        Group { // green, dark
+            PreviewController(variant: .green, isOn: true)
+                .previewLayout(.sizeThatFits)
+                .colorScheme(.dark)
 
-        PreviewController(variant: .green, isOn: false)
-            .previewLayout(.sizeThatFits)
-            .colorScheme(.dark)
+            PreviewController(variant: .green, isOn: false)
+                .previewLayout(.sizeThatFits)
+                .colorScheme(.dark)
+        }
     }
 
     struct PreviewController: View {
@@ -160,6 +176,7 @@ struct PrimarySwitch_Previews: PreviewProvider {
                 accessibilityLabel: "Test",
                 isOn: $isOn
             )
+            .background(Color.semantic.background)
         }
     }
 }

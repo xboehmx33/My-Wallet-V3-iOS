@@ -1,6 +1,6 @@
 clean(true)
 skip_build(true)
-workspace("Blockchain.xcworkspace")
+project "Blockchain.xcodeproj"
 configuration("Debug Staging")
 scheme("Blockchain (Staging)")
 slack_channel("#ios-ci")

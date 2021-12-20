@@ -24,7 +24,7 @@ public protocol AccountPickerBuildable: RIBs.Buildable {
     ///   - showWithdrawalLocks: flags that determines if Withdrawal Lock should be shown
     func build(
         listener: AccountPickerListenerBridge,
-        navigationModel: ScreenNavigationModel,
+        navigationModel: ScreenNavigationModel?,
         headerModel: AccountPickerHeaderType,
         buttonViewModel: ButtonViewModel?,
         showWithdrawalLocks: Bool
@@ -73,7 +73,7 @@ public final class AccountPickerBuilder: AccountPickerBuildable {
 
     public func build(
         listener: AccountPickerListenerBridge,
-        navigationModel: ScreenNavigationModel,
+        navigationModel: ScreenNavigationModel?,
         headerModel: AccountPickerHeaderType,
         buttonViewModel: ButtonViewModel? = nil,
         showWithdrawalLocks: Bool = false

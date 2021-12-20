@@ -3,6 +3,10 @@
 import ComposableArchitecture
 import SwiftUI
 
+// A few variants of `StatefulView(...)` are provided to assist in wrapping composable
+// state which can be a combination of `LoadingState<T>` and `Result<Success, Failure>`.
+// See `AccountPickerView.swift` and associated state for sample usage.
+
 /// `LoadingState<Value>` stateful view
 ///
 /// States handled:

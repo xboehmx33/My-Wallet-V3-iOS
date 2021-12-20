@@ -10,15 +10,15 @@ extension SettingsSectionType {
         case .preferences:
             return LocalizationConstants.Settings.Section.preferences
         case .connect:
-            return LocalizationConstants.Settings.Section.exchangeLink
+            return LocalizationConstants.Settings.Section.walletConnect
         case .security:
             return LocalizationConstants.Settings.Section.security
         case .cards:
             return LocalizationConstants.Settings.Section.linkedCards
         case .banks:
             return LocalizationConstants.Settings.Section.linkedBanks
-        case .about:
-            return LocalizationConstants.Settings.Section.about
+        case .help:
+            return LocalizationConstants.Settings.Section.help
         }
     }
 }

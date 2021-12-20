@@ -3,6 +3,7 @@
 import BigInt
 import DIKit
 import Foundation
+import MoneyKit
 import PlatformKit
 import RxCocoa
 import RxSwift

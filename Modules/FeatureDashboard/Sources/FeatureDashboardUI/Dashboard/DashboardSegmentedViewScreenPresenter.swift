@@ -42,11 +42,17 @@ final class DashboardSegmentedViewScreenPresenter: SegmentedViewScreenPresenting
         ),
         SegmentedViewScreenItem(
             title: LocalizedString.prices,
-            viewController: PricesViewController()
+            viewController: PricesViewController(
+                presenter: PricesScreenPresenter(
+                    interactor: PricesScreenInteractor(
+                        showSupportedPairsOnly: false
+                    )
+                )
+            )
         )
     ]
 
-    let itemIndexSelectedRelay: BehaviorRelay<Int?> = .init(value: nil)
+    let itemIndexSelectedRelay: BehaviorRelay<(index: Int, animated: Bool)> = .init(value: (index: 0, animated: false))
 
     // MARK: - Private Properties
 
@@ -62,14 +68,13 @@ final class DashboardSegmentedViewScreenPresenter: SegmentedViewScreenPresenting
         drawerRouter: DrawerRouting,
         fiatBalanceCellProvider: FiatBalanceCellProviding,
         dashboardScreenPresenter: PortfolioScreenPresenter,
-        qrCodeScannerRouter: QRCodeScannerRouting,
-        internalFeatureFlagService: InternalFeatureFlagServiceAPI
+        qrCodeScannerRouter: QRCodeScannerRouting
     ) {
         self.drawerRouter = drawerRouter
         self.fiatBalanceCellProvider = fiatBalanceCellProvider
         self.dashboardScreenPresenter = dashboardScreenPresenter
         self.qrCodeScannerRouter = qrCodeScannerRouter
-        trailingButton = internalFeatureFlagService.isEnabled(.unifiedQRCodeScanner) ? .qrCode : .none
+        trailingButton = .qrCode
 
         leadingButtonTapRelay
             .bindAndCatch(weak: self) { (self) in

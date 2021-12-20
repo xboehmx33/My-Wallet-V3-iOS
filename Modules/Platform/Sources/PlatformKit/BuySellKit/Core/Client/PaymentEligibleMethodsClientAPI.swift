@@ -3,11 +3,13 @@
 import Combine
 import NabuNetworkError
 
-protocol PaymentEligibleMethodsClientAPI: AnyObject {
+public protocol PaymentEligibleMethodsClientAPI: AnyObject {
 
     func eligiblePaymentMethods(
         for currency: String,
         currentTier: KYC.Tier,
         sddEligibleTier: Int?
     ) -> AnyPublisher<[PaymentMethodsResponse.Method], NabuNetworkError>
+
+    func paymentsCardAcquirers() -> AnyPublisher<[PaymentCardAcquirer], NabuNetworkError>
 }

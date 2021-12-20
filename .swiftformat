@@ -1,4 +1,4 @@
---exclude Carthage,Submodules
+--exclude Carthage,Submodules,SourcePackages,vendor,scripts
 --disable blankLinesAtStartOfScope
 --allman false
 --assetliterals visual-width

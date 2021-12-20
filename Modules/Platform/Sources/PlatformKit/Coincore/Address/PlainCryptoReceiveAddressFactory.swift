@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Foundation
+import MoneyKit
 
 /// A `CryptoReceiveAddressFactory` that doesn't know how to validate the asset/address and assumes it is correct.
 public final class PlainCryptoReceiveAddressFactory: ExternalAssetAddressFactory {

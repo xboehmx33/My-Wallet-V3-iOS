@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 public struct CardData {
 
     /// The identifier of the card
@@ -77,9 +79,8 @@ extension CardData {
         guard let currency = FiatCurrency(code: response.currency) else { return nil }
         guard let billingAddress = response.address else { return nil }
         guard response.partner.isKnown else { return nil }
-        guard let type = CardType(rawValue: response.card?.type ?? "") else { return nil }
 
-        self.type = type
+        type = CardType(rawValue: response.card?.type ?? "") ?? .unknown
         identifier = response.identifier
         ownerName = ""
         number = response.card?.number ?? ""

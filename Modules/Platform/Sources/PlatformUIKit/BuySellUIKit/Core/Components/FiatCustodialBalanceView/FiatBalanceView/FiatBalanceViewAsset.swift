@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ComposableArchitectureExtensions
+import MoneyKit
 import PlatformKit
 import UIKit
 

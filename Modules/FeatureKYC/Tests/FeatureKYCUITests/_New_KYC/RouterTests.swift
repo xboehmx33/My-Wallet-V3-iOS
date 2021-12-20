@@ -34,8 +34,10 @@ final class RouterTests: XCTestCase {
             loadingViewPresenter: MockLoadingViewPresenter(),
             legacyRouter: mockLegacyKYCRouter,
             kycService: mockKYCTiersService,
+            featureFlagsService: MockFeatureFlagsService(),
             emailVerificationService: mockEmailVerificationService,
-            openMailApp: mockExternalAppOpener.openMailApp
+            openMailApp: mockExternalAppOpener.openMailApp,
+            openURL: mockExternalAppOpener.open
         )
     }
 

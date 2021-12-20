@@ -2,6 +2,7 @@
 
 import Charts
 import ComposableArchitectureExtensions
+import MoneyKit
 import PlatformKit
 
 /// Any util / data related to the pie chart presentation / interaction layers

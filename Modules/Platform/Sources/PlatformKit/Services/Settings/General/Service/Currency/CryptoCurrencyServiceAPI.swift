@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import Combine
+import MoneyKit
 import RxSwift
 
 public protocol CryptoCurrencyServiceAPI: CurrencyServiceAPI {
@@ -13,16 +15,17 @@ public protocol CryptoCurrencyServiceAPI: CurrencyServiceAPI {
 
 extension CryptoCurrencyServiceAPI {
 
-    public var currencyObservable: Observable<Currency> {
-        cryptoCurrencyObservable.map { $0 as Currency }
-    }
-
-    public var currency: Single<Currency> {
-        cryptoCurrency.map { $0 as Currency }
+    public var currencyPublisher: AnyPublisher<Currency, Never> {
+        cryptoCurrencyObservable
+            .map { $0 as Currency }
+            .asPublisher()
+            .ignoreFailure()
+            .eraseToAnyPublisher()
     }
 }
 
 public class DefaultCryptoCurrencyService: CryptoCurrencyServiceAPI {
+
     public enum ServiceError: Error {
         case unexpectedCurrencyType
     }

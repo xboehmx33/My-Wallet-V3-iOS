@@ -45,3 +45,9 @@ extension Result {
         }
     }
 }
+
+extension SingleEvent {
+    public static func error(_ error: Failure) -> Self {
+        .failure(error)
+    }
+}

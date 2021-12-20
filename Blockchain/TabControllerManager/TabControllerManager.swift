@@ -6,6 +6,7 @@ import FeatureActivityUI
 import FeatureDashboardUI
 import FeatureTransactionDomain
 import FeatureTransactionUI
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RIBs
@@ -110,8 +111,9 @@ final class TabControllerManager: NSObject {
         let router = SendRootBuilder().build()
         sendP2ViewController = router.viewControllable.uiviewController
         sendRouter = router
-        router.interactable.activate()
-        router.load()
+        sendRouter.routeToSendLanding()
+        sendRouter.interactable.activate()
+        sendRouter.load()
     }
 
     private func setSendAsActive() {
@@ -148,12 +150,12 @@ final class TabControllerManager: NSObject {
 
     func send(from account: BlockchainAccount) {
         loadSend()
-        sendRouter.routeToSend(sourceAccount: account as! CryptoAccount)
+        sendRouter.routeToSend(sourceAccount: account)
     }
 
     func send(from account: BlockchainAccount, target: TransactionTarget) {
         loadSend()
-        sendRouter.routeToSend(sourceAccount: account as! CryptoAccount, destination: target)
+        sendRouter.routeToSend(sourceAccount: account, destination: target)
     }
 
     func showSend(cryptoCurrency: CryptoCurrency) {

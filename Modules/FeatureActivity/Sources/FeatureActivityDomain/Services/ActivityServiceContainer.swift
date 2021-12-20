@@ -7,14 +7,12 @@ import RxSwift
 import ToolKit
 
 public protocol ActivityServiceContaining {
-    var internalFeatureFlagService: InternalFeatureFlagServiceAPI { get }
     var exchangeProviding: ExchangeProviding { get }
     var fiatCurrency: FiatCurrencySettingsServiceAPI { get }
     var selectionService: WalletPickerSelectionServiceAPI { get }
 }
 
 final class ActivityServiceContainer: ActivityServiceContaining {
-    let internalFeatureFlagService: InternalFeatureFlagServiceAPI
     let fiatCurrency: FiatCurrencySettingsServiceAPI
     let selectionService: WalletPickerSelectionServiceAPI
     let exchangeProviding: ExchangeProviding
@@ -30,12 +28,10 @@ final class ActivityServiceContainer: ActivityServiceContaining {
     }()
 
     init(
-        internalFeatureFlagService: InternalFeatureFlagServiceAPI = resolve(),
         fiatCurrency: FiatCurrencySettingsServiceAPI = resolve(),
         exchangeProviding: ExchangeProviding = resolve()
     ) {
         selectionService = WalletPickerSelectionService()
-        self.internalFeatureFlagService = internalFeatureFlagService
         self.fiatCurrency = fiatCurrency
         self.exchangeProviding = exchangeProviding
     }

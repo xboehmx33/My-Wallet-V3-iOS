@@ -12,5 +12,5 @@ public enum QRCodeScannerResultType {
     case cryptoTarget(_ target: QRCodeParserTarget)
     case secureChannel(_ message: String)
     case deepLink(_ link: String)
-    case walletConnect
+    case walletConnect(_ url: String)
 }

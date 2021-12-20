@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 public struct TransactionMoneyValuePairs {
     /// Your `source` from a swap. Your `base` is `1: CryptoCurrency`

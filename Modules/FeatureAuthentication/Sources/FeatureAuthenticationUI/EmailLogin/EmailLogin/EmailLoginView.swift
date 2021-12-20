@@ -53,46 +53,44 @@ public struct EmailLoginView: View {
 
     public var body: some View {
         WithViewStore(store) { viewStore in
-            NavigationView {
-                VStack {
-                    emailField
-                        .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.emailGroup)
+            VStack {
+                emailField
+                    .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.emailGroup)
 
-                    Spacer()
+                Spacer()
 
-                    PrimaryButton(
-                        title: LocalizedString.Button._continue,
-                        action: {
-                            viewStore.send(.sendDeviceVerificationEmail)
-                        },
-                        loading: viewStore.binding(get: \.isLoading, send: .none)
-                    )
-                    .disabled(!viewStore.isEmailValid)
-                    .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.continueButton)
-                }
-                .padding(
-                    EdgeInsets(
-                        top: Layout.topPadding,
-                        leading: Layout.leadingPadding,
-                        bottom: Layout.bottomPadding,
-                        trailing: Layout.trailingPadding
-                    )
+                PrimaryButton(
+                    title: LocalizedString.Button._continue,
+                    action: {
+                        viewStore.send(.sendDeviceVerificationEmail)
+                    },
+                    loading: .constant(viewStore.isLoading)
                 )
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Text(LocalizedString.navigationTitle)
-                            .font(Font(weight: .semibold, size: Layout.navigationTitleFontSize))
-                            .padding(.top, Layout.navigationTitleTopPadding)
-                            .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.loginTitleText)
-                    }
-                }
-                .navigationRoute(in: store)
-                .trailingNavigationButton(.close) {
-                    viewStore.send(.closeButtonTapped)
-                }
-                .whiteNavigationBarStyle()
-                .hideBackButtonTitle()
+                .disabled(!viewStore.isEmailValid)
+                .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.continueButton)
             }
+            .padding(
+                EdgeInsets(
+                    top: Layout.topPadding,
+                    leading: Layout.leadingPadding,
+                    bottom: Layout.bottomPadding,
+                    trailing: Layout.trailingPadding
+                )
+            )
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Text(LocalizedString.navigationTitle)
+                        .font(Font(weight: .semibold, size: Layout.navigationTitleFontSize))
+                        .padding(.top, Layout.navigationTitleTopPadding)
+                        .accessibility(identifier: AccessibilityIdentifiers.EmailLoginScreen.loginTitleText)
+                }
+            }
+            .navigationRoute(in: store)
+            .trailingNavigationButton(.close) {
+                viewStore.send(.closeButtonTapped)
+            }
+            .whiteNavigationBarStyle()
+            .hideBackButtonTitle()
             .alert(self.store.scope(state: \.alert), dismiss: .alert(.dismiss))
             .onAppear {
                 viewStore.send(.onAppear)
@@ -108,10 +106,7 @@ public struct EmailLoginView: View {
                     send: { .didChangeEmailAddress($0) }
                 ),
                 isFirstResponder: $isEmailFieldFirstResponder,
-                isError: viewStore.binding(
-                    get: { !$0.isEmailValid && !$0.emailAddress.isEmpty },
-                    send: .none
-                ),
+                isError: .constant(!viewStore.isEmailValid && !viewStore.emailAddress.isEmpty),
                 title: LocalizedString.TextFieldTitle.email,
                 configuration: {
                     $0.autocorrectionType = .no

@@ -62,6 +62,13 @@ extension KYC {
     }
 }
 
+extension KYC.UserTiers {
+
+    public func canPurchaseCrypto(isSDDVerified: Bool) -> Bool {
+        isTier2Approved || (latestApprovedTier == .tier1 && isSDDVerified)
+    }
+}
+
 extension KYC.Tier.State {
     fileprivate var accountStatus: KYC.AccountStatus {
         switch self {

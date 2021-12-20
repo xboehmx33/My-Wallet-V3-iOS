@@ -33,7 +33,7 @@ final class SessionTokenService: SessionTokenServiceAPI {
             }
             .flatMap { [sessionRepository] sessionToken
                 -> AnyPublisher<Void, SessionTokenServiceError> in
-                sessionRepository.setPublisher(sessionToken: sessionToken)
+                sessionRepository.set(sessionToken: sessionToken)
                     .mapError()
             }
             .eraseToAnyPublisher()

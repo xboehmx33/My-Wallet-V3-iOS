@@ -168,7 +168,7 @@ final class BankPaymentTests: OpenBankingTestCase {
             .do { [self] in state.set(.is.authorised, to: true) },
             .do { [self] in scheduler.advance() },
             .receive(.finalise(.deposited(details))) { [self] state in
-                state.ui = .payment(success: details, in: environment)
+                state.ui = .deposit(success: details, in: environment)
             },
             .send(.cancel)
         )

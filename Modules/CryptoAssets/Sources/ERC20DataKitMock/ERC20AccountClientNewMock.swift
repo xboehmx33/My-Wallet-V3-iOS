@@ -2,6 +2,7 @@
 
 import Combine
 @testable import ERC20DataKit
+import MoneyKit
 import NetworkError
 import PlatformKit
 

@@ -3,7 +3,7 @@
 //  Copyright © 2021 Blockchain Luxembourg S.A. All rights reserved.
 //
 
-import PlatformKit
+import MoneyKit
 import RxCocoa
 
 /// An abstract class that doesn't do much: it's only used for communication across modules

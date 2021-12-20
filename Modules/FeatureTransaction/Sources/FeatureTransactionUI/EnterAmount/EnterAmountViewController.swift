@@ -366,6 +366,7 @@ extension EnterAmountViewController {
     private enum Constant {
         private enum SuperCompact {
             static let topSelectionViewHeight: CGFloat = 48
+            static let bottomAuxiliaryViewOffset: CGFloat = 8
         }
 
         private enum Compact {

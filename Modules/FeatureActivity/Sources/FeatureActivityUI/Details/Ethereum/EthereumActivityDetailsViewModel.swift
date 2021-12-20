@@ -4,6 +4,7 @@ import BigInt
 import ERC20Kit
 import EthereumKit
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 

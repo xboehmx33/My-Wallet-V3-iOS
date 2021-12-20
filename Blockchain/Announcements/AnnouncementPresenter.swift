@@ -4,6 +4,7 @@ import AnalyticsKit
 import DIKit
 import FeatureDashboardUI
 import FeatureKYCDomain
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa
@@ -21,7 +22,7 @@ final class AnnouncementPresenter {
     private let walletOperating: WalletOperationsRouting
     private let backupFlowStarter: BackupFlowStarterAPI
     private let settingsStarter: SettingsStarterAPI
-    private let tapControllerManagerProvider: TabControllerManagerProvider
+    private let tab: TabSwapping
 
     private let featureFetcher: RxFeatureFetching
     private let cashIdentityVerificationRouter: CashIdentityVerificationAnnouncementRouting
@@ -69,7 +70,7 @@ final class AnnouncementPresenter {
         walletOperating: WalletOperationsRouting = DIKit.resolve(),
         backupFlowStarter: BackupFlowStarterAPI = DIKit.resolve(),
         settingsStarter: SettingsStarterAPI = DIKit.resolve(),
-        tapControllerManagerProvider: TabControllerManagerProvider = DIKit.resolve(),
+        tab: TabSwapping = DIKit.resolve(),
         exchangeCoordinator: ExchangeCoordinator = .shared,
         kycRouter: KYCRouterAPI = DIKit.resolve(),
         reactiveWallet: ReactiveWalletAPI = WalletManager.shared.reactiveWallet,
@@ -94,7 +95,7 @@ final class AnnouncementPresenter {
         self.walletOperating = walletOperating
         self.backupFlowStarter = backupFlowStarter
         self.settingsStarter = settingsStarter
-        self.tapControllerManagerProvider = tapControllerManagerProvider
+        self.tab = tab
         self.navigationRouter = navigationRouter
         self.exchangeProviding = exchangeProviding
         self.accountsRouter = accountsRouter
@@ -169,8 +170,6 @@ final class AnnouncementPresenter {
                     user: preliminaryData.user,
                     reappearanceTimeInterval: metadata.interval
                 )
-            case .walletIntro:
-                announcement = walletIntro(reappearanceTimeInterval: metadata.interval)
             case .twoFA:
                 announcement = twoFA(data: preliminaryData, reappearanceTimeInterval: metadata.interval)
             case .backupFunds:
@@ -280,21 +279,6 @@ extension AnnouncementPresenter {
         )
     }
 
-    // Computes Wallet Intro card announcement
-    private func walletIntro(reappearanceTimeInterval: TimeInterval) -> Announcement {
-        WalletIntroAnnouncement(
-            reappearanceTimeInterval: reappearanceTimeInterval,
-            action: { [weak self] in
-                guard let self = self else { return }
-                self.hideAnnouncement()
-                self.tapControllerManagerProvider.tabControllerManager?.tabViewController.setupIntroduction()
-            },
-            dismiss: { [weak self] in
-                self?.hideAnnouncement()
-            }
-        )
-    }
-
     // Computes kyc airdrop announcement
     private func kycAirdrop(
         user: NabuUser,
@@ -311,12 +295,11 @@ extension AnnouncementPresenter {
             },
             action: { [weak self] in
                 guard let self = self else { return }
-                guard let tabControllerManager = self.tapControllerManagerProvider.tabControllerManager else { return }
                 let tier = user.tiers?.selected ?? .tier1
                 self.kycRouter.start(
                     tier: tier,
                     parentFlow: .airdrop,
-                    from: tabControllerManager.tabViewController
+                    from: self.tab
                 )
             }
         )
@@ -348,12 +331,11 @@ extension AnnouncementPresenter {
             },
             action: { [weak self] in
                 guard let self = self else { return }
-                guard let tabControllerManager = self.tapControllerManagerProvider.tabControllerManager else { return }
                 let tier = user.tiers?.selected ?? .tier1
                 self.kycRouter.start(
                     tier: tier,
                     parentFlow: .announcement,
-                    from: tabControllerManager.tabViewController
+                    from: self.tab
                 )
             }
         )
@@ -606,12 +588,11 @@ extension AnnouncementPresenter {
             },
             action: { [weak self] in
                 guard let self = self else { return }
-                guard let tabControllerManager = self.tapControllerManagerProvider.tabControllerManager else { return }
                 let tier = user.tiers?.selected ?? .tier1
                 self.kycRouter.start(
                     tier: tier,
                     parentFlow: .announcement,
-                    from: tabControllerManager.tabViewController
+                    from: self.tab
                 )
             }
         )
@@ -623,12 +604,11 @@ extension AnnouncementPresenter {
             needsDocumentResubmission: user.needsDocumentResubmission?.reason == 1,
             action: { [weak self] in
                 guard let self = self else { return }
-                guard let tabControllerManager = self.tapControllerManagerProvider.tabControllerManager else { return }
                 let tier = user.tiers?.selected ?? .tier1
                 self.kycRouter.start(
                     tier: tier,
                     parentFlow: .announcement,
-                    from: tabControllerManager.tabViewController
+                    from: self.tab
                 )
             }
         )

@@ -21,7 +21,7 @@ struct PrimaryNavigationExamples: View {
             Spacer()
         }
         .primaryNavigation(title: "Navigation") {
-            IconButton(icon: .qRCode) {}
+            IconButton(icon: .qrCode) {}
 
             IconButton(icon: .user) {}
         }
@@ -38,7 +38,7 @@ struct PrimaryNavigationExamples_Previews: PreviewProvider {
         PrimaryNavigationView {
             PrimaryNavigationExamples()
         }
-        .environment(\.navigationUsesCircledBackButton, false)
-        .previewDisplayName("Exchange")
+        .environment(\.navigationBackButtonColor, .semantic.gold)
+        .previewDisplayName("Custom Back button Color")
     }
 }

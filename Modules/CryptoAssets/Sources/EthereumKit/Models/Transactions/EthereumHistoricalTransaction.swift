@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import BigInt
+import MoneyKit
 import PlatformKit
 
 public enum EthereumTransactionState: String, CaseIterable, Codable {
@@ -57,7 +58,7 @@ public struct EthereumHistoricalTransaction {
         response: EthereumHistoricalTransactionResponse,
         note: String? = nil,
         accountAddress: String,
-        latestBlock: Int
+        latestBlock: BigInt
     ) {
         identifier = response.hash
         fromAddress = EthereumAddress(address: response.from)!
@@ -100,19 +101,31 @@ public struct EthereumHistoricalTransaction {
     }
 
     private static func fee(gasPrice: String, gasUsed: String?) -> CryptoValue {
+        let ethereum = CryptoCurrency.coin(.ethereum)
         guard let gasUsed = gasUsed else {
-            return .zero(currency: .coin(.ethereum))
+            return .zero(currency: ethereum)
         }
-        let fee = BigInt(stringLiteral: gasPrice) * BigInt(stringLiteral: gasUsed)
-        return CryptoValue.create(minor: fee, currency: .coin(.ethereum))
+        guard let gasPrice = BigInt(gasPrice),
+              let gasUsed = BigInt(gasUsed)
+        else {
+            return .zero(currency: ethereum)
+        }
+        return CryptoValue
+            .create(
+                minor: gasPrice * gasUsed,
+                currency: ethereum
+            )
     }
 
-    private static func confirmations(latestBlock: Int, blockNumber: String?) -> Int {
-        guard let blockNumber: Int = blockNumber.flatMap({ Int($0) }) else {
-            return 0
-        }
-        let confirmations = (latestBlock - blockNumber) + 1
-        return max(0, confirmations)
+    private static func confirmations(latestBlock: BigInt, blockNumber: String?) -> Int {
+        blockNumber
+            .flatMap { BigInt($0) }
+            .flatMap { blockNumber in
+                let difference = (latestBlock - blockNumber) + 1
+                let confirmations = max(difference, 0)
+                return Int(confirmations)
+            }
+            ?? 0
     }
 }
 

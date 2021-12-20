@@ -5,6 +5,7 @@ import Combine
 import ComposableArchitecture
 import DIKit
 import ERC20Kit
+import FeatureAppDomain
 import FeatureAuthenticationDomain
 import FeatureAuthenticationUI
 import FeatureSettingsDomain
@@ -100,6 +101,7 @@ public enum CoreAppAction: Equatable {
     // Nabu Account Operations
     case resetVerificationStatusIfNeeded(guid: String?, sharedKey: String?)
     case recoverUser(guid: String, sharedKey: String, userId: String, recoveryToken: String)
+    case setInitialResidentialAddress(country: String, state: String?)
 
     // Mobile Auth Sync
     case mobileAuthSync(isLogin: Bool)
@@ -115,6 +117,7 @@ struct CoreAppEnvironment {
     var mobileAuthSyncService: MobileAuthSyncServiceAPI
     var resetPasswordService: ResetPasswordServiceAPI
     var accountRecoveryService: AccountRecoveryServiceAPI
+    var userService: NabuUserServiceAPI
     var deviceVerificationService: DeviceVerificationServiceAPI
     var featureFlagsService: FeatureFlagsServiceAPI
     var appFeatureConfigurator: FeatureConfiguratorAPI
@@ -133,6 +136,7 @@ struct CoreAppEnvironment {
     var onboardingSettings: OnboardingSettingsAPI
     var mainQueue: AnySchedulerOf<DispatchQueue>
     var appStoreOpener: AppStoreOpening
+    var walletService: WalletService
     var buildVersionProvider: () -> String
 }
 
@@ -295,21 +299,43 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
 
     case .fetchWallet(let password):
         environment.loadingViewPresenter.showCircular()
-        // As much as I (Dimitris) hate delay-ing work this is one of those method
-        // that I'm going to make an exception, mainly because it's going to be replaced soon.
-        // This is to give a change for the circular loader to appear before
-        // we call `fetch(with: _password_)` which will call the evil that is JS.
-        return .merge(
-            Effect(value: .doFetchWallet(password: password))
-                .delay(for: .milliseconds(200), scheduler: environment.mainQueue)
-                .eraseToEffect()
-                .cancellable(id: WalletCancelations.FetchId(), cancelInFlight: true),
-            Effect(value: .authenticate)
-        )
+        return nativeWalletFlagEnabled()
+            .flatMap { nativeWalletEnabled -> Effect<CoreAppAction, Never> in
+                guard nativeWalletEnabled else {
+                    // As much as I (Dimitris) hate delay-ing work this is one of those method
+                    // that I'm going to make an exception, mainly because it's going to be replaced soon.
+                    // This is to give a change for the circular loader to appear before
+                    // we call `fetch(with: _password_)` which will call the evil that is JS.
+                    return .merge(
+                        Effect(value: .doFetchWallet(password: password))
+                            .delay(for: .milliseconds(200), scheduler: environment.mainQueue)
+                            .eraseToEffect()
+                            .cancellable(id: WalletCancelations.FetchId(), cancelInFlight: true),
+                        Effect(value: .authenticate)
+                    )
+                }
+                return Effect(value: .doFetchWallet(password: password))
+            }
+            .eraseToEffect()
 
     case .doFetchWallet(let password):
-        environment.walletManager.fetch(with: password)
-        return .cancel(id: WalletCancelations.FetchId())
+        let walletManager = environment.walletManager
+        let walletService = environment.walletService
+        let mainQueue = environment.mainQueue
+        return nativeWalletFlagEnabled()
+            .flatMap { nativeWalletEnabled -> Effect<CoreAppAction, Never> in
+                guard nativeWalletEnabled else {
+                    walletManager.fetch(with: password)
+                    return .cancel(id: WalletCancelations.FetchId())
+                }
+                // Runs the native wallet fetching
+                return walletService.fetch(password)
+                    .receive(on: mainQueue)
+                    .catchToEffect()
+                    .cancellable(id: WalletCancelations.FetchId(), cancelInFlight: true)
+                    .map { _ in CoreAppAction.walletInitialized }
+            }
+            .eraseToEffect()
 
     case .authenticate:
         return .merge(
@@ -380,7 +406,7 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
             state.onboarding?.displayAlert = .walletAuthentication(error)
             return .cancel(id: WalletCancelations.AuthenticationId())
         }
-        if state.onboarding?.welcomeState?.screenFlow == .manualLoginScreen {
+        if state.onboarding?.welcomeState?.manualCredentialsState != nil {
             return .merge(
                 .cancel(id: WalletCancelations.AuthenticationId()),
                 Effect(
@@ -464,7 +490,6 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
         }
         // decide if we need to set a pin or not
         guard environment.blockchainSettings.isPinSet else {
-            state.onboarding?.hideLegacyScreenIfNeeded()
             guard state.onboarding?.welcomeState != nil else {
                 return .merge(
                     .cancel(id: WalletCancelations.AuthenticationId()),
@@ -473,7 +498,7 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
             }
             return .merge(
                 .cancel(id: WalletCancelations.AuthenticationId()),
-                Effect(value: .onboarding(.welcomeScreen(.presentScreenFlow(.welcomeScreen)))),
+                Effect(value: .onboarding(.welcomeScreen(.dismiss()))),
                 Effect(value: .setupPin)
             )
         }
@@ -596,12 +621,29 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
         return .none
 
     case .createWallet(let email, let password):
+        let createState = state.onboarding?.welcomeState?.createWalletState
+        func setInitialAddressEffect() -> Effect<CoreAppAction, Never> {
+            guard let createState = createState else {
+                return .none
+            }
+            let country = createState.country.id.description
+            let state = createState.countryState?.id.description
+            return Effect(value: .setInitialResidentialAddress(country: country, state: state))
+        }
+
         environment.loadingViewPresenter.showCircular()
         environment.walletManager.loadWalletJS()
         environment.walletManager.newWallet(password: password, email: email)
-        return .merge(
-            Effect(value: .create),
-            Effect(value: .authenticate)
+
+        // Setting country and state requires us to have an authenticated user, so:
+        return .concatenate(
+            // Step 1: create a wallet and authenticate the user to ensure we have an authenticated user
+            .merge(
+                Effect(value: .create),
+                Effect(value: .authenticate)
+            ),
+            // Step 2: update the user info with country and state
+            setInitialAddressEffect()
         )
 
     case .create:
@@ -808,10 +850,6 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
          .onboarding(.welcomeScreen(.restoreWallet(.resetPassword(.reset(let password))))):
         return Effect(value: .resetPassword(newPassword: password))
 
-    case .onboarding(.welcomeScreen(.presentScreenFlow(.createWalletScreen))):
-        // send `authenticate` action so that we can listen for wallet creation
-        return Effect(value: .authenticate)
-
     case .onboarding(.createAccountScreenClosed):
         // cancel any authentication publishers in case the create wallet is closed
         environment.loadingViewPresenter.hide()
@@ -838,6 +876,11 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
     case .onboarding(.pin(.pinCreated)):
         return Effect(
             value: .initializeWallet
+        )
+
+    case .onboarding(.welcomeScreen(.requestedToCreateWallet(let email, let password))):
+        return Effect(
+            value: .createWallet(email: email, newPassword: password)
         )
 
     case .onboarding(.welcomeScreen(.requestedToDecryptWallet(let password))):
@@ -978,6 +1021,20 @@ let mainAppReducerCore = Reducer<CoreAppState, CoreAppAction, CoreAppEnvironment
                 )
                 return .none
             }
+
+    case .setInitialResidentialAddress(let country, let state):
+        // I wanted to use `.fireAndForget` for this, but the call returns a `Publisher`, so it makes sense to convert it to an `Effect`.
+        // Otherwise, we'd have to sink and store the cancellable in a set we don't have here, nor want to have.
+        return environment.userService.setInitialResidentialInfo(
+            country: country,
+            state: state
+        )
+        // we don't care about the result, we have nothing to do with it here
+        .map(CoreAppAction.none)
+        // we also don't care about failures as users will be asked about country and state during KYC if we don't have that info yet
+        .ignoreFailure()
+        .receive(on: environment.mainQueue)
+        .eraseToEffect()
 
     case .mobileAuthSync(let isLogin):
         return .merge(

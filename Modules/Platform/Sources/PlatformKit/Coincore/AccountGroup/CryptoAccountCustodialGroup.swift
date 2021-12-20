@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Localization
+import MoneyKit
 import RxSwift
 
 /// An `AccountGroup` containing only Custodial accounts.

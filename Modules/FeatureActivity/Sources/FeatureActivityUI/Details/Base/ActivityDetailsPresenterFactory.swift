@@ -2,6 +2,7 @@
 
 import DIKit
 import ERC20Kit
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay

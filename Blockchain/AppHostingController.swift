@@ -17,7 +17,7 @@ protocol LoggedInViewController: UIViewController, LoggedInBridge {
 }
 
 extension LoggedInHostingController: LoggedInViewController {}
-extension LoggedInRootViewController: LoggedInViewController {}
+extension RootViewController: LoggedInViewController {}
 
 /// Acts as the main controller for onboarding and logged in states
 final class AppHostingController: UIViewController {
@@ -109,10 +109,10 @@ final class AppHostingController: UIViewController {
                     self.onboardingController = nil
                 }
 
-                self.featureFlagsService.isEnabled(.local(.redesign))
+                self.featureFlagsService.isEnabled(.remote(.redesign))
                     .sink { isEnabled in
                         if isEnabled {
-                            load(LoggedInRootViewController(store: store))
+                            load(RootViewController(store: store))
                         } else {
                             load(LoggedInHostingController(store: store))
                         }
@@ -139,4 +139,15 @@ final class AppHostingController: UIViewController {
     private func showAlert(with content: AlertViewContent) {
         alertViewPresenter.notify(content: content, in: self)
     }
+}
+
+extension AppHostingController {
+
+    private var currentController: UIViewController? { loggedInController ?? onboardingController }
+
+    override public var childForStatusBarStyle: UIViewController? { currentController }
+    override public var childForStatusBarHidden: UIViewController? { currentController }
+    override public var childForHomeIndicatorAutoHidden: UIViewController? { currentController }
+    override public var childForScreenEdgesDeferringSystemGestures: UIViewController? { currentController }
+    override public var childViewControllerForPointerLock: UIViewController? { currentController }
 }

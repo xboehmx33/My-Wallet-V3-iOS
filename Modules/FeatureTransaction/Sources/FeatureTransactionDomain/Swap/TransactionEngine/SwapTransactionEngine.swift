@@ -2,6 +2,7 @@
 
 import BigInt
 import DIKit
+import MoneyKit
 import NabuNetworkError
 import PlatformKit
 import RxSwift
@@ -120,10 +121,6 @@ extension SwapTransactionEngine {
         validateAmount(pendingTransaction: pendingTransaction)
     }
 
-    func doPostExecute(transactionResult: TransactionResult) -> Completable {
-        target.onTxCompleted(transactionResult)
-    }
-
     func doBuildConfirmations(pendingTransaction: PendingTransaction) -> Single<PendingTransaction> {
         let quote = quotesEngine.getRate(direction: orderDirection, pair: pair)
             .take(1)
@@ -239,7 +236,8 @@ extension SwapTransactionEngine {
 
     var sourceExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
+            .displayCurrency
+            .asSingle()
             .flatMap { [currencyConversionService, sourceAsset] fiatCurrency -> Single<MoneyValuePair> in
                 currencyConversionService
                     .conversionRate(from: sourceAsset.currencyType, to: fiatCurrency.currencyType)
@@ -250,7 +248,8 @@ extension SwapTransactionEngine {
 
     private var destinationExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
+            .displayCurrency
+            .asSingle()
             .flatMap { [currencyConversionService, target] fiatCurrency -> Single<MoneyValuePair> in
                 currencyConversionService
                     .conversionRate(from: target.currencyType, to: fiatCurrency.currencyType)

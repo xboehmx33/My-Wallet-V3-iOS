@@ -18,6 +18,10 @@ struct IconsExamplesView: View {
                             .accentColor(.semantic.muted)
                             .frame(width: 24)
 
+                        icon.circle()
+                            .accentColor(.semantic.muted)
+                            .frame(width: 32)
+
                         Text(icon.name)
                             .typography(.caption2)
                     }

@@ -1,11 +1,14 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+import ToolKit
+
 struct PaymentAccountEUR: PaymentAccountDescribing, Equatable {
     var fields: [PaymentAccountProperty.Field] {
         [
             .bankName(bankName),
             .bankCountry(bankCountry),
-            .iban(iban),
+            .iban(iban.separatedWithSeparator(" ", stride: 4)),
             .bankCode(bankCode),
             .recipientName(recipientName)
         ]

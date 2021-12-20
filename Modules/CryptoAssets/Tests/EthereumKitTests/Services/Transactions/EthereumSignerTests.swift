@@ -3,49 +3,78 @@
 import BigInt
 @testable import EthereumKit
 @testable import EthereumKitMock
+import MoneyKit
 @testable import PlatformKit
 import XCTest
 
-class EthereumSignerTests: XCTestCase {
+final class EthereumSignerTests: XCTestCase {
+
+    private struct TestCase {
+        let rawTransaction: String
+        let to: EthereumAddress
+        let gasPrice: BigUInt
+        let gasLimit: BigUInt
+        let value: BigUInt
+        let nonce: BigUInt
+    }
 
     var subject: EthereumSigner!
-    var builder: EthereumTransactionBuilder!
+    private var signTransactionTestCases: [TestCase] {
+        [
+            TestCase(
+                // swiftlint:disable line_length
+                rawTransaction: "0xf86c0985028fa6ae0082520894353535353535353535353535353535353535353588016345785d8a00008026a0521f82fef48c80ca3245cc1d2be289f42f5119613fc1eea8c8e9e673d48c7b8ba017cfd25094a4f81e2c5f766e76686bc9270f22d24e8998fa1549d0c9a3d5f786",
+                to: EthereumAddress(address: MockEthereumWalletTestData.Transaction.to)!,
+                gasPrice: MockEthereumWalletTestData.Transaction.gasPrice,
+                gasLimit: MockEthereumWalletTestData.Transaction.gasLimit,
+                value: BigUInt(1e17),
+                nonce: 9
+            ),
+            TestCase(
+                // swiftlint:disable line_length
+                rawTransaction: "0xf867091782520894353535353535353535353535353535353535353588016345785d8a00008026a0b51971506a39c26b1c584df3c9ccc15fb1f890b023c5a5861b01d0d8e61b9249a00d29b3a0a38119ca1fe971d270b32a31bec2037466c2d506c194b7924996a3e1",
+                to: EthereumAddress(address: MockEthereumWalletTestData.Transaction.to)!,
+                gasPrice: 23,
+                gasLimit: MockEthereumWalletTestData.Transaction.gasLimit,
+                value: BigUInt(1e17),
+                nonce: 9
+            )
+        ]
+    }
 
     override func setUp() {
         super.setUp()
-        builder = EthereumTransactionBuilder()
         subject = EthereumSigner()
     }
 
     override func tearDown() {
         subject = nil
-        builder = nil
         super.tearDown()
     }
 
     func test_sign_transaction() throws {
-        let amount = BigUInt("0.1", decimals: CryptoCurrency.coin(.ethereum).precision)!
-        let toAddress = EthereumAddress(address: "0x3535353535353535353535353535353535353535")!
-        let keyPair = MockEthereumWalletTestData.keyPair
-        let candidate = EthereumTransactionCandidate(
-            to: toAddress,
-            gasPrice: MockEthereumWalletTestData.Transaction.gasPrice,
-            gasLimit: MockEthereumWalletTestData.Transaction.gasLimit,
-            value: amount,
-            data: Data(),
-            transferType: .transfer
-        )
-        guard case .success(let costed) = builder.build(transaction: candidate, nonce: 9) else {
-            XCTFail("Transaction building failed")
-            return
+        for testCase in signTransactionTestCases {
+            let candidate = EthereumTransactionCandidate(
+                to: testCase.to,
+                gasPrice: testCase.gasPrice,
+                gasLimit: testCase.gasLimit,
+                value: testCase.value,
+                transferType: .transfer()
+            )
+            guard case .success(let costed) = EthereumTransactionCandidateCosted.create(
+                transaction: candidate,
+                nonce: 9
+            ) else {
+                XCTFail("EthereumTransactionCandidateCosted failed: \(testCase.rawTransaction)")
+                break
+            }
+            guard case .success(let signed) = subject.sign(transaction: costed, keyPair: MockEthereumWalletTestData.keyPair) else {
+                XCTFail("EthereumSigner failed: \(testCase.rawTransaction)")
+                break
+            }
+            XCTAssertEqual(signed.encodedTransaction, Data(hexString: testCase.rawTransaction))
+            XCTAssertEqual(signed.rawTransaction, testCase.rawTransaction.lowercased())
         }
-        guard case .success(let signed) = subject.sign(transaction: costed, keyPair: keyPair) else {
-            XCTFail("Transaction signing failed")
-            return
-        }
-        // swiftlint:disable line_length
-        let rawTransaction = "0xf86c0985028fa6ae0082520894353535353535353535353535353535353535353588016345785d8a00008026a0521f82fef48c80ca3245cc1d2be289f42f5119613fc1eea8c8e9e673d48c7b8ba017cfd25094a4f81e2c5f766e76686bc9270f22d24e8998fa1549d0c9a3d5f786"
-        XCTAssertEqual(signed.encodedTransaction, Data(hexString: rawTransaction))
     }
 
     func test_personal_sign() throws {

@@ -12,30 +12,34 @@ class ValidationPickerField: ValidationTextField, UIPickerViewDataSource, UIPick
         let title: String
     }
 
-    lazy var pickerView: UIPickerView = {
+    private lazy var pickerView: UIPickerView = {
         var picker = UIPickerView()
         picker.sizeToFit()
         return picker
     }()
 
+    var onSelection: ((PickerItem?) -> Void)?
+
     var options: [PickerItem] = [] {
         didSet {
+            guard options != oldValue else {
+                return
+            }
             pickerView.reloadAllComponents()
         }
     }
 
     var selectedOption: PickerItem? {
-        get {
-            guard !options.isEmpty else {
-                return nil
+        didSet {
+            guard selectedOption != oldValue else {
+                return
             }
-            return options[pickerView.selectedRow(inComponent: 0)]
-        }
-        set {
-            if let newValue = newValue, let index = options.lastIndex(of: newValue) {
+            if let newValue = selectedOption, let index = options.lastIndex(of: newValue) {
                 pickerView.selectRow(index, inComponent: 0, animated: false)
                 pickerView.delegate?.pickerView?(pickerView, didSelectRow: index, inComponent: 0)
             }
+            text = selectedOption?.title
+            onSelection?(selectedOption)
         }
     }
 
@@ -45,7 +49,11 @@ class ValidationPickerField: ValidationTextField, UIPickerViewDataSource, UIPick
         pickerView.reloadAllComponents()
         textFieldInputView = pickerView
         validationBlock = { [weak self] _ in
-            self?.options.isEmpty == false && self?.selectedOption == nil ? .invalid(.invalidSelection) : .valid
+            guard let self = self else { return .invalid(.unknown) }
+            let hasValidData = !self.options.isEmpty && self.selectedOption != nil
+            let isOptional = self.optionalField
+            let isValid = hasValidData || isOptional
+            return isValid ? .valid : .invalid(.invalidSelection)
         }
     }
 
@@ -59,9 +67,14 @@ class ValidationPickerField: ValidationTextField, UIPickerViewDataSource, UIPick
     override func textFieldDidBeginEditing(_ textField: UITextField) {
         super.textFieldDidBeginEditing(textField)
         pickerView.isHidden = false
+        selectedOption = selectedOption ?? options.first
     }
 
-    override func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+    override func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
         false
     }
 
@@ -78,7 +91,7 @@ class ValidationPickerField: ValidationTextField, UIPickerViewDataSource, UIPick
     // UIPickerViewDelegate
 
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        text = options[row].title
+        selectedOption = options[row]
     }
 
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {

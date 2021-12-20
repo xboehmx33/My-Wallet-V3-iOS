@@ -2,6 +2,7 @@
 
 import Combine
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 
 final class NoOpInterestAccountBalanceRepository: InterestAccountBalanceRepositoryAPI {
@@ -9,5 +10,9 @@ final class NoOpInterestAccountBalanceRepository: InterestAccountBalanceReposito
         fiatCurrency: FiatCurrency
     ) -> AnyPublisher<InterestAccountBalances, InterestAccountBalanceRepositoryError> {
         Empty().eraseToAnyPublisher()
+    }
+
+    func invalidateAccountBalanceCacheWithKey(_ fiatCurrency: FiatCurrency) {
+        // no-op
     }
 }

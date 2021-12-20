@@ -2,6 +2,7 @@
 
 import ComposableArchitecture
 import Localization
+import MoneyKit
 import SwiftUI
 
 struct LivePricesView: View {

@@ -30,7 +30,7 @@ struct BorderRadiiExamplesView: View {
     @ViewBuilder func radiusView(for radius: CGFloat, name: String, title: String) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: radius)
-                .fill(Color.white)
+                .fill(Color.semantic.background)
 
             RoundedRectangle(cornerRadius: radius)
                 .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [5, 3]))
@@ -43,6 +43,7 @@ struct BorderRadiiExamplesView: View {
                 Text(title)
                     .typography(.body1)
             }
+            .foregroundColor(.semantic.title)
         }
         .frame(height: 188)
     }

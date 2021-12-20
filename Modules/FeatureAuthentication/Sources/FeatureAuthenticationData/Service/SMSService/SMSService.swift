@@ -7,47 +7,29 @@ import WalletPayloadKit
 
 public final class SMSService: SMSServiceAPI {
 
-    public typealias WalletRepositoryAPI = GuidRepositoryAPI & SessionTokenRepositoryAPI
-
     // MARK: - Properties
 
     private let client: SMSClientAPI
-    private let repository: WalletRepositoryAPI
-    private let walletRepo: WalletRepo
-    private let nativeWalletFlagEnabled: () -> AnyPublisher<Bool, Never>
+    private let credentialsRepository: CredentialsRepositoryAPI
+    private let sessionTokenRepository: SessionTokenRepositoryAPI
 
     public init(
         client: SMSClientAPI,
-        repository: WalletRepositoryAPI,
-        walletRepo: WalletRepo,
-        nativeWalletFlagEnabled: @escaping () -> AnyPublisher<Bool, Never>
+        credentialsRepository: CredentialsRepositoryAPI,
+        sessionTokenRepository: SessionTokenRepositoryAPI
     ) {
-        self.repository = repository
         self.client = client
-        self.walletRepo = walletRepo
-        self.nativeWalletFlagEnabled = nativeWalletFlagEnabled
+        self.credentialsRepository = credentialsRepository
+        self.sessionTokenRepository = sessionTokenRepository
     }
 
     // MARK: - API
 
     public func request() -> AnyPublisher<Void, SMSServiceError> {
-        let walletRepo = walletRepo
-        let repository = repository
-
-        let credentials = nativeWalletFlagEnabled()
-            .flatMap { isEnabled -> AnyPublisher<(guid: String?, sessionToken: String?), SMSServiceError> in
-                guard isEnabled else {
-                    return repository.guidPublisher
-                        .zip(repository.sessionTokenPublisher) { ($0, $1) }
-                        .mapError()
-                }
-                return walletRepo.credentials
-                    .map { ($0.guid, $0.sessionToken) }
-                    .mapError()
+        credentialsRepository.guid
+            .zip(sessionTokenRepository.sessionToken) {
+                (guid: $0, sessionToken: $1)
             }
-            .eraseToAnyPublisher()
-
-        return credentials
             .flatMap { credentials -> AnyPublisher<(guid: String, sessionToken: String), SMSServiceError> in
                 guard let guid = credentials.guid else {
                     return .failure(.missingCredentials(.guid))

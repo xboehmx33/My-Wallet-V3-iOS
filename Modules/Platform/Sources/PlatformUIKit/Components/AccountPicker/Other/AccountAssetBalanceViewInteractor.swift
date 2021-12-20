@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxRelay
 import RxSwift
@@ -47,7 +48,7 @@ public final class AccountAssetBalanceViewInteractor: AssetBalanceViewInteractin
     private lazy var setup: Void = {
         Observable
             .combineLatest(
-                fiatCurrencyService.fiatCurrencyObservable,
+                fiatCurrencyService.displayCurrencyPublisher.asObservable(),
                 refreshRelay.asObservable()
             )
             .map(\.0)

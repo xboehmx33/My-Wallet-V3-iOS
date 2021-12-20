@@ -2,6 +2,7 @@
 
 import ComposableArchitectureExtensions
 import Localization
+import MoneyKit
 import PlatformKit
 
 public enum DashboardAsset {

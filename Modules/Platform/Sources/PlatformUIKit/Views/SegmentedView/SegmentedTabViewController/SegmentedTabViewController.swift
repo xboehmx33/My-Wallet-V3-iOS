@@ -13,7 +13,7 @@ public final class SegmentedTabViewController: UITabBarController {
 
     // MARK: - Public Properties
 
-    let itemIndexSelectedRelay = PublishRelay<Int?>()
+    let itemIndexSelectedRelay = PublishRelay<(index: Int, animated: Bool)>()
 
     public var segmentedViewControllers: [SegmentedViewScreenViewController] {
         items.map(\.viewController)
@@ -43,13 +43,12 @@ public final class SegmentedTabViewController: UITabBarController {
 
         tabBar.isHidden = true
         itemIndexSelectedRelay
-            .compactMap { $0 }
-            .map(weak: self) { (self, index) -> UIViewController? in
-                self.viewControllers?[index]
+            .map(weak: self) { (self, value) in
+                (self.viewControllers?[value.index], value.animated)
             }
-            .compactMap { $0 }
-            .bindAndCatch(weak: self) { (self, viewController) in
-                self.setSelectedViewController(viewController, animated: true)
+            .bindAndCatch(weak: self) { (self, value) in
+                guard let vc = value.0 else { return }
+                self.setSelectedViewController(vc, animated: value.1)
             }
             .disposed(by: disposeBag)
     }

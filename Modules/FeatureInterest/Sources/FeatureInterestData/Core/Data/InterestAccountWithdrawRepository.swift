@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import FeatureInterestDomain
+import MoneyKit
 import NabuNetworkError
 import PlatformKit
 import ToolKit

@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 import ToolKit
 

@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// `MoneyValueBalancePairs` represents all the balances
 /// for a given asset type. There are multiple `BalanceTypes`.
 /// This allows for a total pairs that represents

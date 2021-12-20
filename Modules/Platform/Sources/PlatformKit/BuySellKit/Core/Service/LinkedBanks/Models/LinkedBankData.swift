@@ -2,6 +2,7 @@
 
 import FeatureOpenBankingDomain
 import Localization
+import MoneyKit
 
 public struct LinkedBankData {
     public enum Partner: String {

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import DIKit
 import PlatformKit
 import PlatformUIKit
 import UIKit
@@ -14,14 +15,17 @@ enum PaymentSecurityFlowResult {
 
 final class PaymentSecurityRouter {
 
+    private var stripeClient: StripeUIClientAPI
     private let routingInteractor: CardRouterInteractor
     private var cancellables = Set<AnyCancellable>()
 
     init(
         routingInteractor: CardRouterInteractor = .init(),
+        stripeClient: StripeUIClientAPI = resolve(),
         completion: @escaping (PaymentSecurityFlowResult) -> Void
     ) {
         self.routingInteractor = routingInteractor
+        self.stripeClient = stripeClient
         routingInteractor
             .cancellation
             .asPublisher()
@@ -58,9 +62,22 @@ final class PaymentSecurityRouter {
             interactor: interactor,
             data: authorizationData
         )
-        let viewController = CardAuthorizationScreenViewController(
-            presenter: presenter
-        )
-        presentingVC.present(viewController, animated: true, completion: nil)
+
+        guard case .required(let params) = authorizationData.state else {
+            presenter.redirect()
+            return
+        }
+
+        switch params.cardAcquirer {
+        case .stripe:
+            stripeClient.confirmPayment(authorizationData, with: presenter)
+        case .everyPay, .checkout:
+            let viewController = CardAuthorizationScreenViewController(
+                presenter: presenter
+            )
+            presentingVC.present(viewController, animated: true, completion: nil)
+        case .unknown:
+            presenter.redirect()
+        }
     }
 }

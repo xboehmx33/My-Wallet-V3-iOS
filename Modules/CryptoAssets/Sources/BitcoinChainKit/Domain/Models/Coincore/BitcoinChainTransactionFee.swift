@@ -2,6 +2,7 @@
 
 import BigInt
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 
@@ -14,22 +15,16 @@ public struct BitcoinChainTransactionFee<Token: BitcoinChainToken>: TransactionF
         switch Token.coin {
         case .bitcoin:
             return BitcoinChainTransactionFee<Token>(
-                limits: BitcoinChainTransactionFee.defaultLimits, regular: 5, priority: 11
+                regular: 5, priority: 11
             )
         case .bitcoinCash:
             return BitcoinChainTransactionFee<Token>(
-                limits: BitcoinChainTransactionFee.defaultLimits,
                 regular: 5,
                 priority: 11
             )
         }
     }
 
-    public static var defaultLimits: TransactionFeeLimits {
-        TransactionFeeLimits(min: 2, max: 16)
-    }
-
-    public var limits: TransactionFeeLimits
     public var regular: CryptoValue
     public var priority: CryptoValue
 
@@ -47,16 +42,13 @@ public struct BitcoinChainTransactionFee<Token: BitcoinChainToken>: TransactionF
         case .bitcoin:
             regular = CryptoValue(amount: BigInt(regularFee), currency: .coin(.bitcoin))
             priority = CryptoValue(amount: BigInt(priorityFee), currency: .coin(.bitcoin))
-            limits = try values.decode(TransactionFeeLimits.self, forKey: .limits)
         case .bitcoinCash:
             regular = CryptoValue(amount: BigInt(regularFee), currency: .coin(.bitcoinCash))
             priority = CryptoValue(amount: BigInt(priorityFee), currency: .coin(.bitcoinCash))
-            limits = try values.decode(TransactionFeeLimits.self, forKey: .limits)
         }
     }
 
-    init(limits: TransactionFeeLimits, regular: Int, priority: Int) {
-        self.limits = limits
+    init(regular: Int, priority: Int) {
         switch Token.coin {
         case .bitcoin:
             self.regular = CryptoValue(amount: BigInt(regular), currency: .coin(.bitcoin))

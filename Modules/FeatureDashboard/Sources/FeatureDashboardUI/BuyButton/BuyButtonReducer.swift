@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import PlatformKit
+import MoneyKit
 
 let buyButtonReducer = Reducer<
     BuyButtonState,

@@ -7,12 +7,19 @@ import ToolKit
 
 public enum NabuUserServiceError: Error {
     case failedToFetchUser(NabuNetworkError)
+    case failedToSetAddress(NabuNetworkError)
 }
 
 public protocol NabuUserServiceAPI: AnyObject {
+
     var user: AnyPublisher<NabuUser, NabuUserServiceError> { get }
 
     func fetchUser() -> AnyPublisher<NabuUser, NabuUserServiceError>
+
+    func setInitialResidentialInfo(
+        country: String,
+        state: String?
+    ) -> AnyPublisher<Void, NabuUserServiceError>
 }
 
 final class NabuUserService: NabuUserServiceAPI {
@@ -73,5 +80,15 @@ final class NabuUserService: NabuUserServiceAPI {
     func fetchUser() -> AnyPublisher<NabuUser, NabuUserServiceError> {
         cachedValue
             .get(key: Key(), forceFetch: true)
+    }
+
+    func setInitialResidentialInfo(
+        country: String,
+        state: String?
+    ) -> AnyPublisher<Void, NabuUserServiceError> {
+        client
+            .setInitialResidentialInfo(country: country, state: state)
+            .mapError(NabuUserServiceError.failedToSetAddress)
+            .eraseToAnyPublisher()
     }
 }

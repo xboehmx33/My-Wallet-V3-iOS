@@ -1,12 +1,15 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import AnalyticsKit
 import Combine
 import DIKit
 import FeatureQRCodeScannerData
 import FeatureQRCodeScannerDomain
+import FeatureWalletConnectDomain
 import Localization
 import PlatformKit
 import PlatformUIKit
+import ToolKit
 
 protocol QRCodeScannerViewModelProtocol: AnyObject {
     var scanningStarted: (() -> Void)? { get set }
@@ -58,6 +61,7 @@ final class QRCodeScannerViewModel: QRCodeScannerViewModelProtocol {
     private let cryptoTargetParser: CryptoTargetQRCodeParser
     private let deepLinkParser: DeepLinkQRCodeParser
     private let secureChannelParser: SecureChannelQRCodeParser
+    private let walletConnectParser: WalletConnectQRCodeParser
     private let parsingSubject = CurrentValueSubject<Bool, Never>(false)
     private var cancellables = [AnyCancellable]()
 
@@ -70,7 +74,10 @@ final class QRCodeScannerViewModel: QRCodeScannerViewModelProtocol {
         deepLinkHandler: DeepLinkHandling = resolve(),
         deepLinkRouter: DeepLinkRouting = resolve(),
         secureChannelService: SecureChannelAPI = resolve(),
-        adapter: CryptoTargetQRCodeParserAdapter = resolve()
+        adapter: CryptoTargetQRCodeParserAdapter = resolve(),
+        featureFlagsService: FeatureFlagsServiceAPI = resolve(),
+        walletConnectSessionRepository: SessionRepositoryAPI = resolve(),
+        analyticsEventRecorder: AnalyticsEventRecorderAPI = resolve()
     ) {
         let additionalLinkRoutes: [DeepLinkRoute]
         switch additionalParsingOptions {
@@ -100,11 +107,26 @@ final class QRCodeScannerViewModel: QRCodeScannerViewModelProtocol {
         )
         deepLinkParser = DeepLinkQRCodeParser(deepLinkQRCodeRouter: deepLinkQRCodeRouter)
         secureChannelParser = SecureChannelQRCodeParser(secureChannelService: secureChannelService)
+        walletConnectParser = WalletConnectQRCodeParser()
 
         self.types = types
         self.scanner = scanner
         self.completed = completed
-        overlayViewModel = .init(supportsCameraRoll: supportsCameraRoll, titleText: LocalizationConstants.scanQRCode)
+        overlayViewModel = QRCodeScannerOverlayViewModel(
+            supportsCameraRoll: supportsCameraRoll,
+            titleText: LocalizationConstants.scanQRCode,
+            walletConnectSessionRepository: walletConnectSessionRepository,
+            featureFlagsService: featureFlagsService,
+            analyticsEventRecorder: analyticsEventRecorder
+        )
+
+        /// List of parsers in the correct priority.
+        let parsers: [QRCodeScannerParsing] = [
+            walletConnectParser,
+            secureChannelParser,
+            cryptoTargetParser,
+            deepLinkParser
+        ]
 
         scanner.qrCodePublisher
             .withLatestFrom(parsingSubject.eraseToAnyPublisher()) { ($0, !$1) }
@@ -112,31 +134,29 @@ final class QRCodeScannerViewModel: QRCodeScannerViewModelProtocol {
             .handleEvents(receiveOutput: { [weak self] _ in
                 self?.parsingSubject.send(true)
             })
-            .map { [weak self] scanResult, _ -> [AnyPublisher<QRCodeScannerResultType?, Never>]? in
-                guard let self = self else { return nil }
-                return [
-                    self.cryptoTargetParser.parse(scanResult: scanResult)
+            .map { scanResult, _ -> [AnyPublisher<QRCodeScannerResultType?, Never>] in
+                parsers.map {
+                    $0.parse(scanResult: scanResult)
                         .optional()
                         .replaceError(with: nil)
-                        .eraseToAnyPublisher(),
-                    self.secureChannelParser.parse(scanResult: scanResult)
-                        .optional()
-                        .replaceError(with: nil)
-                        .eraseToAnyPublisher()
-                ]
-            }
-            .flatMap { results -> AnyPublisher<QRCodeScannerResultType?, Never> in
-                if let results = results {
-                    return results
-                        .zip()
-                        .map { result in result.compactMap { $0 }.first }
                         .eraseToAnyPublisher()
                 }
-                return AnyPublisher.just(nil)
+            }
+            .flatMap { results -> AnyPublisher<QRCodeScannerResultType?, Never> in
+                results
+                    .zip()
+                    .map { result in
+                        result
+                            .compactMap { $0 }
+                            .first
+                    }
+                    .eraseToAnyPublisher()
             }
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] result in
-                guard let self = self else { return }
+                guard let self = self else {
+                    return
+                }
                 if let result = result {
                     self.scanComplete?(.success(result))
                 } else {
@@ -150,8 +170,10 @@ final class QRCodeScannerViewModel: QRCodeScannerViewModelProtocol {
         parsingSubject
             .eraseToAnyPublisher()
             .dropFirst()
-            .sink { [weak self] in
-                guard !$0 else { return }
+            .sink { [weak self] parsingSubject in
+                guard !parsingSubject else {
+                    return
+                }
                 self?.scanner.restartScanning()
             }
             .store(in: &cancellables)

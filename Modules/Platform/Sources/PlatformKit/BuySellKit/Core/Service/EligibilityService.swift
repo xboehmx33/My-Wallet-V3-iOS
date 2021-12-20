@@ -3,6 +3,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import RxRelay
 import RxSwift
 import RxToolKit
@@ -50,7 +51,8 @@ final class EligibilityService: EligibilityServiceAPI {
         isEligibileValue.setFetch(weak: self) { (self) in
             self.reactiveWallet.waitUntilInitializedSingle
                 .flatMap(weak: self) { (self, _) -> Single<Eligibility> in
-                    self.fiatCurrencyService.fiatCurrency
+                    self.fiatCurrencyService.displayCurrency
+                        .asSingle()
                         .flatMap { currency -> Single<Eligibility> in
                             self.client.isEligible(
                                 for: currency.code,

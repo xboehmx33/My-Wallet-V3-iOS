@@ -38,7 +38,7 @@ class AccountPickerViewTests: XCTestCase {
         bchTradingWalletIdentifier: "0.00004829 BCH"
     ]
 
-    lazy var accountPickerRowList: IdentifiedArrayOf<AccountPickerRow> = [
+    lazy var accountPickerRowList: [AccountPickerRow] = [
         .accountGroup(
             AccountPickerRow.AccountGroup(
                 id: allIdentifier,
@@ -89,7 +89,7 @@ class AccountPickerViewTests: XCTestCase {
         )
     ]
 
-    let header = Header.normal(
+    let header = HeaderStyle.normal(
         title: "Send Crypto Now",
         subtitle: "Choose a Wallet to send cypto from.",
         image: ImageAsset.iconSend.image,
@@ -101,8 +101,8 @@ class AccountPickerViewTests: XCTestCase {
         let view = AccountPickerView(
             store: Store(
                 initialState: AccountPickerState(
-                    rows: .loaded(next: .success(accountPickerRowList)),
-                    header: header,
+                    rows: .loaded(next: .success(Rows(content: accountPickerRowList))),
+                    header: .init(headerStyle: header, searchText: nil),
                     fiatBalances: fiatBalances,
                     cryptoBalances: cryptoBalances,
                     currencyCodes: currencyCodes
@@ -114,14 +114,15 @@ class AccountPickerViewTests: XCTestCase {
                     closeButtonTapped: {},
                     search: { _ in },
                     sections: { .just([]).eraseToAnyPublisher() },
-                    updateSingleAccount: { _ in nil },
-                    updateAccountGroup: { _ in nil },
+                    updateSingleAccounts: { _ in .just([:]) },
+                    updateAccountGroups: { _ in .just([:]) },
                     header: { [unowned self] in .just(header).eraseToAnyPublisher() }
                 )
             ),
-            badgeView: { _ in AnyView(EmptyView()) },
-            iconView: { _ in AnyView(EmptyView()) },
-            multiBadgeView: { _ in AnyView(EmptyView()) }
+            badgeView: { _ in EmptyView() },
+            iconView: { _ in EmptyView() },
+            multiBadgeView: { _ in EmptyView() },
+            withdrawalLocksView: { EmptyView() }
         )
 
         assertSnapshot(matching: view, as: .image(layout: .device(config: .iPhone8)))

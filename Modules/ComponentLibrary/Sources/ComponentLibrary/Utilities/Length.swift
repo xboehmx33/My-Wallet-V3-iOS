@@ -371,7 +371,7 @@ extension HStack {
         alignment: VerticalAlignment = .center,
         spacing: Length,
         in parent: CGRect? = nil,
-        content: () -> Content
+        @ViewBuilder content: () -> Content
     ) {
         self.init(
             alignment: alignment,
@@ -387,7 +387,7 @@ extension VStack {
         alignment: HorizontalAlignment = .center,
         spacing: Length,
         in parent: CGRect? = nil,
-        content: () -> Content
+        @ViewBuilder content: () -> Content
     ) {
         self.init(
             alignment: alignment,

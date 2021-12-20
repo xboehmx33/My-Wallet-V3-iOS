@@ -5,6 +5,8 @@
 import ERC20Kit
 @testable import ERC20KitMock
 import EthereumKit
+import MoneyKit
+@testable import MoneyKitMock
 import PlatformKit
 @testable import PlatformKitMock
 import TestKit

@@ -3,6 +3,7 @@
 //  Copyright © 2021 Blockchain Luxembourg S.A. All rights reserved.
 //
 
+import MoneyKit
 import PlatformKit
 
 public protocol WithdrawalRouting {

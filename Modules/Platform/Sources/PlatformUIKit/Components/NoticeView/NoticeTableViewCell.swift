@@ -1,5 +1,9 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import SwiftUI
+import UIComponentsKit
+import UIKit
+
 public final class NoticeTableViewCell: UITableViewCell {
 
     // MARK: - Properties
@@ -48,3 +52,45 @@ public final class NoticeTableViewCell: UITableViewCell {
         viewModel = nil
     }
 }
+
+// MARK: SwiftUI Preview
+
+#if DEBUG
+struct NoticeTableViewCellContainer: UIViewRepresentable {
+    typealias UIViewType = NoticeTableViewCell
+
+    func makeUIView(context: Context) -> UIViewType {
+        let view = NoticeTableViewCell()
+        let image = ImageViewContent(
+            imageResource: .local(name: "icon-disclosure-down-small", bundle: .platformUIKit)
+        )
+        view.viewModel = NoticeViewModel(
+            imageViewContent: image,
+            imageViewSize: .edge(40),
+            labelContents: [
+                LabelContent(
+                    text: "UniSwap Dapp",
+                    font: .main(.semibold, 16),
+                    color: .darkTitleText
+                ),
+                LabelContent(
+                    text: "https://app.uniswap.org",
+                    font: .main(.medium, 12),
+                    color: .descriptionText
+                )
+            ],
+            verticalAlignment: .center
+        )
+        return view
+    }
+
+    func updateUIView(_ uiView: UIViewType, context: Context) {}
+}
+
+struct NoticeTableViewCellContainer_Previews: PreviewProvider {
+    static var previews: some View {
+        NoticeTableViewCellContainer()
+            .previewLayout(.fixed(width: 375, height: 100))
+    }
+}
+#endif

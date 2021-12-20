@@ -2,9 +2,15 @@
 
 import Combine
 import PlatformKit
+import ToolKit
 
 class NoOpKYCVerificationService: KYCVerificationServiceAPI {
+
     var isKYCVerified: AnyPublisher<Bool, Never> {
-        Empty().eraseToAnyPublisher()
+        .empty()
+    }
+
+    var canPurchaseCrypto: AnyPublisher<Bool, Never> {
+        .empty()
     }
 }

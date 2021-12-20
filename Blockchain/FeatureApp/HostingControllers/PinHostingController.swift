@@ -13,6 +13,10 @@ final class PinHostingController: UIViewController {
 
     private var cancellables: Set<AnyCancellable> = []
 
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        .lightContent
+    }
+
     private var pinRouter: PinRouter?
 
     init(store: Store<PinCore.State, PinCore.Action>) {

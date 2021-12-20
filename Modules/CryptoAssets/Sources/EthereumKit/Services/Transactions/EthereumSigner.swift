@@ -15,7 +15,7 @@ protocol EthereumSignerAPI {
     func sign(
         transaction: EthereumTransactionCandidateCosted,
         keyPair: EthereumKeyPair
-    ) -> Result<EthereumTransactionCandidateSigned, EthereumSignerError>
+    ) -> Result<EthereumTransactionEncoded, EthereumSignerError>
 
     /// The sign method calculates an Ethereum specific signature with: sign(keccak256("\x19Ethereum Signed Message:\n" + len(message) + message))).
     /// Used for `eth_sign` and `personal_sign` WalletConnect methods.
@@ -35,11 +35,11 @@ final class EthereumSigner: EthereumSignerAPI {
     func sign(
         transaction: EthereumTransactionCandidateCosted,
         keyPair: EthereumKeyPair
-    ) -> Result<EthereumTransactionCandidateSigned, EthereumSignerError> {
+    ) -> Result<EthereumTransactionEncoded, EthereumSignerError> {
         var input = transaction.transaction
         input.privateKey = keyPair.privateKey.data
         let output: EthereumSigningOutput = AnySigner.sign(input: input, coin: .ethereum)
-        let signed = EthereumTransactionCandidateSigned(transaction: output)
+        let signed = EthereumTransactionEncoded(transaction: output)
         return .success(signed)
     }
 

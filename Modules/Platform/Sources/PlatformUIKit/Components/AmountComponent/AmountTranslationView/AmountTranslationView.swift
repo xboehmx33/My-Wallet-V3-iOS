@@ -247,7 +247,7 @@ public final class AmountTranslationView: UIView, AmountViewable {
         case .showSecondaryAmountLabel:
             auxiliaryButton.viewModel = nil
             limitButtonVisibility = .hidden
-            textColor = fiatAmountLabelView.textColor
+            textColor = .validInput
         case .empty:
             auxiliaryButton.viewModel = nil
             limitButtonVisibility = .hidden

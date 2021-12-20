@@ -30,16 +30,16 @@
                         </constraints>
                     </view>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Add a Card" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eQg-kC-6xG">
-                        <rect key="frame" x="60" y="16" width="314" height="65"/>
+                        <rect key="frame" x="60" y="16" width="310" height="65"/>
                         <fontDescription key="fontDescription" name="Inter-Medium" family="Inter" pointSize="16"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.0" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Icon-Add-Circle" translatesAutoresizingMaskIntoConstraints="NO" id="mga-It-Qo3">
-                        <rect key="frame" x="378" y="38.5" width="20" height="20"/>
+                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.0" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Icon-Add-Circle" translatesAutoresizingMaskIntoConstraints="NO" id="mga-It-Qo3">
+                        <rect key="frame" x="374" y="36.5" width="24" height="24"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="20" id="KQo-7z-3oQ"/>
-                            <constraint firstAttribute="height" constant="20" id="UPI-JI-Mzx"/>
+                            <constraint firstAttribute="width" constant="24" id="KQo-7z-3oQ"/>
+                            <constraint firstAttribute="height" constant="24" id="UPI-JI-Mzx"/>
                         </constraints>
                     </imageView>
                 </subviews>

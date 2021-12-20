@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import RxToolKit
@@ -19,8 +20,7 @@ public final class InterestWithdrawTradingTransationEngine: InterestTransactionE
 
     public let walletCurrencyService: FiatCurrencyServiceAPI
     public let currencyConversionService: CurrencyConversionServiceAPI
-
-    public var askForRefreshConfirmation: (AskForRefreshConfirmation)!
+    public var askForRefreshConfirmation: AskForRefreshConfirmation!
     public var sourceAccount: BlockchainAccount!
     public var transactionTarget: TransactionTarget!
 
@@ -47,15 +47,15 @@ public final class InterestWithdrawTradingTransationEngine: InterestTransactionE
 
     private var interestAccountLimits: Single<InterestAccountLimits> {
         walletCurrencyService
-            .fiatCurrency
+            .displayCurrency
             .flatMap { [accountLimitsRepository, sourceAsset] fiatCurrency in
                 accountLimitsRepository
                     .fetchInterestAccountLimitsForCryptoCurrency(
                         sourceAsset.cryptoCurrency!,
                         fiatCurrency: fiatCurrency
                     )
-                    .asSingle()
             }
+            .asSingle()
     }
 
     private let feeCache: CachedValue<CustodialTransferFee>
@@ -105,7 +105,8 @@ public final class InterestWithdrawTradingTransationEngine: InterestTransactionE
     {
         Single.zip(
             walletCurrencyService
-                .fiatCurrency,
+                .displayCurrency
+                .asSingle(),
             fee,
             availableBalance,
             minimumLimit,

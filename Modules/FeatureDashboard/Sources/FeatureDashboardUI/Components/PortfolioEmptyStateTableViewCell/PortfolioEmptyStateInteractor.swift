@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Foundation
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxCocoa

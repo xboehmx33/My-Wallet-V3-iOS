@@ -2,13 +2,11 @@
 
 import Combine
 import FeatureAuthenticationDomain
-import RxSwift
 import WalletPayloadKit
 
 final class PasswordRepository: PasswordRepositoryAPI {
-    let password: Single<String?>
-    let hasPasswordPublisher: AnyPublisher<Bool, Never>
-    let passwordPublisher: AnyPublisher<String?, Never>
+    let hasPassword: AnyPublisher<Bool, Never>
+    let password: AnyPublisher<String?, Never>
 
     // This is set to the older WalletRepository API, soon to be removed
     private let walletRepository: WalletRepositoryAPI
@@ -25,21 +23,9 @@ final class PasswordRepository: PasswordRepositoryAPI {
         self.nativeWalletEnabled = nativeWalletEnabled
 
         password = nativeWalletEnabled()
-            .asObservable()
-            .take(1)
-            .asSingle()
-            .flatMap { isEnabled -> Single<String?> in
-                guard isEnabled else {
-                    return walletRepository.password
-                }
-                let guidOrNil = walletRepo.credentials.password.isEmpty ? nil : walletRepo.credentials.password
-                return .just(guidOrNil)
-            }
-
-        passwordPublisher = nativeWalletEnabled()
             .flatMap { isEnabled -> AnyPublisher<String?, Never> in
                 guard isEnabled else {
-                    return walletRepository.passwordPublisher
+                    return walletRepository.password
                 }
                 return walletRepo.map(\.credentials.password)
                     .map { key in key.isEmpty ? nil : key }
@@ -47,10 +33,10 @@ final class PasswordRepository: PasswordRepositoryAPI {
             }
             .eraseToAnyPublisher()
 
-        hasPasswordPublisher = nativeWalletEnabled()
+        hasPassword = nativeWalletEnabled()
             .flatMap { isEnabled -> AnyPublisher<Bool, Never> in
                 guard isEnabled else {
-                    return walletRepository.hasPasswordPublisher
+                    return walletRepository.hasPassword
                 }
                 return walletRepo.map(\.credentials.password)
                     .map { key in !key.isEmpty }
@@ -59,24 +45,11 @@ final class PasswordRepository: PasswordRepositoryAPI {
             .eraseToAnyPublisher()
     }
 
-    func set(password: String) -> Completable {
-        nativeWalletEnabled()
-            .asObservable()
-            .flatMap { [walletRepository, walletRepo] isEnabled -> Completable in
-                guard isEnabled else {
-                    return walletRepository.set(password: password)
-                }
-                return walletRepo.set(keyPath: \.credentials.password, value: password)
-                    .asCompletable()
-            }
-            .asCompletable()
-    }
-
-    func setPublisher(password: String) -> AnyPublisher<Void, Never> {
+    func set(password: String) -> AnyPublisher<Void, Never> {
         nativeWalletEnabled()
             .flatMap { [walletRepository, walletRepo] isEnabled -> AnyPublisher<Void, Never> in
                 guard isEnabled else {
-                    return walletRepository.setPublisher(password: password)
+                    return walletRepository.set(password: password)
                 }
                 return walletRepo
                     .set(keyPath: \.credentials.password, value: password)
@@ -87,12 +60,7 @@ final class PasswordRepository: PasswordRepositoryAPI {
     }
 
     #warning("TODO: NativeWallet should support syncing of password change")
-    func sync() -> Completable {
+    func sync() -> AnyPublisher<Void, PasswordRepositoryError> {
         walletRepository.sync()
-    }
-
-    #warning("TODO: NativeWallet should support syncing of password change")
-    func syncPublisher() -> AnyPublisher<Void, PasswordRepositoryError> {
-        walletRepository.syncPublisher()
     }
 }

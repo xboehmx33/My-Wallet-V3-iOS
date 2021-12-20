@@ -7,6 +7,7 @@ import FeatureKYCDomain
 import PlatformKit
 import PlatformUIKit
 import RxSwift
+import ToolKit
 import UIComponentsKit
 import UIKit
 
@@ -85,6 +86,9 @@ public protocol Routing {
         from presenter: UIViewController,
         requiredTier: KYC.Tier
     ) -> AnyPublisher<FlowResult, RouterError>
+
+    /// Presents a limits overview screen
+    func presentLimitsOverview(from presenter: UIViewController)
 }
 
 /// A class that encapsulates routing logic for the KYC flow. Use this to present the app user with any part of the KYC flow.
@@ -95,25 +99,32 @@ public class Router: Routing {
     private let loadingViewPresenter: PlatformUIKit.LoadingViewPresenting
     private let emailVerificationService: FeatureKYCDomain.EmailVerificationServiceAPI
     private let kycService: PlatformKit.KYCTiersServiceAPI
+    private let featureFlagsService: FeatureFlagsServiceAPI
     private let openMailApp: (@escaping (Bool) -> Void) -> Void
+    private let openURL: (URL) -> Void
 
     // This should be removed once the legacy router is deleted
     private var cancellables = Set<AnyCancellable>()
+    private var disposeBag = DisposeBag()
 
     public init(
         analyticsRecorder: AnalyticsEventRecorderAPI,
         loadingViewPresenter: PlatformUIKit.LoadingViewPresenting,
         legacyRouter: PlatformUIKit.KYCRouterAPI,
         kycService: PlatformKit.KYCTiersServiceAPI,
+        featureFlagsService: FeatureFlagsServiceAPI,
         emailVerificationService: FeatureKYCDomain.EmailVerificationServiceAPI,
-        openMailApp: @escaping (@escaping (Bool) -> Void) -> Void
+        openMailApp: @escaping (@escaping (Bool) -> Void) -> Void,
+        openURL: @escaping (URL) -> Void
     ) {
         self.analyticsRecorder = analyticsRecorder
         self.loadingViewPresenter = loadingViewPresenter
         self.legacyRouter = legacyRouter
         self.kycService = kycService
+        self.featureFlagsService = featureFlagsService
         self.emailVerificationService = emailVerificationService
         self.openMailApp = openMailApp
+        self.openURL = openURL
     }
 
     public func routeToEmailVerification(
@@ -316,7 +327,52 @@ public class Router: Routing {
         return publisher.eraseToAnyPublisher()
     }
 
-    // MARK: - Helpers
+    public func presentLimitsOverview(from presenter: UIViewController) {
+        func internalPresentKYC(from presenter: UIViewController, requiredTier: KYC.Tier) {
+            presentKYC(from: presenter, requiredTier: requiredTier)
+                .receive(on: DispatchQueue.main)
+                .sink(receiveValue: { _ in
+                    // no-op
+                })
+                .store(in: &cancellables)
+        }
+        return featureFlagsService.isEnabled(.remote(.newLimitsUIEnabled))
+            .receive(on: DispatchQueue.main)
+            .handleLoaderForLifecycle(loader: loadingViewPresenter, style: .circle)
+            .sink { [kycService, disposeBag, internalPresentKYC, openURL] newLimitsUIEnabled in
+                guard newLimitsUIEnabled else {
+                    KYCTiersViewController
+                        .routeToTiers(fromViewController: presenter)
+                        .disposed(by: disposeBag)
+                    return
+                }
+                let view = TradingLimitsView(
+                    store: .init(
+                        initialState: TradingLimitsState(),
+                        reducer: tradingLimitsReducer,
+                        environment: TradingLimitsEnvironment(
+                            close: {
+                                presenter.dismiss(animated: true, completion: nil)
+                            },
+                            openURL: openURL,
+                            presentKYCFlow: { requiredTier in
+                                presenter.dismiss(animated: true) {
+                                    internalPresentKYC(presenter, requiredTier)
+                                }
+                            },
+                            fetchLimitsOverview: kycService.fetchOverview
+                        )
+                    )
+                )
+                presenter.present(view)
+            }
+            .store(in: &cancellables)
+    }
+}
+
+// MARK: - Helpers
+
+extension Router {
 
     func buildEmailVerificationEnvironment(
         emailAddress: String,

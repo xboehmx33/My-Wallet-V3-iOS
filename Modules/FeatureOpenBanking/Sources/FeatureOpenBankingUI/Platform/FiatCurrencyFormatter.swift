@@ -1,17 +1,22 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-/*
- let currency = FiatCurrency(rawValue: symbol)
- let fiat = FiatValue.create(minor: amount, currency: currency)
- */
+import UIComponentsKit
 
-public protocol FiatCurrencyFormatter {
+public protocol CurrencyFormatter {
     func displayString(amountMinor: String, currency: String) -> String?
+    func displayImage(currency: String) -> ImageResource?
 }
 
-public struct NoFormatFiatCurrencyFormatter: FiatCurrencyFormatter {
+public protocol FiatCurrencyFormatter: CurrencyFormatter {}
+public protocol CryptoCurrencyFormatter: CurrencyFormatter {}
+
+public struct NoFormatCurrencyFormatter: FiatCurrencyFormatter, CryptoCurrencyFormatter {
     public init() {}
     public func displayString(amountMinor: String, currency: String) -> String? {
         "\(currency) \(amountMinor)"
+    }
+
+    public func displayImage(currency: String) -> ImageResource? {
+        nil
     }
 }

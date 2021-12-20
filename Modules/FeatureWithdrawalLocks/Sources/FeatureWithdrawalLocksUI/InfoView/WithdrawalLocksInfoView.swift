@@ -1,7 +1,11 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+#if canImport(SharedComponentLibrary)
+import SharedComponentLibrary
+#else
 import ComponentLibrary
+#endif
 import ComposableArchitecture
 import ComposableNavigation
 import DIKit
@@ -100,7 +104,7 @@ public struct WithdrawalLocksInfoView: View {
             ZStack(alignment: .top) {
                 HStack {
                     Spacer()
-                    CircularIconButton(icon: .closev2) {
+                    IconButton(icon: .closev2.circle()) {
                         viewStore.send(.dismiss)
                     }
                     .frame(width: 24, height: 24)

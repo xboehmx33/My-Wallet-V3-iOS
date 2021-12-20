@@ -26,8 +26,8 @@ final class PushNotificationsRepository: PushNotificationsRepositoryAPI {
 
     func revokeToken() -> AnyPublisher<Void, PushNotificationsRepositoryError> {
         Publishers.Zip(
-            credentialsRepository.guidPublisher,
-            credentialsRepository.sharedKeyPublisher
+            credentialsRepository.guid,
+            credentialsRepository.sharedKey
         )
         .setFailureType(to: PushNotificationsRepositoryError.self)
         .flatMap { [apiClient] guidOrNil, sharedKeyOrNil -> AnyPublisher<Void, PushNotificationsRepositoryError> in

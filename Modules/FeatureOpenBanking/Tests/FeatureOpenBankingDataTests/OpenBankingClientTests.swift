@@ -49,7 +49,7 @@ final class OpenBankingTests: XCTestCase {
 
     func test_handle_consent_token() throws {
 
-        banking.state.set(.callback.path, to: "/payments/banktransfer/one-time-token")
+        banking.state.set(.callback.path, to: "payments/banktransfer/one-time-token")
         banking.state.set(.consent.token, to: "token")
 
         let request = try network.requests[

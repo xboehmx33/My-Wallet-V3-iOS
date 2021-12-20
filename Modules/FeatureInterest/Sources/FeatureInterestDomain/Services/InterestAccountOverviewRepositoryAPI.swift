@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import PlatformKit
 
 public enum InterestAccountOverviewError: Error, Equatable {

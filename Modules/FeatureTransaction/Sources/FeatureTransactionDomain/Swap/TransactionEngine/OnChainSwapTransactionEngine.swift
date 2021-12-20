@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -98,7 +99,7 @@ final class OnChainSwapTransactionEngine: SwapTransactionEngine {
                 self.startOnChainEngine(pricedQuote: pricedQuote)
                     .andThen(
                         Single.zip(
-                            self.walletCurrencyService.fiatCurrency,
+                            self.walletCurrencyService.displayCurrency.asSingle(),
                             self.onChainEngine.initializeTransaction()
                         )
                     )
@@ -166,6 +167,7 @@ final class OnChainSwapTransactionEngine: SwapTransactionEngine {
                                     .updateOrder(identifier: swapOrder.identifier, success: false)
                                     .asObservable()
                                     .ignoreElements()
+                                    .asCompletable()
                                     .catchError { _ in .empty() }
                                     .andThen(.error(error))
                             }
@@ -174,6 +176,7 @@ final class OnChainSwapTransactionEngine: SwapTransactionEngine {
                                     .updateOrder(identifier: swapOrder.identifier, success: true)
                                     .asObservable()
                                     .ignoreElements()
+                                    .asCompletable()
                                     .catchError { _ in .empty() }
                                     .andThen(.just(result))
                             }

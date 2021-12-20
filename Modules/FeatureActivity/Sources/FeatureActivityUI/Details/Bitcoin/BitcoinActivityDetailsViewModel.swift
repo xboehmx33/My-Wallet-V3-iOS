@@ -2,6 +2,7 @@
 
 import BitcoinKit
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 

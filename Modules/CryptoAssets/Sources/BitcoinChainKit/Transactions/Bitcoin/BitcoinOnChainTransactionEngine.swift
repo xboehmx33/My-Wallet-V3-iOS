@@ -2,6 +2,7 @@
 
 import DIKit
 import FeatureTransactionDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import RxToolKit
@@ -105,7 +106,8 @@ final class BitcoinOnChainTransactionEngine<Token: BitcoinChainToken>: OnChainTr
     func initializeTransaction() -> Single<PendingTransaction> {
         Single.zip(
             walletCurrencyService
-                .fiatCurrency,
+                .displayCurrency
+                .asSingle(),
             availableBalance
         )
         .map { fiatCurrency, availableBalance -> PendingTransaction in
@@ -341,11 +343,7 @@ extension BitcoinOnChainTransactionEngine {
     private func makeFeeSelectionOption(
         pendingTransaction: PendingTransaction
     ) -> Single<TransactionConfirmation.Model.FeeSelection> {
-        Single
-            .just(pendingTransaction)
-            .map(weak: self) { (self, pendingTransaction) -> FeeState in
-                try self.getFeeState(pendingTransaction: pendingTransaction)
-            }
+        getFeeState(pendingTransaction: pendingTransaction)
             .map { feeState -> TransactionConfirmation.Model.FeeSelection in
                 TransactionConfirmation.Model.FeeSelection(
                     feeState: feeState,
@@ -388,12 +386,12 @@ extension BitcoinOnChainTransactionEngine {
 
     private var sourceExchangeRatePair: Single<MoneyValuePair> {
         walletCurrencyService
-            .fiatCurrency
-            .flatMap { [currencyConversionService, sourceCryptoAccount] fiatCurrency -> Single<MoneyValuePair> in
+            .displayCurrency
+            .flatMap { [currencyConversionService, sourceCryptoAccount] fiatCurrency in
                 currencyConversionService
                     .conversionRate(from: sourceCryptoAccount.currencyType, to: fiatCurrency.currencyType)
-                    .asSingle()
                     .map { MoneyValuePair(base: .one(currency: sourceCryptoAccount.currencyType), quote: $0) }
             }
+            .asSingle()
     }
 }

@@ -1,37 +1,19 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import AnalyticsKit
+import ComponentLibrary
 import ComposableArchitecture
+import ComposableNavigation
 import FeatureAuthenticationDomain
 import Localization
 import SwiftUI
-import ToolKit
 import UIComponentsKit
+
+private typealias LocalizedString = LocalizationConstants.FeatureAuthentication.CreateAccount
 
 struct CreateAccountView: View {
 
-    private typealias LocalizedString = LocalizationConstants.FeatureAuthentication.CreateAccount
-
-    private enum Layout {
-        static let topPadding: CGFloat = 20
-        static let bottomPadding: CGFloat = 34
-        static let leadingPadding: CGFloat = 24
-        static let trailingPadding: CGFloat = 24
-        static let footnoteTopPadding: CGFloat = 1
-        static let textFieldSpacing: CGFloat = 20
-
-        static let messageFontSize: CGFloat = 12
-        static let lineSpacing: CGFloat = 4
-    }
-
     private let store: Store<CreateAccountState, CreateAccountAction>
     @ObservedObject private var viewStore: ViewStore<CreateAccountState, CreateAccountAction>
-
-    @State private var isEmailFieldFirstResponder: Bool = true
-    @State private var isPasswordFieldFirstResponder: Bool = false
-    @State private var isPasswordVisible: Bool = false
-    @State private var isConfirmPasswordFieldFirstResponder: Bool = false
-    @State private var isConfirmPasswordVisible: Bool = false
 
     init(store: Store<CreateAccountState, CreateAccountAction>) {
         self.store = store
@@ -39,74 +21,222 @@ struct CreateAccountView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: Spacing.padding3) {
+                    CreateAccountHeader()
+                    CreateAccountForm(viewStore: viewStore)
+                    Spacer()
+                    ComponentLibrary.PrimaryButton(
+                        title: LocalizedString.createAccountButton,
+                        isLoading: viewStore.validatingInput
+                    ) {
+                        viewStore.send(.createButtonTapped)
+                    }
+                    .disabled(viewStore.validatingInput || viewStore.inputValidationState.isInvalid)
+                    .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.createAccountButton)
+                }
+                .padding(Spacing.padding3)
+            }
+            // setting the frame is necessary for the Spacer inside the VStack above to work properly
+            .frame(height: geometry.size.height)
+        }
+        .primaryNavigation(title: "") {
+            Button {
+                viewStore.send(.createButtonTapped)
+            } label: {
+                Text(LocalizedString.nextButton)
+                    .typography(.paragraph2)
+                    .foregroundColor(.semantic.primary)
+            }
+            .disabled(viewStore.validatingInput || viewStore.inputValidationState.isInvalid)
+            .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.nextButton)
+        }
+        .onWillDisappear {
+            viewStore.send(.onWillDisappear)
+        }
+        .navigationRoute(in: store)
+    }
+}
 
+private struct CreateAccountHeader: View {
+
+    var body: some View {
+        VStack(spacing: Spacing.padding3) {
+            Icon.globe
+                .frame(width: 32, height: 32)
+                .accentColor(.semantic.primary)
+            VStack(spacing: Spacing.baseline) {
+                Text(LocalizedString.headerTitle)
+                    .typography(.title2)
+                Text(LocalizedString.headerSubtitle)
+                    .typography(.paragraph1)
+            }
+        }
+    }
+}
+
+private struct CreateAccountForm: View {
+
+    @ObservedObject var viewStore: ViewStore<CreateAccountState, CreateAccountAction>
+
+    var body: some View {
+        VStack(spacing: Spacing.padding2) {
             emailField
-                .padding(.bottom, Layout.textFieldSpacing)
-                .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.emailGroup)
-
             passwordField
-                .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.passwordGroup)
+            countryAndStatePickers
+            termsAgreementView
+        }
+    }
 
-            PasswordStrengthIndicatorView(
-                passwordStrength: viewStore.binding(
-                    get: \.passwordStrength,
-                    send: { .didChangePasswordStrength($0) }
+    private var emailField: some View {
+        let shouldShowError = viewStore.inputValidationState == .invalid(.invalidEmail)
+        return Input(
+            text: viewStore.binding(\.$emailAddress),
+            isFirstResponder: viewStore
+                .binding(\.$selectedInputField)
+                .equals(.email),
+            label: LocalizedString.TextFieldTitle.email,
+            subText: shouldShowError ? LocalizedString.TextFieldError.invalidEmail : nil,
+            subTextStyle: .error,
+            placeholder: LocalizedString.TextFieldPlaceholder.email,
+            state: shouldShowError ? .error : .default,
+            configuration: {
+                $0.autocapitalizationType = .none
+                $0.keyboardType = .emailAddress
+                $0.textContentType = .emailAddress
+            },
+            onReturnTapped: {
+                viewStore.send(.set(\.$selectedInputField, .password))
+            }
+        )
+        .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.emailGroup)
+    }
+
+    private var passwordField: some View {
+        let shouldShowError = viewStore.inputValidationState == .invalid(.weakPassword)
+        return Input(
+            text: viewStore.binding(\.$password),
+            isFirstResponder: viewStore
+                .binding(\.$selectedInputField)
+                .equals(.password),
+            label: LocalizedString.TextFieldTitle.password,
+            subText: viewStore.passwordStrength.displayString,
+            subTextStyle: viewStore.passwordStrength.inputSubTextStyle,
+            state: shouldShowError ? .error : .default,
+            configuration: {
+                $0.isSecureTextEntry = !viewStore.passwordFieldTextVisible
+                $0.textContentType = .newPassword
+            },
+            trailing: {
+                PasswordEyeSymbolButton(
+                    isPasswordVisible: viewStore.binding(\.$passwordFieldTextVisible)
                 )
-            )
-            .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.passwordStrengthIndicatorGroup)
+            },
+            onReturnTapped: {
+                viewStore.send(.set(\.$selectedInputField, nil))
+            }
+        )
+        .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.passwordGroup)
+    }
 
-            confirmPasswordField
-                .padding(.top, Layout.textFieldSpacing)
-                .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.confirmPasswordGroup)
+    private var countryAndStatePickers: some View {
+        VStack(alignment: .leading, spacing: Spacing.baseline) {
+            let accessory = Icon.chevronDown
+                .accentColor(.semantic.muted)
+                .frame(width: 12, height: 12)
+
+            Text(LocalizedString.TextFieldTitle.country)
+                .typography(.paragraph2)
+
+            VStack(spacing: .zero) {
+                let country = viewStore.country.title
+                if let state = viewStore.countryState?.title {
+                    PrimaryPicker(
+                        selection: viewStore.binding(\.$pickerSelection),
+                        rows: [
+                            .row(
+                                title: country,
+                                identifier: .country,
+                                trailing: { accessory }
+                            ),
+                            .row(
+                                title: state,
+                                identifier: .state,
+                                trailing: { accessory }
+                            )
+                        ]
+                    )
+                } else {
+                    PrimaryPicker(
+                        selection: viewStore.binding(\.$pickerSelection),
+                        rows: [
+                            .row(
+                                title: country,
+                                identifier: .country,
+                                trailing: { accessory }
+                            )
+                        ]
+                    )
+                }
+            }
+        }
+    }
+
+    private var termsAgreementView: some View {
+        HStack(alignment: .top, spacing: Spacing.baseline) {
+            let showCheckboxError = viewStore.inputValidationState == .invalid(.termsNotAccepted)
+            Checkbox(
+                isOn: viewStore.binding(\.$termsAccepted),
+                variant: showCheckboxError ? .error : .default
+            )
+            .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.termsOfServiceButton)
 
             agreementText
-                .font(Font(weight: .medium, size: Layout.messageFontSize))
-                .lineSpacing(Layout.lineSpacing)
-                .padding(.top, Layout.footnoteTopPadding)
-                .padding(.bottom, Layout.textFieldSpacing)
-
-            Spacer()
-
-            PrimaryButton(title: LocalizedString.createAccountButton) {
-                viewStore.send(.createButtonTapped)
-            }
-            .disabled(viewStore.password.isEmpty ||
-                viewStore.password != viewStore.confirmPassword ||
-                viewStore.passwordStrength == .weak)
-            .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.createAccountButton)
+                .typography(.caption1)
+                .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.agreementPromptText)
         }
-        .onDisappear {
-            viewStore.send(.onDisappear)
-        }
-        .navigationBarTitle(LocalizedString.navigationTitle, displayMode: .inline)
-        .padding(
-            EdgeInsets(
-                top: Layout.topPadding,
-                leading: Layout.leadingPadding,
-                bottom: Layout.bottomPadding,
-                trailing: Layout.trailingPadding
-            )
-        )
+        // fixing the size prevents the view from collapsing when the keyboard is on screen
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var agreementText: some View {
-        VStack(alignment: .leading, spacing: Layout.lineSpacing) {
-            Text(LocalizedString.agreementPrompt + " ")
-                .foregroundColor(.textSubheading)
+        VStack(alignment: .leading, spacing: .zero) {
+            let promptTemplate = LocalizedString.agreementPrompt
+            let recoveryPhrasePlaceholder = "|RECOVERY_PHRASE|"
+
+            let recoveryPhraseText = Text(LocalizedString.recoveryPhrase)
+                .foregroundColor(.semantic.primary)
+
+            let promptComponents = promptTemplate.components(separatedBy: recoveryPhrasePlaceholder)
+            let promptText = Text(promptComponents[0]) + recoveryPhraseText + Text(promptComponents[1]) + Text("")
+
+            promptText
+                .foregroundColor(.semantic.body)
+                .onTapGesture {
+                    viewStore.send(.openExternalLink(Constants.SupportURL.ResetAccount.walletBackupURL))
+                }
                 .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.agreementPromptText)
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
+
+            HStack(alignment: .firstTextBaseline, spacing: .zero) {
                 Text(LocalizedString.termsOfServiceLink)
-                    .foregroundColor(.buttonLinkText)
+                    .foregroundColor(.semantic.primary)
                     .onTapGesture {
                         guard let url = URL(string: Constants.HostURL.terms) else { return }
                         viewStore.send(.openExternalLink(url))
                     }
                     .accessibility(identifier: AccessibilityIdentifiers.CreateAccountScreen.termsOfServiceButton)
+
                 Text(" " + LocalizedString.and + " ")
-                    .foregroundColor(.textSubheading)
-                Text(LocalizedString.privacyPolicyLink)
-                    .foregroundColor(.buttonLinkText)
+                    .foregroundColor(.semantic.body)
+
+                let privacyPolicyComponent = Text(LocalizedString.privacyPolicyLink)
+                    .foregroundColor(.semantic.primary)
+                let fullStopComponent = Text(".")
+                    .foregroundColor(.semantic.body)
+                let privacyPolicyText = privacyPolicyComponent + fullStopComponent
+
+                privacyPolicyText
                     .onTapGesture {
                         guard let url = URL(string: Constants.HostURL.privacyPolicy) else { return }
                         viewStore.send(.openExternalLink(url))
@@ -115,125 +245,52 @@ struct CreateAccountView: View {
             }
         }
     }
+}
 
-    private var emailField: some View {
-        FormTextFieldGroup(
-            text: viewStore.binding(
-                get: \.emailAddress,
-                send: { .didChangeEmailAddress($0) }
-            ),
-            isFirstResponder: $isEmailFieldFirstResponder,
-            isError: viewStore.binding(
-                get: { !$0.emailAddress.isEmail && !$0.emailAddress.isEmpty },
-                send: .noop
-            ),
-            title: LocalizedString.TextFieldTitle.email,
-            configuration: {
-                $0.autocorrectionType = .no
-                $0.autocapitalizationType = .none
-                $0.textContentType = .emailAddress
-                $0.keyboardType = .emailAddress
-                $0.placeholder = LocalizedString.TextFieldPlaceholder.email
-                $0.returnKeyType = .next
-                $0.enablesReturnKeyAutomatically = true
-            },
-            errorMessage: LocalizedString.TextFieldError.invalidEmail,
-            onPaddingTapped: {
-                self.isEmailFieldFirstResponder = true
-                self.isPasswordFieldFirstResponder = false
-                self.isConfirmPasswordFieldFirstResponder = false
-            },
-            onReturnTapped: {
-                self.isEmailFieldFirstResponder = false
-                self.isPasswordFieldFirstResponder = true
-                self.isConfirmPasswordFieldFirstResponder = false
-            }
-        )
+extension PasswordValidationScore {
+
+    fileprivate var displayString: String? {
+        switch self {
+        case .none:
+            return nil
+        case .normal:
+            return LocalizedString.PasswordStrengthIndicator.regularPassword
+        case .strong:
+            return LocalizedString.PasswordStrengthIndicator.strongPassword
+        case .weak:
+            return LocalizedString.PasswordStrengthIndicator.weakPassword
+        }
     }
 
-    private var passwordField: some View {
-        FormTextFieldGroup(
-            text: viewStore.binding(
-                get: \.password,
-                send: { .didChangePassword($0) }
-            ),
-            isFirstResponder: $isPasswordFieldFirstResponder,
-            isError: .constant(false),
-            title: LocalizedString.TextFieldTitle.password,
-            configuration: {
-                $0.autocorrectionType = .no
-                $0.autocapitalizationType = .none
-                $0.isSecureTextEntry = !isPasswordVisible
-                $0.textContentType = .newPassword
-                $0.placeholder = LocalizedString.TextFieldPlaceholder.password
-            },
-            onPaddingTapped: {
-                self.isEmailFieldFirstResponder = false
-                self.isPasswordFieldFirstResponder = true
-                self.isConfirmPasswordFieldFirstResponder = false
-            },
-            onReturnTapped: {
-                self.isEmailFieldFirstResponder = false
-                self.isPasswordFieldFirstResponder = false
-                self.isConfirmPasswordFieldFirstResponder = true
-            },
-            trailingAccessoryView: {
-                PasswordEyeSymbolButton(isPasswordVisible: $isPasswordVisible)
-            }
-        )
-    }
-
-    private var passwordInstruction: some View {
-        Text(LocalizedString.passwordInstruction)
-            .font(Font(weight: .medium, size: 12))
-            .foregroundColor(.textSubheading)
-    }
-
-    private var confirmPasswordField: some View {
-        FormTextFieldGroup(
-            text: viewStore.binding(
-                get: \.confirmPassword,
-                send: { .didChangeConfirmPassword($0) }
-            ),
-            isFirstResponder: $isConfirmPasswordFieldFirstResponder,
-            isError: viewStore.binding(
-                get: { $0.password != $0.confirmPassword },
-                send: .noop
-            ),
-            title: LocalizedString.TextFieldTitle.confirmPassword,
-            configuration: {
-                $0.autocorrectionType = .no
-                $0.autocapitalizationType = .none
-                $0.isSecureTextEntry = !isConfirmPasswordVisible
-                $0.textContentType = .newPassword
-                $0.placeholder = LocalizedString.TextFieldPlaceholder.confirmPassword
-            },
-            errorMessage: LocalizedString.TextFieldError.confirmPasswordNotMatch,
-            onPaddingTapped: {
-                self.isEmailFieldFirstResponder = false
-                self.isPasswordFieldFirstResponder = false
-                self.isConfirmPasswordFieldFirstResponder = true
-            },
-            onReturnTapped: {
-                self.isEmailFieldFirstResponder = false
-                self.isPasswordFieldFirstResponder = false
-                self.isConfirmPasswordFieldFirstResponder = false
-            },
-            trailingAccessoryView: {
-                PasswordEyeSymbolButton(isPasswordVisible: $isConfirmPasswordVisible)
-            }
-        )
+    fileprivate var inputSubTextStyle: InputSubTextStyle {
+        switch self {
+        case .none, .normal:
+            return .primary
+        case .strong:
+            return .success
+        case .weak:
+            return .error
+        }
     }
 }
 
 #if DEBUG
+import AnalyticsKit
+import ToolKit
+
 struct CreateAccountView_Previews: PreviewProvider {
+
     static var previews: some View {
         CreateAccountView(
             store: .init(
-                initialState: .init(),
+                initialState: .init(
+                    context: .createWallet
+                ),
                 reducer: createAccountReducer,
                 environment: .init(
+                    mainQueue: .main,
+                    passwordValidator: PasswordValidator(),
+                    externalAppOpener: ToLogAppOpener(),
                     analyticsRecorder: NoOpAnalyticsRecorder()
                 )
             )

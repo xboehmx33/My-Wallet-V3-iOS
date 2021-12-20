@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import MoneyKit
 
 struct CryptoExchangeAddressResponse: Decodable, Equatable {
 

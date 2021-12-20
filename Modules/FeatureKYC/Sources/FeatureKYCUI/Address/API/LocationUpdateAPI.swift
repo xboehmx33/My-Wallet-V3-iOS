@@ -15,5 +15,6 @@ final class LocationUpdateService {
         client.updateAddress(userAddress: address)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 }

@@ -1,7 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
-import RxSwift
 
 public enum EmailAuthorizationServiceError: Error {
     /// Session token is missing
@@ -24,7 +23,6 @@ public enum EmailAuthorizationServiceError: Error {
 }
 
 public protocol EmailAuthorizationServiceAPI {
-    var authorize: Completable { get }
 
     func cancel()
 

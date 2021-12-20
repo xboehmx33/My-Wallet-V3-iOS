@@ -5,6 +5,7 @@ import Foundation
 enum DebugItemType: CaseIterable {
     case interalFeatureFlags
     case componentLibraryExamples
+    case colorScheme
 }
 
 extension DebugItemType {
@@ -14,6 +15,8 @@ extension DebugItemType {
             return "Internal Feature Flags"
         case .componentLibraryExamples:
             return "Component Library Examples"
+        case .colorScheme:
+            return "Switch Color Scheme (Light/Dark)"
         }
     }
 

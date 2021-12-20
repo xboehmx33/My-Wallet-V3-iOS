@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 import RxSwift
 import ToolKit
@@ -34,6 +35,12 @@ final class InterestAccountBalanceRepository: InterestAccountBalanceRepositoryAP
                     .eraseToAnyPublisher()
             }
         )
+    }
+
+    func invalidateAccountBalanceCacheWithKey(
+        _ fiatCurrency: FiatCurrency
+    ) {
+        cachedValue.invalidateCacheWithKey(fiatCurrency)
     }
 
     func fetchInterestAccountsBalance(

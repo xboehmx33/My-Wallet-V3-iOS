@@ -55,7 +55,17 @@ public protocol FeatureFlagsServiceAPI {
     func enable(_ feature: FeatureFlag) -> AnyPublisher<Void, Never>
     func disable(_ feature: FeatureFlag) -> AnyPublisher<Void, Never>
     func isEnabled(_ feature: FeatureFlag) -> AnyPublisher<Bool, Never>
-    func object<Feature: Codable>(for feature: FeatureFlag) -> AnyPublisher<Feature?, FeatureFlagError>
+    func object<Feature: Codable>(
+        for feature: FeatureFlag,
+        type: Feature.Type
+    ) -> AnyPublisher<Feature?, FeatureFlagError>
+}
+
+extension FeatureFlagsServiceAPI {
+
+    public func object<Feature: Codable>(for feature: FeatureFlag) -> AnyPublisher<Feature?, FeatureFlagError> {
+        object(for: feature, type: Feature.self)
+    }
 }
 
 public protocol FeatureFetching: AnyObject {
@@ -115,7 +125,10 @@ class FeatureFlagsService: FeatureFlagsServiceAPI {
         }
     }
 
-    func object<Feature: Codable>(for feature: FeatureFlag) -> AnyPublisher<Feature?, FeatureFlagError> {
+    func object<Feature: Codable>(
+        for feature: FeatureFlag,
+        type: Feature.Type
+    ) -> AnyPublisher<Feature?, FeatureFlagError> {
         switch feature {
         case .local:
             unimplemented("Objects are not yet supported for local feature flags")

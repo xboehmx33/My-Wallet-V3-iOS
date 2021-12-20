@@ -32,7 +32,7 @@ let package = Package(
         .package(
             name: "RxSwift",
             url: "https://github.com/ReactiveX/RxSwift.git",
-            from: "5.1.3"
+            from: "6.2.0"
         ),
         .package(
             name: "stellarsdk",
@@ -41,6 +41,7 @@ let package = Package(
         ),
         .package(path: "../Network"),
         .package(path: "../NetworkErrors"),
+        .package(path: "../Money"),
         .package(path: "../Platform"),
         .package(path: "../FeatureTransaction"),
         .package(path: "../Test"),
@@ -190,6 +191,7 @@ let package = Package(
                 .target(name: "ERC20Kit"),
                 .target(name: "ERC20KitMock"),
                 .target(name: "EthereumKit"),
+                .product(name: "MoneyKitMock", package: "Money"),
                 .product(name: "PlatformKit", package: "Platform"),
                 .product(name: "PlatformKitMock", package: "Platform"),
                 .product(name: "TestKit", package: "Test"),

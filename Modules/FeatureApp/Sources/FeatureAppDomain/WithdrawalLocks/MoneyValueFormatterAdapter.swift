@@ -3,6 +3,7 @@
 import BigInt
 import FeatureWithdrawalLocksData
 import Foundation
+import MoneyKit
 import PlatformKit
 
 final class MoneyValueFormatterAdapter: MoneyValueFormatterAPI {

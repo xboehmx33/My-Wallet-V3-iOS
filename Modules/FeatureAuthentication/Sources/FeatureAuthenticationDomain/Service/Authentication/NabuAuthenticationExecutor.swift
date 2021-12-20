@@ -240,7 +240,7 @@ struct NabuAuthenticationExecutor: NabuAuthenticationExecutorAPI {
             .mapError(NabuAuthenticationExecutorError.failedToFetchEmail)
             .eraseToAnyPublisher()
 
-        let guid = credentialsRepository.guidPublisher
+        let guid = credentialsRepository.guid
             .flatMap { guid -> AnyPublisher<String, NabuAuthenticationExecutorError> in
                 guard let guid = guid else {
                     return .failure(.missingCredentials(MissingCredentialsError.guid))

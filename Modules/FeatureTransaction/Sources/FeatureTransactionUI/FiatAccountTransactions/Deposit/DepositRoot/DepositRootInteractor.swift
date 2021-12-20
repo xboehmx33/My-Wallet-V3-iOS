@@ -2,13 +2,14 @@
 
 import AnalyticsKit
 import DIKit
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RIBs
 import RxSwift
 import ToolKit
 
-public protocol DepositRootRouting: AnyObject {
+public protocol DepositRootRouting: Routing {
     /// Routes to the `Select a Funding Method` screen
     func routeToDepositLanding()
 
@@ -109,7 +110,7 @@ final class DepositRootInteractor: Interactor, DepositRootInteractable, DepositR
                 .isEnabled(.remote(.openBanking))
                 .asSingle()
         )
-        .observeOn(MainScheduler.asyncInstance)
+        .observe(on: MainScheduler.asyncInstance)
         .subscribe(onSuccess: { [weak self] values in
             guard let self = self else { return }
             let (linkedBanks, paymentMethodTypes, fiatCurrency, openBanking) = values
@@ -143,7 +144,7 @@ final class DepositRootInteractor: Interactor, DepositRootInteractable, DepositR
         linkedBanksFactory
             .linkedBanks
             .compactMap(\.first)
-            .observeOn(MainScheduler.asyncInstance)
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(onSuccess: { [weak self] linkedBankAccount in
                 guard let self = self else { return }
                 self.router?.routeToDeposit(
@@ -164,8 +165,9 @@ final class DepositRootInteractor: Interactor, DepositRootInteractable, DepositR
 
     func routeToWireTransfer() {
         fiatCurrencyService
-            .fiatCurrency
-            .observeOn(MainScheduler.asyncInstance)
+            .displayCurrency
+            .asSingle()
+            .observe(on: MainScheduler.asyncInstance)
             .subscribe(onSuccess: { [weak self] fiatCurrency in
                 self?.router?.routeToWireInstructions(currency: fiatCurrency)
             })

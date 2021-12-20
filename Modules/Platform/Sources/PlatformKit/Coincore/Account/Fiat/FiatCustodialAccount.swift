@@ -3,6 +3,7 @@
 import Combine
 import DIKit
 import Localization
+import MoneyKit
 import RxSwift
 import ToolKit
 
@@ -153,5 +154,10 @@ final class FiatCustodialAccount: FiatAccount {
                 MoneyValuePair(base: balance, exchangeRate: fiatPrice.moneyValue)
             }
             .eraseToAnyPublisher()
+    }
+
+    func invalidateAccountBalance() {
+        balanceService
+            .invalidateTradingAccountBalances()
     }
 }

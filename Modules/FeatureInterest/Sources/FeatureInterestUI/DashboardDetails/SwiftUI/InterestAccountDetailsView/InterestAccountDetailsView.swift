@@ -23,7 +23,7 @@ struct InterestAccountDetailsView: View {
     var body: some View {
         WithViewStore(store) { viewStore in
             if viewStore.isLoading {
-                LoadingStateView(title: LocalizationConstants.loading)
+                LoadingStateView(title: "")
                     .onAppear {
                         viewStore.send(.loadInterestAccountBalanceInfo)
                     }

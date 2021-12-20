@@ -9,6 +9,8 @@ struct SecondaryButtonExamplesView: View {
         VStack(spacing: Spacing.padding1) {
             SecondaryButton(title: "Enabled", action: {})
 
+            SecondaryButton(title: "With Icon", leadingView: { Icon.placeholder }, action: {})
+
             SecondaryButton(title: "Disabled", action: {})
                 .disabled(true)
 

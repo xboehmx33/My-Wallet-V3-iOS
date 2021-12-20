@@ -7,14 +7,16 @@ import PlatformKit
 import RxSwift
 
 public enum EthereumTransactionSendingServiceError: Error {
-    case generic
-    case errorSigningTransaction(Error)
     case pushTransactionFailed(Error)
     case pushTransactionMalformed(EthereumTransactionPublishedError)
-    case failedAccountNonce(Error)
+    case signingError(EthereumTransactionSigningServiceError)
 }
 
 protocol EthereumTransactionSendingServiceAPI {
+    func send(
+        transaction: EthereumTransactionEncoded
+    ) -> AnyPublisher<EthereumTransactionPublished, EthereumTransactionSendingServiceError>
+
     func signAndSend(
         transaction: EthereumTransactionCandidate,
         keyPair: EthereumKeyPair
@@ -23,87 +25,38 @@ protocol EthereumTransactionSendingServiceAPI {
 
 final class EthereumTransactionSendingService: EthereumTransactionSendingServiceAPI {
 
-    private let accountDetailsService: EthereumAccountDetailsServiceAPI
     private let client: TransactionPushClientAPI
-    private let feeService: EthereumFeeServiceAPI
-    private let transactionBuilder: EthereumTransactionBuilderAPI
-    private let transactionSigner: EthereumSignerAPI
-    private let transactionEncoder: EthereumTransactionEncoderAPI
+    private let transactionSigner: EthereumTransactionSigningServiceAPI
 
     init(
-        accountDetailsService: EthereumAccountDetailsServiceAPI = resolve(),
         client: TransactionPushClientAPI = resolve(),
-        feeService: EthereumFeeServiceAPI = resolve(),
-        transactionBuilder: EthereumTransactionBuilderAPI = resolve(),
-        transactionSigner: EthereumSignerAPI = resolve(),
-        transactionEncoder: EthereumTransactionEncoderAPI = resolve()
+        transactionSigner: EthereumTransactionSigningServiceAPI = resolve()
     ) {
-        self.accountDetailsService = accountDetailsService
         self.client = client
-        self.feeService = feeService
-        self.transactionBuilder = transactionBuilder
         self.transactionSigner = transactionSigner
-        self.transactionEncoder = transactionEncoder
     }
 
     func signAndSend(
         transaction: EthereumTransactionCandidate,
         keyPair: EthereumKeyPair
     ) -> AnyPublisher<EthereumTransactionPublished, EthereumTransactionSendingServiceError> {
-        sign(transaction: transaction, keyPair: keyPair)
+        transactionSigner
+            .sign(transaction: transaction, keyPair: keyPair)
+            .mapError(EthereumTransactionSendingServiceError.signingError)
             .flatMap { [send] finalised in
                 send(finalised)
             }
             .eraseToAnyPublisher()
     }
 
-    private func sign(
-        transaction: EthereumTransactionCandidate,
-        keyPair: EthereumKeyPair
-    ) -> AnyPublisher<EthereumTransactionFinalised, EthereumTransactionSendingServiceError> {
-        defaultAccountNonce()
-            .flatMap { [buildSignEncode] nonce in
-                buildSignEncode(transaction, nonce, keyPair)
-                    .publisher
-            }
-            .eraseToAnyPublisher()
-    }
-
-    private func buildSignEncode(
-        transaction: EthereumTransactionCandidate,
-        nonce: UInt64,
-        keyPair: EthereumKeyPair
-    ) -> Result<EthereumTransactionFinalised, EthereumTransactionSendingServiceError> {
-        transactionBuilder
-            .build(transaction: transaction, nonce: BigUInt(nonce))
-            .eraseError()
-            .flatMap { costed in
-                transactionSigner.sign(transaction: costed, keyPair: keyPair)
-                    .eraseError()
-            }
-            .flatMap { signed in
-                transactionEncoder.encode(signed: signed)
-                    .eraseError()
-            }
-            .mapError(EthereumTransactionSendingServiceError.errorSigningTransaction)
-    }
-
-    private func defaultAccountNonce() -> AnyPublisher<UInt64, EthereumTransactionSendingServiceError> {
-        accountDetailsService.accountDetails()
-            .map(\.nonce)
-            .asPublisher()
-            .mapError(EthereumTransactionSendingServiceError.failedAccountNonce)
-            .eraseToAnyPublisher()
-    }
-
-    private func send(
-        transaction: EthereumTransactionFinalised
+    func send(
+        transaction: EthereumTransactionEncoded
     ) -> AnyPublisher<EthereumTransactionPublished, EthereumTransactionSendingServiceError> {
         client.push(transaction: transaction)
             .mapError(EthereumTransactionSendingServiceError.pushTransactionFailed)
             .flatMap { response in
                 EthereumTransactionPublished.create(
-                    finalisedTransaction: transaction,
+                    transaction: transaction,
                     responseHash: response.txHash
                 )
                 .publisher

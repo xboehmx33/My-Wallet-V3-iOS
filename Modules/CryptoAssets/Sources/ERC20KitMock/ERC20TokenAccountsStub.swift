@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ERC20Kit
+import MoneyKit
 import PlatformKit
 
 extension ERC20TokenAccounts {

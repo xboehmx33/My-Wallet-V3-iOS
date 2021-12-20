@@ -1,7 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
-import PlatformKit
+import MoneyKit
 import RxSwift
 
 public protocol EthereumFeeServiceAPI {
@@ -17,7 +17,6 @@ final class EthereumFeeService: EthereumFeeServiceAPI {
             .fees(cryptoCurrency: cryptoCurrency)
             .map { response in
                 EthereumTransactionFee(
-                    limits: response.limits,
                     regular: response.regular,
                     priority: response.priority,
                     gasLimit: response.gasLimit,

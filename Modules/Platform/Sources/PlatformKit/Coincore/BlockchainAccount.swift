@@ -1,7 +1,9 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import Combine
+import MoneyKit
 import RxSwift
+import RxToolKit
 import ToolKit
 
 public typealias AvailableActions = Set<AssetAction>
@@ -44,6 +46,14 @@ public protocol BlockchainAccount: Account {
     /// The reason why the BlockchainAccount is ineligible for Interest.
     /// This will be `.eligible` if the account is eligible
     var disabledReason: AnyPublisher<InterestAccountIneligibilityReason, Error> { get }
+
+    /// Various `BlockchainAccount` objects fetch their balance in
+    /// different ways and use different services. After completing
+    /// a transaction we may not want to fetch the balance but do want
+    /// fetches anytime after the transaction to reflect the true balance
+    /// of the account. All accounts have a 60 second cache but sometimes
+    /// this cache should be invalidated.
+    func invalidateAccountBalance()
 
     /// The balance of this account exchanged to the given fiat currency.
     func fiatBalance(fiatCurrency: FiatCurrency) -> AnyPublisher<MoneyValue, Error>

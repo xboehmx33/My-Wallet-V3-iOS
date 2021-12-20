@@ -33,10 +33,10 @@ public final class ActivityScreenViewController: BaseScreenViewController {
 
     // MARK: - Setup
 
-    public init(services: ActivityServiceContaining = resolve()) {
+    public init(services: ActivityServiceContaining = resolve(), drawerRouting: DrawerRouting = resolve()) {
         let router = ActivityRouter(container: services)
         let interactor = ActivityScreenInteractor(serviceContainer: services)
-        presenter = ActivityScreenPresenter(router: router, interactor: interactor)
+        presenter = ActivityScreenPresenter(router: router, interactor: interactor, drawerRouter: drawerRouting)
         super.init(nibName: ActivityScreenViewController.objectName, bundle: .module)
     }
 

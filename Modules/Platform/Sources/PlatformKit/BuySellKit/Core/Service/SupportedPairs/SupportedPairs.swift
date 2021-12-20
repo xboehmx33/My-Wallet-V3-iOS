@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 /// Simple-Buy supported pairs
 public struct SupportedPairs: Equatable {
     static let empty: SupportedPairs = .init(pairs: [])

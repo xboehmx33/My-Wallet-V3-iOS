@@ -1,6 +1,9 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import DIKit
+import FeatureOpenBankingUI
+import FeatureSettingsUI
+import PlatformUIKit
 import ToolKit
 import UIKit
 
@@ -18,5 +21,19 @@ extension DependencyContainer {
             )
             return BackgroundAppHandler(backgroundTaskTimer: timer)
         }
+
+        // MARK: Open Banking
+
+        factory { () -> FeatureOpenBankingUI.FiatCurrencyFormatter in
+            FiatCurrencyFormatter()
+        }
+
+        factory { () -> FeatureOpenBankingUI.CryptoCurrencyFormatter in
+            CryptoCurrencyFormatter()
+        }
+
+        factory { LaunchOpenBankingFlow() as StartOpenBanking }
+
+        factory { AccountLinkingFlowPresenter() as AccountLinkingFlowPresenterAPI }
     }
 }

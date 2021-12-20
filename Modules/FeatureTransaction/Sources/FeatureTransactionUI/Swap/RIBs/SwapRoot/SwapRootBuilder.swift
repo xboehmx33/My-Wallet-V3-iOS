@@ -7,14 +7,14 @@ import RIBs
 // MARK: - Builder
 
 public protocol SwapRootBuildable {
-    func build() -> ViewableRouting
+    func build() -> SwapRootRouting
 }
 
 public final class SwapRootBuilder: SwapRootBuildable {
 
     public init() {}
 
-    public func build() -> ViewableRouting {
+    public func build() -> SwapRootRouting {
         let viewController = SwapRootViewController()
         let interactor = SwapRootInteractor()
 

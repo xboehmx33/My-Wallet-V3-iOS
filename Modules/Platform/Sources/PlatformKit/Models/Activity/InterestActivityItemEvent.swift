@@ -1,5 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
+import MoneyKit
+
 public enum InterestActivityItemEventState: String {
     case failed
     case rejected

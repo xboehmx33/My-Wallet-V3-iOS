@@ -15,6 +15,11 @@ enum TransitionType: Equatable {
     case replaceRoot
 }
 
+enum OpenBankingAction {
+    case buy(OrderDetails)
+    case deposit(PendingTransaction)
+}
+
 protocol TransactionFlowRouting: Routing {
 
     var isDisplayingRootViewController: Bool { get }
@@ -79,7 +84,11 @@ protocol TransactionFlowRouting: Routing {
     func presentBankWiringInstructions(transactionModel: TransactionModel)
 
     /// Present open banking authorisation so users can deposit funds into their wallet
-    func presentOpenBanking(transactionModel: TransactionModel, account: LinkedBankAccount, order: PendingTransaction)
+    func presentOpenBanking(
+        action: OpenBankingAction,
+        transactionModel: TransactionModel,
+        account: LinkedBankData
+    )
 
     /// Route to the in progress screen. This pushes onto the navigation stack.
     func routeToInProgress(transactionModel: TransactionModel, action: AssetAction)
@@ -119,6 +128,7 @@ public protocol TransactionFlowListener: AnyObject {
     func dismissTransactionFlow()
 }
 
+// swiftlint:disable type_body_length
 final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPresentable>,
     TransactionFlowInteractable,
     AccountPickerListener,
@@ -362,6 +372,7 @@ final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPres
         transactionModel.process(action: .resetFlow)
     }
 
+    // swiftlint:disable cyclomatic_complexity
     private func showFlowStep(previousState: TransactionState?, newState: TransactionState) {
         guard previousState?.step != newState.step else {
             // if the step hasn't changed we have nothing to do
@@ -385,13 +396,45 @@ final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPres
             break
 
         case .authorizeOpenBanking:
-            guard let bankAccount = previousState?.source as? LinkedBankAccount else { return }
-            guard let order = previousState?.pendingTransaction else { return }
-            router?.presentOpenBanking(
-                transactionModel: transactionModel,
-                account: bankAccount,
-                order: order
-            )
+
+            let linkedBankData: LinkedBankData
+            switch previousState?.source {
+            case let account as PaymentMethodAccount:
+                switch account.paymentMethodType {
+                case .linkedBank(let data):
+                    linkedBankData = data
+                default:
+                    return assertionFailure("Authorising open banking without a valid payment method")
+                }
+            case let account as LinkedBankAccount:
+                linkedBankData = account.data
+            default:
+                return assertionFailure("Authorising open banking without a valid account type")
+            }
+
+            switch previousState?.action {
+            case .buy:
+                guard let order = previousState?.order as? OrderDetails else {
+                    return assertionFailure("OpenBanking for buy requires OrderDetails")
+                }
+                router?.presentOpenBanking(
+                    action: .buy(order),
+                    transactionModel: transactionModel,
+                    account: linkedBankData
+                )
+            case .deposit:
+                guard let order = previousState?.pendingTransaction else {
+                    return assertionFailure("OpenBanking for deposit requires a PendingTransaction")
+                }
+                router?.presentOpenBanking(
+                    action: .deposit(order),
+                    transactionModel: transactionModel,
+                    account: linkedBankData
+                )
+            default:
+                return assertionFailure("OpenBanking authorisation is only required for buy and deposit")
+            }
+
         case .enterAmount:
             router?.routeToPriceInput(
                 source: newState.source!,
@@ -460,7 +503,7 @@ final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPres
         case .kycChecks:
             router?.presentKYCFlowIfNeeded { [transactionModel] didCompleteKYC in
                 if didCompleteKYC {
-                    transactionModel.process(action: .validateSourceAccount)
+                    transactionModel.process(action: .validateTransactionAfterKYC)
                 } else {
                     transactionModel.process(action: .returnToPreviousStep)
                 }
@@ -485,7 +528,7 @@ final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPres
             )
 
         case .selectSource:
-            let canAddMoreSources = newState.userKYCTiers?.isTier2Approved ?? false
+            let canAddMoreSources = newState.userKYCStatus?.tiers.isTier2Approved ?? false
             switch action {
             case .buy where newState.stepsBackStack.contains(.enterAmount):
                 router?.routeToSourceAccountPicker(
@@ -615,6 +658,18 @@ final class TransactionFlowInteractor: PresentableInteractor<TransactionFlowPres
         case .funds:
             // Nothing to link, move on to the next step
             transactionModel.process(action: .prepareTransaction)
+        }
+    }
+}
+
+extension OpenBankingAction {
+
+    var currency: String {
+        switch self {
+        case .buy(let order):
+            return order.inputValue.code
+        case .deposit(let order):
+            return order.amount.code
         }
     }
 }

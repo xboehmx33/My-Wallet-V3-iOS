@@ -5,6 +5,7 @@ import Combine
 import DIKit
 import FeatureOpenBankingUI
 import Localization
+import MoneyKit
 import PlatformKit
 import RxSwift
 import SafariServices
@@ -50,6 +51,7 @@ public final class Router: RouterAPI {
     private let navigationRouter: NavigationRouterAPI
     private let alertViewPresenter: AlertViewPresenterAPI
     private let paymentAccountService: PaymentAccountServiceAPI
+    private var stripeClient: StripeUIClientAPI
 
     private var cardRouter: CardRouter!
 
@@ -83,7 +85,8 @@ public final class Router: RouterAPI {
         kycRouter: KYCRouterAPI = resolve(), // TODO: merge with the following or remove (IOS-4471)
         newKYCRouter: KYCRouting = resolve(),
         analyticsRecorder: AnalyticsEventRecorderAPI = resolve(),
-        paymentAccountService: PaymentAccountServiceAPI = resolve()
+        paymentAccountService: PaymentAccountServiceAPI = resolve(),
+        stripeClient: StripeUIClientAPI = resolve()
     ) {
         self.navigationRouter = navigationRouter
         self.supportedPairsInteractor = supportedPairsInteractor
@@ -96,6 +99,7 @@ public final class Router: RouterAPI {
         self.builder = builder
         self.analyticsRecorder = analyticsRecorder
         self.paymentAccountService = paymentAccountService
+        self.stripeClient = stripeClient
 
         let cryptoSelectionService = CryptoCurrencySelectionService(
             service: supportedPairsInteractor,
@@ -128,7 +132,7 @@ public final class Router: RouterAPI {
     /// Should be called once
     public func setup(startImmediately: Bool) {
         stateService.action
-            .observeOn(MainScheduler.asyncInstance)
+            .observe(on: MainScheduler.asyncInstance)
             .bindAndCatch(weak: self) { (self, action) in
                 switch action {
                 case .previous(let state):
@@ -163,16 +167,18 @@ public final class Router: RouterAPI {
             showIntroScreen()
         case .changeFiat:
             settingsService
-                .fiatCurrency
-                .observeOn(MainScheduler.instance)
+                .displayCurrency
+                .asSingle()
+                .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] currency in
                     self?.showFiatCurrencyChangeScreen(selectedCurrency: currency)
                 })
                 .disposed(by: disposeBag)
         case .selectFiat:
             settingsService
-                .fiatCurrency
-                .observeOn(MainScheduler.instance)
+                .displayCurrency
+                .asSingle()
+                .observe(on: MainScheduler.instance)
                 .subscribe(onSuccess: { [weak self] currency in
                     self?.showFiatCurrencySelectionScreen(selectedCurrency: currency)
                 })
@@ -304,12 +310,14 @@ public final class Router: RouterAPI {
                 // TICKET: IOS-3144
                 self.settingsService
                     .update(
-                        currency: currency,
+                        displayCurrency: currency,
                         context: .simpleBuy
                     )
+                    .asSingle()
+                    .asCompletable()
                     .andThen(Single.just(currency))
             }
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: { [weak self] currency in
                     guard let self = self else { return }
@@ -362,15 +370,17 @@ public final class Router: RouterAPI {
                 // TICKET: IOS-3144
                 return self.settingsService
                     .update(
-                        currency: currency,
+                        displayCurrency: currency,
                         context: .simpleBuy
                     )
+                    .asSingle()
+                    .asCompletable()
                     .andThen(Single.zip(
                         Single.just(currency),
                         isCurrencySupported
                     ))
             }
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: { [weak self] value in
                     guard let self = self else { return }
@@ -439,7 +449,7 @@ public final class Router: RouterAPI {
         analyticsRecorder.record(event: AnalyticsEvents.New.Withdrawal.linkBankClicked(origin: .buy))
         router.startFlow()
             .takeUntil(.inclusive, predicate: { $0.isCloseEffect })
-            .skipWhile { $0.shouldSkipEffect }
+            .skip { $0.shouldSkipEffect }
             .subscribe(onNext: { [weak self] effect in
                 guard let self = self else { return }
                 guard case .closeFlow(let isInteractive) = effect, !isInteractive else {
@@ -540,11 +550,7 @@ public final class Router: RouterAPI {
             orderInteractor = BuyOrderCardCheckoutInteractor(
                 cardInteractor: CardOrderCheckoutInteractor()
             )
-        case .funds, .bankAccount:
-            orderInteractor = BuyOrderFundsCheckoutInteractor(
-                fundsAndBankInteractor: FundsAndBankOrderCheckoutInteractor()
-            )
-        case .bankTransfer:
+        case .funds, .bankAccount, .bankTransfer:
             orderInteractor = BuyOrderFundsCheckoutInteractor(
                 fundsAndBankInteractor: FundsAndBankOrderCheckoutInteractor()
             )
@@ -588,10 +594,25 @@ public final class Router: RouterAPI {
             interactor: interactor,
             data: data.authorizationData!
         )
-        let viewController = CardAuthorizationScreenViewController(
-            presenter: presenter
-        )
-        navigationRouter.present(viewController: viewController)
+
+        guard let authorizationData = data.authorizationData,
+              case .required(let params) = authorizationData.state
+        else {
+            presenter.redirect()
+            return
+        }
+
+        switch params.cardAcquirer {
+        case .stripe:
+            stripeClient.confirmPayment(authorizationData, with: presenter)
+        case .everyPay, .checkout:
+            let viewController = CardAuthorizationScreenViewController(
+                presenter: presenter
+            )
+            navigationRouter.present(viewController: viewController)
+        case .unknown:
+            presenter.redirect()
+        }
     }
 
     private func showOpenBankingAuthorization(with data: CheckoutData) {
@@ -671,13 +692,13 @@ public final class Router: RouterAPI {
         kycDisposeBag = DisposeBag()
         kycRouter.kycStopped
             .take(1)
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .bindAndCatch(to: stateService.previousRelay)
             .disposed(by: kycDisposeBag)
 
         let finished = kycRouter.kycFinished
             .take(1)
-            .observeOn(MainScheduler.instance)
+            .observe(on: MainScheduler.instance)
             .share()
 
         // tier 2, silver +, etc. can buy. Only tier 0 and 1 can't.
@@ -733,7 +754,7 @@ public final class Router: RouterAPI {
                         parentFlow: .simpleBuy,
                         from: kycRootViewController
                     )
-                } onError: { [kycRouter] error in
+                } onFailure: { [kycRouter] error in
                     Logger.shared.error(String(describing: error))
                     kycRouter.start(
                         tier: .tier0,
@@ -741,6 +762,7 @@ public final class Router: RouterAPI {
                         from: kycRootViewController
                     )
                 }
+                .disposed(by: kycDisposeBag)
         }
     }
 

@@ -2,6 +2,7 @@
 
 import ComposableArchitecture
 import Localization
+import MoneyKit
 import PlatformKit
 import PlatformUIKit
 import RxRelay
@@ -19,6 +20,7 @@ final class AssetDetailsViewController: BaseScreenViewController {
     // MARK: - IBOutlets
 
     private let tableView: UITableView = .init()
+    private var tableViewBottomConstraint: NSLayoutConstraint?
     /// A reload relay that debounces its stream before calling table view to reload its data.
     private let reloadRelay = PublishRelay<Void>()
 
@@ -44,6 +46,7 @@ final class AssetDetailsViewController: BaseScreenViewController {
         setupNavigationBar()
 
         navigationController?.setNavigationBarHidden(true, animated: false)
+        view.backgroundColor = .white
 
         presenter.presentationAction
             .emit(onNext: { [weak self] action in
@@ -64,7 +67,8 @@ final class AssetDetailsViewController: BaseScreenViewController {
 
     private func setupTableView() {
         view.addSubview(tableView)
-        tableView.layoutToSuperview(.leading, .trailing, .top, .bottom)
+        tableView.layoutToSuperview(.leading, .trailing, .top)
+        tableViewBottomConstraint = tableView.layoutToSuperview(.bottom)
 
         tableView.tableFooterView = UIView()
         tableView.estimatedRowHeight = 312
@@ -113,21 +117,23 @@ final class AssetDetailsViewController: BaseScreenViewController {
     }
 
     private func addBuyButton(forCryptoCurrency cryptoCurrency: CryptoCurrency) {
-        let buyButtonAsUIView: UIView = UIHostingController(rootView: BuyButtonView(store: Store<BuyButtonState, BuyButtonAction>(
-            initialState: .init(cryptoCurrency: cryptoCurrency),
-            reducer: buyButtonReducer,
-            environment: .init()
-        ))).view
-
+        let buyButtonAsUIView: UIView = UIHostingController(
+            rootView: BuyButtonView(
+                store: Store<BuyButtonState, BuyButtonAction>(
+                    initialState: .init(cryptoCurrency: cryptoCurrency),
+                    reducer: buyButtonReducer,
+                    environment: .init()
+                )
+            )
+        ).view
         view.addSubview(buyButtonAsUIView)
-        buyButtonAsUIView.layoutToSuperview(.bottom, usesSafeAreaLayoutGuide: true, offset: -16)
+        view.safeAreaLayoutGuide.bottomAnchor.constraint(
+            equalToSystemSpacingBelow: buyButtonAsUIView.bottomAnchor,
+            multiplier: 1.0
+        ).isActive = true
+        tableViewBottomConstraint?.isActive = false
+        buyButtonAsUIView.layout(edge: .top, to: .bottom, of: tableView, activate: true)
         buyButtonAsUIView.layoutToSuperview(axis: .horizontal)
-        tableView.contentInset = UIEdgeInsets(
-            top: 0,
-            left: 0,
-            bottom: BuyButtonView.height,
-            right: 0
-        )
     }
 
     // MARK: - Actions

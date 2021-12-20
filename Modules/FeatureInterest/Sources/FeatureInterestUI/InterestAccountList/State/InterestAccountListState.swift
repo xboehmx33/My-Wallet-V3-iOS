@@ -3,6 +3,7 @@
 import ComposableArchitecture
 import ComposableNavigation
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 import SwiftUI
 

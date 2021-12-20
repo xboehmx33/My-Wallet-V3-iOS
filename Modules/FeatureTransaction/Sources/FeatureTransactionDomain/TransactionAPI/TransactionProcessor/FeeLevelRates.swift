@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 public struct FeeLevelRates: Equatable {
     public var regularFee: MoneyValue

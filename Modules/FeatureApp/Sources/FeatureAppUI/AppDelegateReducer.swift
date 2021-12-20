@@ -122,7 +122,7 @@ let appDelegateReducer = Reducer<
                 .eraseToEffect()
                 .fireAndForget(),
 
-            environment.featureFlagService.isEnabled(.local(.redesign))
+            environment.featureFlagService.isEnabled(.remote(.redesign))
                 .filter(!)
                 .map(.setGlobalNavigationAppearance(.lightContent()))
                 .eraseToEffect(),

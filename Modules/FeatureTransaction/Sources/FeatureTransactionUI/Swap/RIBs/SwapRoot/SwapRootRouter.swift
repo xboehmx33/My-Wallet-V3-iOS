@@ -8,13 +8,13 @@ import PlatformKit
 import PlatformUIKit
 import RIBs
 
-struct SwapTrendingPair {
-    let sourceAccount: CryptoAccount
-    let destinationAccount: CryptoAccount
-    let enabled: Bool
+public struct SwapTrendingPair {
+    public let sourceAccount: CryptoAccount
+    public let destinationAccount: CryptoAccount
+    public let enabled: Bool
 }
 
-protocol SwapRootRouting: ViewableRouting {
+public protocol SwapRootRouting: ViewableRouting {
     /// Bootstrap determines if the user
     /// should see KYC or Swap.
     func routeToSwapBootstrap()

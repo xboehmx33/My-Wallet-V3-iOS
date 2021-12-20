@@ -17,23 +17,27 @@ extension View {
         @ViewBuilder content: @escaping () -> Content
     ) -> some View where Content: View {
         ZStack {
-            self
-            let bottomSheetView = BottomSheetView(
+            zIndex(0)
+            if isPresented.transaction(isPresented.transaction).wrappedValue {
+                Color.palette.overlay600
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(1)
+                    .onTapGesture {
+                        isPresented.wrappedValue = false
+                    }
+            }
+            BottomSheetView(
                 isPresented: isPresented,
                 maximumHeight: maximumHeight,
                 content: content
             )
-            Color.black
-                .opacity(isPresented.wrappedValue ? 0.4 : 0)
-                .frame(width: .infinity, height: .infinity)
-                .ignoresSafeArea()
-                .animation(.linear)
-                .onTapGesture {
-                    bottomSheetView.isPresented = false
-                }
-            bottomSheetView
-                .ignoresSafeArea(.container, edges: .bottom)
+            .transition(.asymmetric(insertion: .move(edge: .top), removal: .move(edge: .bottom)))
+            .zIndex(2)
+            .ignoresSafeArea(.container, edges: .bottom)
         }
+        .animation(.interactiveSpring())
     }
 }
 
@@ -62,6 +66,8 @@ public struct BottomSheetView<Content: View>: View {
         _isPresented = isPresented
     }
 
+    @State private var height: CGFloat = 0
+
     public var body: some View {
         GeometryReader { geometry in
             let maximumHeight = maximumHeight.in(geometry)
@@ -71,16 +77,23 @@ public struct BottomSheetView<Content: View>: View {
                 content()
             }
             .padding(.bottom, 20.pt)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { height = min(geometry.size.height, maximumHeight) }
+                }
+            )
             .frame(
                 width: geometry.size.width,
-                height: maximumHeight,
+                height: height,
                 alignment: .top
             )
             .background(Color.semantic.background)
-            .cornerRadius(16)
+            .cornerRadius(24)
             .frame(height: geometry.size.height, alignment: .bottom)
-            .offset(y: max((isPresented ? 0 : maximumHeight) + translation, 0))
-            .animation(.interactiveSpring())
+            .offset(
+                y: max((isPresented ? 0 : height) + translation, 0)
+            )
             .gesture(
                 DragGesture()
                     .updating($translation) { value, state, _ in
@@ -96,12 +109,10 @@ public struct BottomSheetView<Content: View>: View {
 
     private var indicator: some View {
         RoundedRectangle(cornerRadius: 16)
-            .fill(Color.semantic.medium)
+            .fill(Color.semantic.dark)
             .frame(width: 32.pt, height: 4.pt)
             .onTapGesture {
-                withAnimation(.linear) {
-                    isPresented.toggle()
-                }
+                isPresented.toggle()
             }
     }
 }
@@ -112,11 +123,11 @@ struct BottomSheetView_Previews: PreviewProvider {
         Color.gray
             .overlay(
                 BottomSheetView(
-                    isPresented: Binding(get: { true }, set: { _ in }),
+                    isPresented: .constant(true),
                     maximumHeight: 70.vh
                 ) {
                     ForEach(0..<10) { i in
-                        DefaultRow(title: "\(i)", accessoryView: { Icon.chevronRight })
+                        PrimaryRow(title: "\(i)")
                             .accentColor(.semantic.muted)
                         if i != 9 {
                             Divider()

@@ -9,6 +9,8 @@ struct MinimalButtonExamplesView: View {
         VStack(spacing: Spacing.padding1) {
             MinimalButton(title: "Enabled", action: {})
 
+            MinimalButton(title: "With Icon", leadingView: { Icon.placeholder }, action: {})
+
             MinimalButton(title: "Disabled", action: {})
                 .disabled(true)
 

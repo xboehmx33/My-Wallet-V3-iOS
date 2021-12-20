@@ -136,11 +136,8 @@ final class LoginContainerViewController: UIViewController {
         isPageControlCurrentlyInteracted = false
     }
 
-    private func setStatusBarStateIfNeeded() {
-        let current = UIApplication.shared.statusBarStyle
-        let next: UIStatusBarStyle = currentItemIndex == 0 ? .lightContent : .default
-        guard next != current else { return }
-        UIApplication.shared.statusBarStyle = next
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        .lightContent
     }
 
     /// Returns the currently displayed item index
@@ -236,8 +233,6 @@ extension LoginContainerViewController {
             let page = Int(offset / scrollView.contentSize.width * CGFloat(inputs.count))
             pageControl.currentPage = max(page, 0)
         }
-
-        setStatusBarStateIfNeeded()
     }
 }
 

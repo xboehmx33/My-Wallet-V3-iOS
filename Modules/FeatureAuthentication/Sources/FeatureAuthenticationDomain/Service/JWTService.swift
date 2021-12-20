@@ -32,7 +32,7 @@ final class JWTService: JWTServiceAPI {
     var token: AnyPublisher<String, JWTServiceError> {
         let jwtRepository = jwtRepository
         return credentialsRepository
-            .credentialsPublisher
+            .credentials
             .mapError(JWTServiceError.failedToRetrieveCredentials)
             .flatMap { [jwtRepository] guid, sharedKey -> AnyPublisher<String, JWTServiceError> in
                 jwtRepository

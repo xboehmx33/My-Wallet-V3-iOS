@@ -2,6 +2,7 @@
 
 import Combine
 import FeatureInterestDomain
+import MoneyKit
 import PlatformKit
 
 final class NoOpInterestAccountOverviewRepository: InterestAccountOverviewRepositoryAPI {

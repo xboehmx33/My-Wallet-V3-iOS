@@ -2,6 +2,7 @@
 
 import ComposableArchitecture
 import Localization
+import MoneyKit
 import PlatformKit
 import SwiftUI
 import UIComponentsKit

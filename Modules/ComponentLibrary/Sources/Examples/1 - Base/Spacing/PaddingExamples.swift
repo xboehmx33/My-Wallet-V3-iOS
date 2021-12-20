@@ -20,7 +20,7 @@ struct PaddingExamplesView: View {
     @ViewBuilder func paddingView(for padding: CGFloat, title: String) -> some View {
         ZStack {
             Rectangle()
-                .foregroundColor(.white)
+                .foregroundColor(.semantic.background)
                 .border(Color.red, width: 0.5)
                 .padding(padding)
 
@@ -30,6 +30,7 @@ struct PaddingExamplesView: View {
                 Text("\(padding)")
                     .typography(.body1)
             }
+            .foregroundColor(.semantic.title)
         }
         .frame(height: 188)
         .background(Color.gray.opacity(0.1))

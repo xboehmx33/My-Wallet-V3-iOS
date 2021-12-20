@@ -2,6 +2,7 @@
 
 import Combine
 import DIKit
+import MoneyKit
 import NabuNetworkError
 import RxSwift
 import ToolKit
@@ -68,5 +69,6 @@ final class CustodialPendingDepositService: CustodialPendingDepositServiceAPI {
         return client.createPendingDeposit(body: body)
             .asObservable()
             .ignoreElements()
+            .asCompletable()
     }
 }

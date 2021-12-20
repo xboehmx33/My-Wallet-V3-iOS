@@ -1,6 +1,6 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
-import PlatformKit
+import MoneyKit
 
 public struct CustodialTransferFee {
     let fee: [CurrencyType: MoneyValue]

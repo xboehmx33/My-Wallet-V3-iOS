@@ -23,6 +23,7 @@ public final class WalletPayloadServiceNew: WalletPayloadServiceAPI {
     public func requestUsingSessionToken() -> AnyPublisher<WalletAuthenticatorType, WalletPayloadServiceError> {
         let request = request(guid:sessionToken:)
         return walletRepo.credentials
+            .first()
             .flatMap { credentials -> AnyPublisher<(guid: String, sessionToken: String), WalletPayloadServiceError> in
                 guard !credentials.guid.isEmpty else {
                     return .failure(.missingCredentials(.guid))
@@ -41,6 +42,7 @@ public final class WalletPayloadServiceNew: WalletPayloadServiceAPI {
     public func requestUsingSharedKey() -> AnyPublisher<Void, WalletPayloadServiceError> {
         let request = request(guid:sharedKey:)
         return walletRepo.credentials
+            .first()
             .flatMap { credentials -> AnyPublisher<(guid: String, sharedKey: String), WalletPayloadServiceError> in
                 guard !credentials.guid.isEmpty else {
                     return .failure(.missingCredentials(.guid))
@@ -115,6 +117,7 @@ public final class WalletPayloadServiceNew: WalletPayloadServiceAPI {
             .set(keyPath: \.encryptedPayload, value: rawPayload)
             .set(keyPath: \.properties.authenticatorType, value: authenticatorType)
             .map { _ in clientResponse }
+            .first()
             .mapError()
     }
 }

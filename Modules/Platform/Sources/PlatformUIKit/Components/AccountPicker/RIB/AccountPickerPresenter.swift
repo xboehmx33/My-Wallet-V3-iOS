@@ -26,7 +26,7 @@ public final class AccountPickerPresenter: Presenter<AccountPickerViewControllab
     // MARK: - Private Properties
 
     private let action: AssetAction
-    private let navigationModel: ScreenNavigationModel
+    private let navigationModel: ScreenNavigationModel?
     private let headerModel: AccountPickerHeaderType
     private let showWithdrawalLocks: Bool
 
@@ -35,7 +35,7 @@ public final class AccountPickerPresenter: Presenter<AccountPickerViewControllab
     init(
         viewController: AccountPickerViewControllable,
         action: AssetAction,
-        navigationModel: ScreenNavigationModel,
+        navigationModel: ScreenNavigationModel?,
         headerModel: AccountPickerHeaderType,
         buttonViewModel: ButtonViewModel? = nil,
         showWithdrawalLocks: Bool = false
@@ -86,7 +86,7 @@ public final class AccountPickerPresenter: Presenter<AccountPickerViewControllab
 extension AccountPickerPresenter {
     public struct State {
         public var headerModel: AccountPickerHeaderType
-        public var navigationModel: ScreenNavigationModel
+        public var navigationModel: ScreenNavigationModel?
         public var sections: [AccountPickerSectionViewModel]
     }
 }

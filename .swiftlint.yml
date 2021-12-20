@@ -134,6 +134,7 @@ only_rules:
 - xctfail_message
 - yoda_condition
 excluded:
+  - .build/
   - Submodules/
   - Carthage/
   - vendor/bundle

@@ -1,6 +1,7 @@
 // Copyright © Blockchain Luxembourg S.A. All rights reserved.
 
 import ERC20Kit
+import MoneyKit
 import PlatformKit
 
 /// A mapper for ERC-20 token accounts data model to domain model.
